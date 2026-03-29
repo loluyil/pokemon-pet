@@ -1,0 +1,898 @@
+{
+	"stench": {
+		"display_name": "Stench",
+		"short_effect": "Has a 10% chance of making target Pok\u00e9mon flinch with each hit."
+	},
+	"drizzle": {
+		"display_name": "Drizzle",
+		"short_effect": "Summons rain that lasts indefinitely upon entering battle."
+	},
+	"speed-boost": {
+		"display_name": "Speed Boost",
+		"short_effect": "Raises Speed one stage after each turn."
+	},
+	"battle-armor": {
+		"display_name": "Battle Armor",
+		"short_effect": "Protects against critical hits."
+	},
+	"sturdy": {
+		"display_name": "Sturdy",
+		"short_effect": "Prevents being KOed from full HP, leaving 1 HP instead.  Protects against the one-hit KO moves regardless of HP."
+	},
+	"damp": {
+		"display_name": "Damp",
+		"short_effect": "Prevents self destruct, explosion, and aftermath from working while the Pok\u00e9mon is in battle."
+	},
+	"limber": {
+		"display_name": "Limber",
+		"short_effect": "Prevents paralysis."
+	},
+	"sand-veil": {
+		"display_name": "Sand Veil",
+		"short_effect": "Increases evasion to 1.25\u00d7 during a sandstorm.  Protects against sandstorm damage."
+	},
+	"static": {
+		"display_name": "Static",
+		"short_effect": "Has a 30% chance of paralyzing attacking Pok\u00e9mon on contact."
+	},
+	"volt-absorb": {
+		"display_name": "Volt Absorb",
+		"short_effect": "Absorbs electric moves, healing for 1/4 max HP."
+	},
+	"water-absorb": {
+		"display_name": "Water Absorb",
+		"short_effect": "Absorbs water moves, healing for 1/4 max HP."
+	},
+	"oblivious": {
+		"display_name": "Oblivious",
+		"short_effect": "Prevents infatuation and protects against captivate."
+	},
+	"cloud-nine": {
+		"display_name": "Cloud Nine",
+		"short_effect": "Negates all effects of weather, but does not prevent the weather itself."
+	},
+	"compound-eyes": {
+		"display_name": "Compound Eyes",
+		"short_effect": "Increases moves' accuracy to 1.3\u00d7."
+	},
+	"insomnia": {
+		"display_name": "Insomnia",
+		"short_effect": "Prevents sleep."
+	},
+	"color-change": {
+		"display_name": "Color Change",
+		"short_effect": "Changes type to match when hit by a damaging move."
+	},
+	"immunity": {
+		"display_name": "Immunity",
+		"short_effect": "Prevents poison."
+	},
+	"flash-fire": {
+		"display_name": "Flash Fire",
+		"short_effect": "Protects against fire moves.  Once one has been blocked, the Pok\u00e9mon's own Fire moves inflict 1.5\u00d7 damage until it leaves battle."
+	},
+	"shield-dust": {
+		"display_name": "Shield Dust",
+		"short_effect": "Protects against incoming moves' extra effects."
+	},
+	"own-tempo": {
+		"display_name": "Own Tempo",
+		"short_effect": "Prevents confusion."
+	},
+	"suction-cups": {
+		"display_name": "Suction Cups",
+		"short_effect": "Prevents being forced out of battle by other Pok\u00e9mon's moves."
+	},
+	"intimidate": {
+		"display_name": "Intimidate",
+		"short_effect": "Lowers opponents' Attack one stage upon entering battle."
+	},
+	"shadow-tag": {
+		"display_name": "Shadow Tag",
+		"short_effect": "Prevents opponents from fleeing or switching out."
+	},
+	"rough-skin": {
+		"display_name": "Rough Skin",
+		"short_effect": "Damages attacking Pok\u00e9mon for 1/8 their max HP on contact."
+	},
+	"wonder-guard": {
+		"display_name": "Wonder Guard",
+		"short_effect": "Protects against damaging moves that are not super effective."
+	},
+	"levitate": {
+		"display_name": "Levitate",
+		"short_effect": "Evades ground moves."
+	},
+	"effect-spore": {
+		"display_name": "Effect Spore",
+		"short_effect": "Has a 30% chance of inflcting either paralysis, poison, or sleep on attacking Pok\u00e9mon on contact."
+	},
+	"synchronize": {
+		"display_name": "Synchronize",
+		"short_effect": "Copies burns, paralysis, and poison received onto the Pok\u00e9mon that inflicted them."
+	},
+	"clear-body": {
+		"display_name": "Clear Body",
+		"short_effect": "Prevents stats from being lowered by other Pok\u00e9mon."
+	},
+	"natural-cure": {
+		"display_name": "Natural Cure",
+		"short_effect": "Cures any major status ailment upon switching out."
+	},
+	"lightning-rod": {
+		"display_name": "Lightning Rod",
+		"short_effect": "Redirects single-target electric moves to this Pok\u00e9mon where possible.  Absorbs Electric moves, raising Special Attack one stage."
+	},
+	"serene-grace": {
+		"display_name": "Serene Grace",
+		"short_effect": "Doubles the chance of moves' extra effects occurring."
+	},
+	"swift-swim": {
+		"display_name": "Swift Swim",
+		"short_effect": "Doubles Speed during rain."
+	},
+	"chlorophyll": {
+		"display_name": "Chlorophyll",
+		"short_effect": "Doubles Speed during strong sunlight."
+	},
+	"illuminate": {
+		"display_name": "Illuminate",
+		"short_effect": "Doubles the wild encounter rate."
+	},
+	"trace": {
+		"display_name": "Trace",
+		"short_effect": "Copies an opponent's ability upon entering battle."
+	},
+	"huge-power": {
+		"display_name": "Huge Power",
+		"short_effect": "Doubles Attack in battle."
+	},
+	"poison-point": {
+		"display_name": "Poison Point",
+		"short_effect": "Has a 30% chance of poisoning attacking Pok\u00e9mon on contact."
+	},
+	"inner-focus": {
+		"display_name": "Inner Focus",
+		"short_effect": "Prevents flinching."
+	},
+	"magma-armor": {
+		"display_name": "Magma Armor",
+		"short_effect": "Prevents freezing."
+	},
+	"water-veil": {
+		"display_name": "Water Veil",
+		"short_effect": "Prevents burns."
+	},
+	"magnet-pull": {
+		"display_name": "Magnet Pull",
+		"short_effect": "Prevents steel opponents from fleeing or switching out."
+	},
+	"soundproof": {
+		"display_name": "Soundproof",
+		"short_effect": "Protects against sound-based moves."
+	},
+	"rain-dish": {
+		"display_name": "Rain Dish",
+		"short_effect": "Heals for 1/16 max HP after each turn during rain."
+	},
+	"sand-stream": {
+		"display_name": "Sand Stream",
+		"short_effect": "Summons a sandstorm that lasts indefinitely upon entering battle."
+	},
+	"pressure": {
+		"display_name": "Pressure",
+		"short_effect": "Increases the PP cost of moves targetting the Pok\u00e9mon by one."
+	},
+	"thick-fat": {
+		"display_name": "Thick Fat",
+		"short_effect": "Halves damage from fire and ice moves."
+	},
+	"early-bird": {
+		"display_name": "Early Bird",
+		"short_effect": "Makes sleep pass twice as quickly."
+	},
+	"flame-body": {
+		"display_name": "Flame Body",
+		"short_effect": "Has a 30% chance of burning attacking Pok\u00e9mon on contact."
+	},
+	"run-away": {
+		"display_name": "Run Away",
+		"short_effect": "Ensures success fleeing from wild battles."
+	},
+	"keen-eye": {
+		"display_name": "Keen Eye",
+		"short_effect": "Prevents accuracy from being lowered."
+	},
+	"hyper-cutter": {
+		"display_name": "Hyper Cutter",
+		"short_effect": "Prevents Attack from being lowered by other Pok\u00e9mon."
+	},
+	"pickup": {
+		"display_name": "Pickup",
+		"short_effect": "Picks up other Pok\u00e9mon's used and Flung held items.  May also pick up an item after battle."
+	},
+	"truant": {
+		"display_name": "Truant",
+		"short_effect": "Skips every second turn."
+	},
+	"hustle": {
+		"display_name": "Hustle",
+		"short_effect": "Strengthens physical moves to inflict 1.5\u00d7 damage, but decreases their accuracy to 0.8\u00d7."
+	},
+	"cute-charm": {
+		"display_name": "Cute Charm",
+		"short_effect": "Has a 30% chance of infatuating attacking Pok\u00e9mon on contact."
+	},
+	"plus": {
+		"display_name": "Plus",
+		"short_effect": "Increases Special Attack to 1.5\u00d7 when a friendly Pok\u00e9mon has plus or minus."
+	},
+	"minus": {
+		"display_name": "Minus",
+		"short_effect": "Increases Special Attack to 1.5\u00d7 when a friendly Pok\u00e9mon has plus or minus."
+	},
+	"forecast": {
+		"display_name": "Forecast",
+		"short_effect": "Changes castform's type and form to match the weather."
+	},
+	"sticky-hold": {
+		"display_name": "Sticky Hold",
+		"short_effect": "Prevents a held item from being removed by other Pok\u00e9mon."
+	},
+	"shed-skin": {
+		"display_name": "Shed Skin",
+		"short_effect": "Has a 33% chance of curing any major status ailment after each turn."
+	},
+	"guts": {
+		"display_name": "Guts",
+		"short_effect": "Increases Attack to 1.5\u00d7 with a major status ailment."
+	},
+	"marvel-scale": {
+		"display_name": "Marvel Scale",
+		"short_effect": "Increases Defense to 1.5\u00d7 with a major status ailment."
+	},
+	"liquid-ooze": {
+		"display_name": "Liquid Ooze",
+		"short_effect": "Damages opponents using leeching moves for as much as they would heal."
+	},
+	"overgrow": {
+		"display_name": "Overgrow",
+		"short_effect": "Strengthens grass moves to inflict 1.5\u00d7 damage at 1/3 max HP or less."
+	},
+	"blaze": {
+		"display_name": "Blaze",
+		"short_effect": "Strengthens fire moves to inflict 1.5\u00d7 damage at 1/3 max HP or less."
+	},
+	"torrent": {
+		"display_name": "Torrent",
+		"short_effect": "Strengthens water moves to inflict 1.5\u00d7 damage at 1/3 max HP or less."
+	},
+	"swarm": {
+		"display_name": "Swarm",
+		"short_effect": "Strengthens bug moves to inflict 1.5\u00d7 damage at 1/3 max HP or less."
+	},
+	"rock-head": {
+		"display_name": "Rock Head",
+		"short_effect": "Protects against recoil damage."
+	},
+	"drought": {
+		"display_name": "Drought",
+		"short_effect": "Summons strong sunlight that lasts indefinitely upon entering battle."
+	},
+	"arena-trap": {
+		"display_name": "Arena Trap",
+		"short_effect": "Prevents opponents from fleeing or switching out.  Eluded by flying-types and Pok\u00e9mon in the air."
+	},
+	"vital-spirit": {
+		"display_name": "Vital Spirit",
+		"short_effect": "Prevents sleep."
+	},
+	"white-smoke": {
+		"display_name": "White Smoke",
+		"short_effect": "Prevents stats from being lowered by other Pok\u00e9mon."
+	},
+	"pure-power": {
+		"display_name": "Pure Power",
+		"short_effect": "Doubles Attack in battle."
+	},
+	"shell-armor": {
+		"display_name": "Shell Armor",
+		"short_effect": "Protects against critical hits."
+	},
+	"air-lock": {
+		"display_name": "Air Lock",
+		"short_effect": "Negates all effects of weather, but does not prevent the weather itself."
+	},
+	"tangled-feet": {
+		"display_name": "Tangled Feet",
+		"short_effect": "Doubles evasion when confused."
+	},
+	"motor-drive": {
+		"display_name": "Motor Drive",
+		"short_effect": "Absorbs electric moves, raising Speed one stage."
+	},
+	"rivalry": {
+		"display_name": "Rivalry",
+		"short_effect": "Increases damage inflicted to 1.25\u00d7 against Pok\u00e9mon of the same gender, but decreases damage to 0.75\u00d7 against the opposite gender."
+	},
+	"steadfast": {
+		"display_name": "Steadfast",
+		"short_effect": "Raises Speed one stage upon flinching."
+	},
+	"snow-cloak": {
+		"display_name": "Snow Cloak",
+		"short_effect": "Increases evasion to 1.25\u00d7 during hail.  Protects against hail damage."
+	},
+	"gluttony": {
+		"display_name": "Gluttony",
+		"short_effect": "Makes the Pok\u00e9mon eat any held Berry triggered by low HP below 1/2 its max HP."
+	},
+	"anger-point": {
+		"display_name": "Anger Point",
+		"short_effect": "Raises Attack to the maximum of six stages upon receiving a critical hit."
+	},
+	"unburden": {
+		"display_name": "Unburden",
+		"short_effect": "Doubles Speed upon using or losing a held item."
+	},
+	"heatproof": {
+		"display_name": "Heatproof",
+		"short_effect": "Halves damage from fire moves and burns."
+	},
+	"simple": {
+		"display_name": "Simple",
+		"short_effect": "Doubles the Pok\u00e9mon's stat modifiers.  These doubled modifiers are still capped at -6 or 6 stages."
+	},
+	"dry-skin": {
+		"display_name": "Dry Skin",
+		"short_effect": "Causes 1/8 max HP in damage each turn during strong sunlight, but heals for 1/8 max HP during rain.  Increases damage from fire moves to 1.25\u00d7, but absorbs water moves, healing for 1/4 max HP."
+	},
+	"download": {
+		"display_name": "Download",
+		"short_effect": "Raises the attack stat corresponding to the opponents' weaker defense one stage upon entering battle."
+	},
+	"iron-fist": {
+		"display_name": "Iron Fist",
+		"short_effect": "Strengthens punch-based moves to 1.2\u00d7 their power."
+	},
+	"poison-heal": {
+		"display_name": "Poison Heal",
+		"short_effect": "Heals for 1/8 max HP after each turn when poisoned in place of damage."
+	},
+	"adaptability": {
+		"display_name": "Adaptability",
+		"short_effect": "Increases the same-type attack bonus from 1.5\u00d7 to 2\u00d7."
+	},
+	"skill-link": {
+		"display_name": "Skill Link",
+		"short_effect": "Extends two-to-five-hit moves and triple kick to their full length every time."
+	},
+	"hydration": {
+		"display_name": "Hydration",
+		"short_effect": "Cures any major status ailment after each turn during rain."
+	},
+	"solar-power": {
+		"display_name": "Solar Power",
+		"short_effect": "Increases Special Attack to 1.5\u00d7 but costs 1/8 max HP after each turn during strong sunlight."
+	},
+	"quick-feet": {
+		"display_name": "Quick Feet",
+		"short_effect": "Increases Speed to 1.5\u00d7 with a major status ailment."
+	},
+	"normalize": {
+		"display_name": "Normalize",
+		"short_effect": "Makes the Pok\u00e9mon's moves all act normal-type."
+	},
+	"sniper": {
+		"display_name": "Sniper",
+		"short_effect": "Strengthens critical hits to inflict 3\u00d7 damage rather than 2\u00d7."
+	},
+	"magic-guard": {
+		"display_name": "Magic Guard",
+		"short_effect": "Protects against damage not directly caused by a move."
+	},
+	"no-guard": {
+		"display_name": "No Guard",
+		"short_effect": "Ensures all moves used by and against the Pok\u00e9mon hit."
+	},
+	"stall": {
+		"display_name": "Stall",
+		"short_effect": "Makes the Pok\u00e9mon move last within its move's priority bracket."
+	},
+	"technician": {
+		"display_name": "Technician",
+		"short_effect": "Strengthens moves of 60 base power or less to 1.5\u00d7 their power."
+	},
+	"leaf-guard": {
+		"display_name": "Leaf Guard",
+		"short_effect": "Protects against major status ailments during strong sunlight."
+	},
+	"klutz": {
+		"display_name": "Klutz",
+		"short_effect": "Prevents the Pok\u00e9mon from using its held item in battle."
+	},
+	"mold-breaker": {
+		"display_name": "Mold Breaker",
+		"short_effect": "Bypasses targets' abilities if they could hinder or prevent a move."
+	},
+	"super-luck": {
+		"display_name": "Super Luck",
+		"short_effect": "Raises moves' critical hit rates one stage."
+	},
+	"aftermath": {
+		"display_name": "Aftermath",
+		"short_effect": "Damages the attacker for 1/4 its max HP when knocked out by a contact move."
+	},
+	"anticipation": {
+		"display_name": "Anticipation",
+		"short_effect": "Notifies all trainers upon entering battle if an opponent has a super-effective move, self destruct, explosion, or a one-hit KO move."
+	},
+	"forewarn": {
+		"display_name": "Forewarn",
+		"short_effect": "Reveals the opponents' strongest move upon entering battle."
+	},
+	"unaware": {
+		"display_name": "Unaware",
+		"short_effect": "Ignores other Pok\u00e9mon's stat modifiers for damage and accuracy calculation."
+	},
+	"tinted-lens": {
+		"display_name": "Tinted Lens",
+		"short_effect": "Doubles damage inflicted with not-very-effective moves."
+	},
+	"filter": {
+		"display_name": "Filter",
+		"short_effect": "Decreases damage taken from super-effective moves by 1/4."
+	},
+	"slow-start": {
+		"display_name": "Slow Start",
+		"short_effect": "Halves Attack and Speed for five turns upon entering battle."
+	},
+	"scrappy": {
+		"display_name": "Scrappy",
+		"short_effect": "Lets the Pok\u00e9mon's normal and fighting moves hit ghost Pok\u00e9mon."
+	},
+	"storm-drain": {
+		"display_name": "Storm Drain",
+		"short_effect": "Redirects single-target water moves to this Pok\u00e9mon where possible.  Absorbs Water moves, raising Special Attack one stage."
+	},
+	"ice-body": {
+		"display_name": "Ice Body",
+		"short_effect": "Heals for 1/16 max HP after each turn during hail.  Protects against hail damage."
+	},
+	"solid-rock": {
+		"display_name": "Solid Rock",
+		"short_effect": "Decreases damage taken from super-effective moves by 1/4."
+	},
+	"snow-warning": {
+		"display_name": "Snow Warning",
+		"short_effect": "Summons hail that lasts indefinitely upon entering battle."
+	},
+	"honey-gather": {
+		"display_name": "Honey Gather",
+		"short_effect": "The Pok\u00e9mon may pick up honey after battle."
+	},
+	"frisk": {
+		"display_name": "Frisk",
+		"short_effect": "Reveals an opponent's held item upon entering battle."
+	},
+	"reckless": {
+		"display_name": "Reckless",
+		"short_effect": "Strengthens recoil moves to 1.2\u00d7 their power."
+	},
+	"multitype": {
+		"display_name": "Multitype",
+		"short_effect": "Changes arceus's type and form to match its held Plate."
+	},
+	"flower-gift": {
+		"display_name": "Flower Gift",
+		"short_effect": "Increases friendly Pok\u00e9mon's Attack and Special Defense to 1.5\u00d7 during strong sunlight."
+	},
+	"bad-dreams": {
+		"display_name": "Bad Dreams",
+		"short_effect": "Damages sleeping opponents for 1/8 their max HP after each turn."
+	},
+	"pickpocket": {
+		"display_name": "Pickpocket",
+		"short_effect": "Steals attacking Pok\u00e9mon's held items on contact."
+	},
+	"sheer-force": {
+		"display_name": "Sheer Force",
+		"short_effect": "Strengthens moves with extra effects to 1.3\u00d7 their power, but prevents their extra effects."
+	},
+	"contrary": {
+		"display_name": "Contrary",
+		"short_effect": "Inverts stat changes."
+	},
+	"unnerve": {
+		"display_name": "Unnerve",
+		"short_effect": "Prevents opposing Pok\u00e9mon from eating held Berries."
+	},
+	"defiant": {
+		"display_name": "Defiant",
+		"short_effect": "Raises Attack two stages upon having any stat lowered."
+	},
+	"defeatist": {
+		"display_name": "Defeatist",
+		"short_effect": "Halves Attack and Special Attack at 50% max HP or less."
+	},
+	"cursed-body": {
+		"display_name": "Cursed Body",
+		"short_effect": "Has a 30% chance of Disabling any move that hits the Pok\u00e9mon."
+	},
+	"healer": {
+		"display_name": "Healer",
+		"short_effect": "Has a 30% chance of curing each adjacent ally of any major status ailment after each turn."
+	},
+	"friend-guard": {
+		"display_name": "Friend Guard",
+		"short_effect": "Decreases all direct damage taken by friendly Pok\u00e9mon to 0.75\u00d7."
+	},
+	"weak-armor": {
+		"display_name": "Weak Armor",
+		"short_effect": "Raises Speed and lowers Defense by one stage each upon being hit by a physical move."
+	},
+	"heavy-metal": {
+		"display_name": "Heavy Metal",
+		"short_effect": "Doubles the Pok\u00e9mon's weight."
+	},
+	"light-metal": {
+		"display_name": "Light Metal",
+		"short_effect": "Halves the Pok\u00e9mon's weight."
+	},
+	"multiscale": {
+		"display_name": "Multiscale",
+		"short_effect": "Halves damage taken from full HP."
+	},
+	"toxic-boost": {
+		"display_name": "Toxic Boost",
+		"short_effect": "Increases Attack to 1.5\u00d7 when poisoned."
+	},
+	"flare-boost": {
+		"display_name": "Flare Boost",
+		"short_effect": "Increases Special Attack to 1.5\u00d7 when burned."
+	},
+	"harvest": {
+		"display_name": "Harvest",
+		"short_effect": "Has a 50% chance of restoring a used Berry after each turn if the Pok\u00e9mon has held no items in the meantime."
+	},
+	"telepathy": {
+		"display_name": "Telepathy",
+		"short_effect": "Protects against friendly Pok\u00e9mon's damaging moves."
+	},
+	"moody": {
+		"display_name": "Moody",
+		"short_effect": "Raises a random stat two stages and lowers another one stage after each turn."
+	},
+	"overcoat": {
+		"display_name": "Overcoat",
+		"short_effect": "Protects against damage from weather."
+	},
+	"poison-touch": {
+		"display_name": "Poison Touch",
+		"short_effect": "Has a 30% chance of poisoning target Pok\u00e9mon upon contact."
+	},
+	"regenerator": {
+		"display_name": "Regenerator",
+		"short_effect": "Heals for 1/3 max HP upon switching out."
+	},
+	"big-pecks": {
+		"display_name": "Big Pecks",
+		"short_effect": "Protects against Defense drops."
+	},
+	"sand-rush": {
+		"display_name": "Sand Rush",
+		"short_effect": "Doubles Speed during a sandstorm.  Protects against sandstorm damage."
+	},
+	"wonder-skin": {
+		"display_name": "Wonder Skin",
+		"short_effect": "Lowers incoming non-damaging moves' base accuracy to exactly 50%."
+	},
+	"analytic": {
+		"display_name": "Analytic",
+		"short_effect": "Strengthens moves to 1.3\u00d7 their power when moving last."
+	},
+	"illusion": {
+		"display_name": "Illusion",
+		"short_effect": "Takes the appearance of the last conscious party Pok\u00e9mon upon being sent out until hit by a damaging move."
+	},
+	"imposter": {
+		"display_name": "Imposter",
+		"short_effect": "Transforms upon entering battle."
+	},
+	"infiltrator": {
+		"display_name": "Infiltrator",
+		"short_effect": "Bypasses light screen, reflect, and safeguard."
+	},
+	"mummy": {
+		"display_name": "Mummy",
+		"short_effect": "Changes attacking Pok\u00e9mon's abilities to Mummy on contact."
+	},
+	"moxie": {
+		"display_name": "Moxie",
+		"short_effect": "Raises Attack one stage upon KOing a Pok\u00e9mon."
+	},
+	"justified": {
+		"display_name": "Justified",
+		"short_effect": "Raises Attack one stage upon taking damage from a dark move."
+	},
+	"rattled": {
+		"display_name": "Rattled",
+		"short_effect": "Raises Speed one stage upon being hit by a dark, ghost, or bug move."
+	},
+	"magic-bounce": {
+		"display_name": "Magic Bounce",
+		"short_effect": "Reflects most non-damaging moves back at their user."
+	},
+	"sap-sipper": {
+		"display_name": "Sap Sipper",
+		"short_effect": "Absorbs grass moves, raising Attack one stage."
+	},
+	"prankster": {
+		"display_name": "Prankster",
+		"short_effect": "Raises non-damaging moves' priority by one stage."
+	},
+	"sand-force": {
+		"display_name": "Sand Force",
+		"short_effect": "Strengthens rock, ground, and steel moves to 1.3\u00d7 their power during a sandstorm.  Protects against sandstorm damage."
+	},
+	"iron-barbs": {
+		"display_name": "Iron Barbs",
+		"short_effect": "Damages attacking Pok\u00e9mon for 1/8 their max HP on contact."
+	},
+	"zen-mode": {
+		"display_name": "Zen Mode",
+		"short_effect": "Changes darmanitan's form after each turn depending on its HP: Zen Mode below 50% max HP, and Standard Mode otherwise."
+	},
+	"victory-star": {
+		"display_name": "Victory Star",
+		"short_effect": "Increases moves' accuracy to 1.1\u00d7 for friendly Pok\u00e9mon."
+	},
+	"turboblaze": {
+		"display_name": "Turboblaze",
+		"short_effect": "Bypasses targets' abilities if they could hinder or prevent moves."
+	},
+	"teravolt": {
+		"display_name": "Teravolt",
+		"short_effect": "Bypasses targets' abilities if they could hinder or prevent moves."
+	},
+	"mountaineer": {
+		"display_name": "Mountaineer",
+		"short_effect": ""
+	},
+	"wave-rider": {
+		"display_name": "Wave Rider",
+		"short_effect": ""
+	},
+	"skater": {
+		"display_name": "Skater",
+		"short_effect": ""
+	},
+	"thrust": {
+		"display_name": "Thrust",
+		"short_effect": ""
+	},
+	"perception": {
+		"display_name": "Perception",
+		"short_effect": ""
+	},
+	"parry": {
+		"display_name": "Parry",
+		"short_effect": ""
+	},
+	"instinct": {
+		"display_name": "Instinct",
+		"short_effect": ""
+	},
+	"dodge": {
+		"display_name": "Dodge",
+		"short_effect": ""
+	},
+	"jagged-edge": {
+		"display_name": "Jagged Edge",
+		"short_effect": ""
+	},
+	"frostbite": {
+		"display_name": "Frostbite",
+		"short_effect": ""
+	},
+	"tenacity": {
+		"display_name": "Tenacity",
+		"short_effect": ""
+	},
+	"pride": {
+		"display_name": "Pride",
+		"short_effect": ""
+	},
+	"deep-sleep": {
+		"display_name": "Deep Sleep",
+		"short_effect": ""
+	},
+	"power-nap": {
+		"display_name": "Power Nap",
+		"short_effect": ""
+	},
+	"spirit": {
+		"display_name": "Spirit",
+		"short_effect": ""
+	},
+	"warm-blanket": {
+		"display_name": "Warm Blanket",
+		"short_effect": ""
+	},
+	"gulp": {
+		"display_name": "Gulp",
+		"short_effect": ""
+	},
+	"herbivore": {
+		"display_name": "Herbivore",
+		"short_effect": ""
+	},
+	"sandpit": {
+		"display_name": "Sandpit",
+		"short_effect": ""
+	},
+	"hot-blooded": {
+		"display_name": "Hot Blooded",
+		"short_effect": ""
+	},
+	"medic": {
+		"display_name": "Medic",
+		"short_effect": ""
+	},
+	"life-force": {
+		"display_name": "Life Force",
+		"short_effect": ""
+	},
+	"lunchbox": {
+		"display_name": "Lunchbox",
+		"short_effect": ""
+	},
+	"nurse": {
+		"display_name": "Nurse",
+		"short_effect": ""
+	},
+	"melee": {
+		"display_name": "Melee",
+		"short_effect": ""
+	},
+	"sponge": {
+		"display_name": "Sponge",
+		"short_effect": ""
+	},
+	"bodyguard": {
+		"display_name": "Bodyguard",
+		"short_effect": ""
+	},
+	"hero": {
+		"display_name": "Hero",
+		"short_effect": ""
+	},
+	"last-bastion": {
+		"display_name": "Last Bastion",
+		"short_effect": ""
+	},
+	"stealth": {
+		"display_name": "Stealth",
+		"short_effect": ""
+	},
+	"vanguard": {
+		"display_name": "Vanguard",
+		"short_effect": ""
+	},
+	"nomad": {
+		"display_name": "Nomad",
+		"short_effect": ""
+	},
+	"sequence": {
+		"display_name": "Sequence",
+		"short_effect": ""
+	},
+	"grass-cloak": {
+		"display_name": "Grass Cloak",
+		"short_effect": ""
+	},
+	"celebrate": {
+		"display_name": "Celebrate",
+		"short_effect": ""
+	},
+	"lullaby": {
+		"display_name": "Lullaby",
+		"short_effect": ""
+	},
+	"calming": {
+		"display_name": "Calming",
+		"short_effect": ""
+	},
+	"daze": {
+		"display_name": "Daze",
+		"short_effect": ""
+	},
+	"frighten": {
+		"display_name": "Frighten",
+		"short_effect": ""
+	},
+	"interference": {
+		"display_name": "Interference",
+		"short_effect": ""
+	},
+	"mood-maker": {
+		"display_name": "Mood Maker",
+		"short_effect": ""
+	},
+	"confidence": {
+		"display_name": "Confidence",
+		"short_effect": ""
+	},
+	"fortune": {
+		"display_name": "Fortune",
+		"short_effect": ""
+	},
+	"bonanza": {
+		"display_name": "Bonanza",
+		"short_effect": ""
+	},
+	"explode": {
+		"display_name": "Explode",
+		"short_effect": ""
+	},
+	"omnipotent": {
+		"display_name": "Omnipotent",
+		"short_effect": ""
+	},
+	"share": {
+		"display_name": "Share",
+		"short_effect": ""
+	},
+	"black-hole": {
+		"display_name": "Black Hole",
+		"short_effect": ""
+	},
+	"shadow-dash": {
+		"display_name": "Shadow Dash",
+		"short_effect": ""
+	},
+	"sprint": {
+		"display_name": "Sprint",
+		"short_effect": ""
+	},
+	"disgust": {
+		"display_name": "Disgust",
+		"short_effect": ""
+	},
+	"high-rise": {
+		"display_name": "High-rise",
+		"short_effect": ""
+	},
+	"climber": {
+		"display_name": "Climber",
+		"short_effect": ""
+	},
+	"flame-boost": {
+		"display_name": "Flame Boost",
+		"short_effect": ""
+	},
+	"aqua-boost": {
+		"display_name": "Aqua Boost",
+		"short_effect": ""
+	},
+	"run-up": {
+		"display_name": "Run Up",
+		"short_effect": ""
+	},
+	"conqueror": {
+		"display_name": "Conqueror",
+		"short_effect": ""
+	},
+	"shackle": {
+		"display_name": "Shackle",
+		"short_effect": ""
+	},
+	"decoy": {
+		"display_name": "Decoy",
+		"short_effect": ""
+	},
+	"shield": {
+		"display_name": "Shield",
+		"short_effect": ""
+	}
+}

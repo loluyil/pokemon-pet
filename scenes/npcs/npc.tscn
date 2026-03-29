@@ -1,0 +1,213 @@
+[gd_scene format=3 uid="uid://h4hyxieljtbu"]
+
+[ext_resource type="Script" uid="uid://b2lems56oq7pg" path="res://scripts/npc_behaviors.gd" id="1_5ejjj"]
+[ext_resource type="Script" uid="uid://c0q7y1ua0ekd0" path="res://scripts/npc_animations.gd" id="1_m5fb5"]
+[ext_resource type="Texture2D" uid="uid://n1djukcse0gc" path="res://sprites/npcs/NPC-grunt-female.png" id="2_6hhpg"]
+[ext_resource type="Texture2D" uid="uid://bamugr2vqtrfo" path="res://sprites/npcs/NPC-grunt-male.png" id="3_rv17e"]
+[ext_resource type="Texture2D" uid="uid://bu3pgmxcath5v" path="res://sprites/npcs/NPC_baddie1.png" id="4_wri4y"]
+[ext_resource type="Texture2D" uid="uid://30dfaeh6rq32" path="res://sprites/npcs/NPC_baddie2.png" id="5_vtiys"]
+[ext_resource type="Texture2D" uid="uid://xslop24ldqom" path="res://sprites/npcs/NPC_baddie3.png" id="6_govfk"]
+[ext_resource type="Texture2D" uid="uid://cjyoeqxcj1cvl" path="res://sprites/npcs/NPC_baddie5.png" id="7_e0dq5"]
+[ext_resource type="Texture2D" uid="uid://cl50ba8jrce58" path="res://sprites/npcs/NPC_bald-ass-dude.png" id="8_0laxn"]
+[ext_resource type="Texture2D" uid="uid://df54764uj6epx" path="res://sprites/npcs/NPC_bug-dude.png" id="9_jbob5"]
+[ext_resource type="Texture2D" uid="uid://b03v0bowblbw1" path="res://sprites/npcs/NPC_chinatown.png" id="10_7ogt2"]
+[ext_resource type="Texture2D" uid="uid://b50lanpnfm2cv" path="res://sprites/npcs/NPC_clean-ass-fit.png" id="11_hfo3e"]
+[ext_resource type="Texture2D" uid="uid://c3ogukin62q6i" path="res://sprites/npcs/NPC_clint-eastwood.png" id="12_tyobp"]
+[ext_resource type="Texture2D" uid="uid://bnqn3cuiwiajf" path="res://sprites/npcs/NPC_detective.png" id="13_vocbu"]
+[ext_resource type="Texture2D" uid="uid://bkkdq2if5fiom" path="res://sprites/npcs/NPC_girl-from-anime.png" id="14_uwxit"]
+[ext_resource type="Texture2D" uid="uid://rfeyy4xfe3qf" path="res://sprites/npcs/NPC_middle-aged-man.png" id="15_ndaby"]
+[ext_resource type="Texture2D" uid="uid://bdo4sv5fauvrc" path="res://sprites/npcs/NPC_prof-juniper.png" id="16_30gb5"]
+[ext_resource type="Texture2D" uid="uid://c76qqnfw7arq0" path="res://sprites/npcs/NPC_yami-from-yugioh.png" id="17_kwyuo"]
+
+[sub_resource type="Animation" id="Animation_p1a37"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_uit3j"]
+resource_name = "idle_down"
+length = 0.1
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [3]
+}
+
+[sub_resource type="Animation" id="Animation_tl5bd"]
+resource_name = "idle_left"
+length = 0.1
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [6]
+}
+
+[sub_resource type="Animation" id="Animation_ua7fl"]
+resource_name = "idle_right"
+length = 0.1
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [9]
+}
+
+[sub_resource type="Animation" id="Animation_1uxhp"]
+resource_name = "idle_up"
+length = 0.1
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_myfjo"]
+resource_name = "walk_down"
+length = 0.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.099999994, 0.2, 0.30302078, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [4, 3, 5, 3, 4]
+}
+
+[sub_resource type="Animation" id="Animation_oa1mj"]
+resource_name = "walk_left"
+length = 0.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [7, 6, 8, 6, 7]
+}
+
+[sub_resource type="Animation" id="Animation_ixgx6"]
+resource_name = "walk_right"
+length = 0.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.30302078, 0.39825585),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [10, 9, 11, 9, 10]
+}
+
+[sub_resource type="Animation" id="Animation_vwpk8"]
+resource_name = "walk_up"
+length = 0.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.393446),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [1, 0, 2, 0, 1]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hdsio"]
+_data = {
+&"RESET": SubResource("Animation_p1a37"),
+&"idle_down": SubResource("Animation_uit3j"),
+&"idle_left": SubResource("Animation_tl5bd"),
+&"idle_right": SubResource("Animation_ua7fl"),
+&"idle_up": SubResource("Animation_1uxhp"),
+&"walk_down": SubResource("Animation_myfjo"),
+&"walk_left": SubResource("Animation_oa1mj"),
+&"walk_right": SubResource("Animation_ixgx6"),
+&"walk_up": SubResource("Animation_vwpk8")
+}
+
+[node name="NPCWindow" type="Window" unique_id=1750111375]
+oversampling_override = 1.0
+size = Vector2i(92, 86)
+always_on_top = true
+script = ExtResource("1_5ejjj")
+_speed = 84
+npc_sprites = Array[Texture2D]([ExtResource("2_6hhpg"), ExtResource("3_rv17e"), ExtResource("4_wri4y"), ExtResource("5_vtiys"), ExtResource("6_govfk"), ExtResource("7_e0dq5"), ExtResource("8_0laxn"), ExtResource("9_jbob5"), ExtResource("10_7ogt2"), ExtResource("11_hfo3e"), ExtResource("12_tyobp"), ExtResource("13_vocbu"), ExtResource("14_uwxit"), ExtResource("15_ndaby"), ExtResource("16_30gb5"), ExtResource("17_kwyuo")])
+
+[node name="NPC" type="CharacterBody2D" parent="." unique_id=348920285]
+script = ExtResource("1_m5fb5")
+
+[node name="NPCSprite" type="Sprite2D" parent="NPC" unique_id=2039624054]
+texture_filter = 1
+position = Vector2(46, 43)
+scale = Vector2(3, 3)
+hframes = 3
+vframes = 4
+
+[node name="NPCAnimator" type="AnimationPlayer" parent="NPC/NPCSprite" unique_id=2034790031]
+libraries/ = SubResource("AnimationLibrary_hdsio")
+speed_scale = 0.75
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="NPC" unique_id=493266159]
+
+[node name="Timer" type="Timer" parent="." unique_id=1723655273]
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

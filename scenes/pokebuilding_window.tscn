@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://c6qb4hinqlg14"]
+
+[ext_resource type="Texture2D" uid="uid://cr1vpojthtidu" path="res://models/meshes/pokemon_center.png" id="2_bfpxa"]
+
+[node name="Window" type="Window" unique_id=1853256890]
+transparent_bg = true
+oversampling_override = 1.0
+size = Vector2i(326, 329)
+borderless = true
+always_on_top = true
+
+[node name="PokeMart" type="Sprite2D" parent="." unique_id=314617420]
+z_index = -1
+z_as_relative = false
+position = Vector2(164, 166)
+texture = ExtResource("2_bfpxa")
+flip_v = true

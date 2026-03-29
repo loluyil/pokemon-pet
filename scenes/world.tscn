@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://c76frrt5c3mtw"]
+
+[ext_resource type="Script" uid="uid://djpcsvpx1m3i3" path="res://scripts/main.gd" id="1_rwgxs"]
+[ext_resource type="AudioStream" uid="uid://xiwnvyr3ny5w" path="res://sounds/1-04. Now for the Adventure!.mp3" id="2_k0juu"]
+[ext_resource type="AudioStream" uid="uid://b8bgt2txd6cuf" path="res://sounds/pokemon_bump.mp3" id="5_71j4m"]
+[ext_resource type="PackedScene" uid="uid://6now8sm4evj" path="res://scenes/gender_choice.tscn" id="6_qfnet"]
+
+[node name="World" type="Node3D" unique_id=1328429363]
+script = ExtResource("1_rwgxs")
+speed = 3
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1561132761]
+
+[node name="BGmusic" type="AudioStreamPlayer2D" parent="." unique_id=315676037]
+stream = ExtResource("2_k0juu")
+volume_db = -30.0
+autoplay = true
+
+[node name="CollisionBump" type="AudioStreamPlayer2D" parent="." unique_id=752616118]
+stream = ExtResource("5_71j4m")
+volume_db = -5.0
+
+[node name="GenderReveal" parent="." unique_id=521100075 instance=ExtResource("6_qfnet")]

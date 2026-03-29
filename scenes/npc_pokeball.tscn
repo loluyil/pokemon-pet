@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://scq26a3bnx43"]
+
+[ext_resource type="Script" uid="uid://5rpf34gkiavu" path="res://scripts/npc_pokeball.gd" id="1_dgdta"]
+[ext_resource type="Texture2D" uid="uid://djtfd72ov15vp" path="res://sprites/placeholders/pokeballplaceholder.png" id="2_n3hpa"]
+
+[node name="NPCPokeball" type="Window" unique_id=506670596]
+oversampling_override = 1.0
+position = Vector2i(0, 36)
+script = ExtResource("1_dgdta")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=557357803]
+texture_filter = 1
+position = Vector2(24, 35)
+texture = ExtResource("2_n3hpa")

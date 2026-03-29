@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://d4s6ycu0dlvy"]
+
+[ext_resource type="Script" uid="uid://djhokfkawrs0s" path="res://pokemon_data.gd" id="1_pejfg"]
+[ext_resource type="Script" uid="uid://d2ccfniqhel6x" path="res://scripts/battle_sim.gd" id="2_jf6bg"]
+
+[node name="Node" type="Node" unique_id=1085841451]
+script = ExtResource("2_jf6bg")
+team_gen_path = NodePath("team_gen_path")
+
+[node name="team_gen_path" type="Node" parent="." unique_id=1502418664]
+script = ExtResource("1_pejfg")
