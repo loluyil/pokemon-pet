@@ -1,10 +1,8 @@
 [gd_scene format=3 uid="uid://kx0ubxo2gdi3"]
 
-[ext_resource type="Texture2D" uid="uid://dafkkij8ik61x" path="res://images/battle/battle_background.png" id="1_1i8jf"]
 [ext_resource type="Texture2D" uid="uid://cakqwoy1wvv6g" path="res://sprites/battle/battle_entry.png" id="1_idkgt"]
 [ext_resource type="Script" uid="uid://f3cpoyvjw1qc" path="res://scripts/battle_ui.gd" id="1_y8gcu"]
 [ext_resource type="Script" uid="uid://caj5vr77cw5c5" path="res://scripts/action_menu.gd" id="1_yt3ua"]
-[ext_resource type="Script" uid="uid://b8511u3baffnv" path="res://scripts/trainer_entry.gd" id="2_8qdv8"]
 [ext_resource type="Shader" uid="uid://dkyfklsvcvesr" path="res://shaders/button_press.gdshader" id="2_ti0og"]
 [ext_resource type="Texture2D" uid="uid://cchcr34yw6ng1" path="res://sprites/pokemon/front/025.png" id="3_pxwbd"]
 [ext_resource type="Script" uid="uid://d0syi1iw0auss" path="res://scripts/button_click.gd" id="3_ti0og"]
@@ -12,16 +10,19 @@
 [ext_resource type="Texture2D" uid="uid://bpjyhjevon2xc" path="res://sprites/pokemon/back/025_back.png" id="4_1i8jf"]
 [ext_resource type="Texture2D" uid="uid://depggk6id5c4h" path="res://images/battle/bag_button.png" id="4_ti0og"]
 [ext_resource type="Texture2D" uid="uid://qj8vbkt88uuk" path="res://images/battle/pokemon_button.png" id="5_bg0yk"]
+[ext_resource type="Texture2D" uid="uid://cgvpqgqtqmf5l" path="res://images/battle/fight-background-open.png" id="5_dm2tv"]
 [ext_resource type="Texture2D" uid="uid://ctq0ifmvbhb68" path="res://sprites/battle/NPC_baddie3_entry.png" id="5_pxwbd"]
 [ext_resource type="Texture2D" uid="uid://cyfvjn0b267ni" path="res://images/battle/run_button.png" id="6_yt3ua"]
 [ext_resource type="Texture2D" uid="uid://ds4tkahs8odwo" path="res://images/battle/border.png" id="8_ti0og"]
 [ext_resource type="Script" uid="uid://cqrtpnbdw1bey" path="res://scripts/move_menu.gd" id="9_bg0yk"]
+[ext_resource type="Script" uid="uid://cu84w74u50xl" path="res://scripts/battle_entry.gd" id="13_dm2tv"]
 [ext_resource type="PackedScene" uid="uid://d4s6ycu0dlvy" path="res://scenes/pokemon_data.tscn" id="16_05s0e"]
 [ext_resource type="Texture2D" uid="uid://bwrodw0ipe72" path="res://images/battle/your_hp_bar.png" id="16_sjku2"]
 [ext_resource type="Script" uid="uid://hi27p5l27oxm" path="res://scripts/hpbar.gd" id="17_0hs4o"]
 [ext_resource type="Texture2D" uid="uid://cv2jkhmirli38" path="res://images/battle/oppponent_hp_bar.png" id="17_7mjbx"]
 [ext_resource type="Texture2D" uid="uid://b2y37hpw8op0o" path="res://images/battle/healthbar.png" id="17_g6hvt"]
 [ext_resource type="Script" uid="uid://djhokfkawrs0s" path="res://pokemon_data.gd" id="17_j0cvo"]
+[ext_resource type="Texture2D" uid="uid://jm1jgntjaoa4" path="res://sprites/pokeballs/pokeball_1.png" id="18_dm2tv"]
 [ext_resource type="Texture2D" uid="uid://bdyywqirln7bs" path="res://images/battle/green_health.png" id="18_g6hvt"]
 [ext_resource type="Texture2D" uid="uid://c6pkw3figrwpd" path="res://images/battle/yellow_health.png" id="19_y8gcu"]
 [ext_resource type="Texture2D" uid="uid://n45o2d8ok7t5" path="res://images/battle/red_health.png" id="20_31luo"]
@@ -30,6 +31,43 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("2_ti0og")
 shader_parameter/pressed = false
+
+[sub_resource type="Animation" id="Animation_2ihny"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_k2d6m"]
+resource_name = "open"
+length = 0.13333334
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.033333335, 0.06666667, 0.10000001, 0.13333334),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hcmo8"]
+_data = {
+&"RESET": SubResource("Animation_2ihny"),
+&"open": SubResource("Animation_k2d6m")
+}
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bg0yk"]
 shader = ExtResource("2_ti0og")
@@ -42,6 +80,125 @@ shader_parameter/pressed = false
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ti0og"]
 shader = ExtResource("2_ti0og")
 shader_parameter/pressed = false
+
+[sub_resource type="Animation" id="Animation_16mmc"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(4.396, 0.037, -3.68)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -0.0017453292, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_wflg7"]
+resource_name = "default"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0.526, 0.397, 2.145), Vector3(1.866, -0.218, -0.11)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(-0.05235988, -0.1850049, 0), Vector3(0, -0.1850049, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_fg2lh"]
+resource_name = "battle_camera"
+length = 1.1666666
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.63333344, 1.1666666),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(4.396, 0.037, -3.68), Vector3(3.071, 0.037, -1.075), Vector3(1.866, -0.218, -0.11)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.63333344, 1.1666666),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, -0.0017453292, 0), Vector3(0, -0.038397245, 0), Vector3(0, -0.1850049, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_tr5ov"]
+resource_name = "player_entry"
+length = 0.56666666
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.56666666),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(1.866, -0.218, -0.11), Vector3(0.526, 0.397, 2.145)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.56666666),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, -0.1850049, 0), Vector3(-0.05235988, -0.1850049, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_c6fjk"]
+_data = {
+&"RESET": SubResource("Animation_16mmc"),
+&"default": SubResource("Animation_wflg7"),
+&"opponent_entry": SubResource("Animation_fg2lh"),
+&"player_entry": SubResource("Animation_tr5ov")
+}
 
 [sub_resource type="Animation" id="Animation_kinr6"]
 length = 0.001
@@ -102,6 +259,131 @@ tracks/1/keys = {
 _data = {
 &"RESET": SubResource("Animation_kinr6"),
 &"battle_entry": SubResource("Animation_rca61")
+}
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mn2k0"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 0, 32, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kgtkx"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 40, 32, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_awgtw"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 80, 32, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_neenq"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 120, 32, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mka0r"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 160, 32, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f2dxx"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 200, 32, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ynxbt"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 240, 32, 40)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6qpb5"]
+atlas = ExtResource("18_dm2tv")
+region = Rect2(0, 280, 32, 40)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_gtd7e"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mn2k0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kgtkx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_awgtw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_neenq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mka0r")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f2dxx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ynxbt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6qpb5")
+}],
+"loop": true,
+"name": &"throw",
+"speed": 5.0
+}]
+
+[sub_resource type="Animation" id="Animation_3rlly"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.005, 0.445, 0.073)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -0.19896753, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_iy28q"]
+resource_name = "trainer_throw"
+length = 0.33333334
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.16666667, 0.33333334),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.045, 0.465, 0.073), Vector3(0.425, 0.893, -0.719), Vector3(1.235, 0.35, -1.672)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -0.19896753, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_165gl"]
+_data = {
+&"RESET": SubResource("Animation_3rlly"),
+&"trainer_throw": SubResource("Animation_iy28q")
 }
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_1i8jf"]
@@ -435,6 +717,43 @@ animations = [{
 "name": &"default",
 "speed": 8.0
 }]
+
+[sub_resource type="Animation" id="Animation_c6fjk"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(3.634, 0.423, -3.122)]
+}
+
+[sub_resource type="Animation" id="Animation_dm2tv"]
+resource_name = "pkmn_entry"
+length = 0.43333334
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.43333334),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(3.634, 0.42300004, -3.122), Vector3(3.634, -0.157, -3.122)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_16mmc"]
+_data = {
+&"RESET": SubResource("Animation_c6fjk"),
+&"pkmn_entry": SubResource("Animation_dm2tv")
+}
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wcadg"]
 atlas = ExtResource("4_1i8jf")
@@ -808,6 +1127,43 @@ animations = [{
 "speed": 8.0
 }]
 
+[sub_resource type="Animation" id="Animation_arw3n"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(1.662, 0.357, -1.741)]
+}
+
+[sub_resource type="Animation" id="Animation_165gl"]
+resource_name = "pkmn_entry"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(1.662, 0.35699996, -1.741), Vector3(1.662, -0.473, -1.741)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_arw3n"]
+_data = {
+&"RESET": SubResource("Animation_arw3n"),
+&"pkmn_entry": SubResource("Animation_165gl")
+}
+
 [sub_resource type="Animation" id="Animation_1i8jf"]
 length = 0.001
 tracks/0/type = "value"
@@ -876,7 +1232,7 @@ sky_custom_fov = 16.6
 [node name="Window" type="Window" unique_id=1004138377]
 oversampling_override = 1.0
 position = Vector2i(0, 36)
-size = Vector2i(1054, 918)
+size = Vector2i(1054, 1018)
 
 [node name="BattleSim" type="Node" parent="." unique_id=1206383916]
 script = ExtResource("1_y8gcu")
@@ -888,58 +1244,11 @@ offset_top = 419.0
 offset_right = 1055.0
 offset_bottom = 419.0
 
-[node name="MoveMenu" type="Control" parent="BattleSim/Control" unique_id=956829585]
-visible = false
-anchors_preset = 0
-offset_left = -1.0
-offset_top = 25.0
-offset_right = 1059.0
-offset_bottom = 503.0
-script = ExtResource("9_bg0yk")
-
-[node name="Move1" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=482121701]
-layout_mode = 0
-offset_left = 165.0
-offset_top = 82.0
-offset_right = 430.0
-offset_bottom = 160.0
-theme_override_fonts/font = ExtResource("23_31luo")
-
-[node name="Move2" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1436650208]
-layout_mode = 0
-offset_left = 587.0
-offset_top = 72.0
-offset_right = 852.0
-offset_bottom = 157.0
-theme_override_fonts/font = ExtResource("23_31luo")
-
-[node name="Move3" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1682038971]
-layout_mode = 0
-offset_left = 188.0
-offset_top = 268.0
-offset_right = 453.0
-offset_bottom = 332.0
-theme_override_fonts/font = ExtResource("23_31luo")
-
-[node name="Move4" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1235230906]
-layout_mode = 0
-offset_left = 587.0
-offset_top = 251.0
-offset_right = 852.0
-offset_bottom = 335.0
-theme_override_fonts/font = ExtResource("23_31luo")
-
-[node name="BackButton" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1196188512]
-layout_mode = 0
-offset_left = 879.0
-offset_top = 364.0
-offset_right = 1026.0
-offset_bottom = 459.0
-
 [node name="ActionMenu" type="Control" parent="BattleSim/Control" unique_id=1213057848]
 anchors_preset = 0
+offset_top = 99.085
 offset_right = 40.0
-offset_bottom = 40.0
+offset_bottom = 139.08511
 script = ExtResource("1_yt3ua")
 
 [node name="FightButton" type="TextureButton" parent="BattleSim/Control/ActionMenu" unique_id=600061448]
@@ -951,21 +1260,34 @@ offset_top = 5.0
 offset_right = 1338.0
 offset_bottom = 500.0
 action_mode = 0
-texture_normal = ExtResource("1_1i8jf")
 ignore_texture_size = true
 stretch_mode = 6
 script = ExtResource("3_ti0og")
 
-[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/ActionMenu/FightButton" unique_id=1549761151]
-texture_filter = 1
-layout_mode = 0
-offset_left = 685.0
-offset_top = 223.0
-offset_right = 931.0
-offset_bottom = 270.0
-texture = ExtResource("3_tttxe")
+[node name="Background" type="Sprite2D" parent="BattleSim/Control/ActionMenu/FightButton" unique_id=1691243739]
+position = Vector2(802, 249.91498)
+scale = Vector2(3.2041013, 3.2041013)
+texture = ExtResource("5_dm2tv")
+hframes = 6
 
-[node name="BagButton" type="TextureButton" parent="BattleSim/Control/ActionMenu" unique_id=1055202247]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/ActionMenu/FightButton/Background" unique_id=829367643]
+libraries/ = SubResource("AnimationLibrary_hcmo8")
+speed_scale = 2.58
+
+[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/ActionMenu" unique_id=2043521209]
+layout_mode = 0
+offset_left = -34.0
+offset_top = -14.0
+offset_right = 1178.0
+offset_bottom = 26.0
+texture = ExtResource("8_ti0og")
+
+[node name="Buttons" type="Control" parent="BattleSim/Control/ActionMenu" unique_id=1043945336]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="BagButton" type="TextureButton" parent="BattleSim/Control/ActionMenu/Buttons" unique_id=1055202247]
 texture_filter = 1
 material = SubResource("ShaderMaterial_bg0yk")
 layout_mode = 0
@@ -977,7 +1299,7 @@ texture_normal = ExtResource("4_ti0og")
 stretch_mode = 0
 script = ExtResource("3_ti0og")
 
-[node name="PokemonButton" type="TextureButton" parent="BattleSim/Control/ActionMenu" unique_id=1088217682]
+[node name="PokemonButton" type="TextureButton" parent="BattleSim/Control/ActionMenu/Buttons" unique_id=1088217682]
 texture_filter = 1
 material = SubResource("ShaderMaterial_yt3ua")
 layout_mode = 0
@@ -989,25 +1311,75 @@ texture_normal = ExtResource("5_bg0yk")
 stretch_mode = 0
 script = ExtResource("3_ti0og")
 
-[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/ActionMenu" unique_id=2043521209]
-layout_mode = 0
-offset_left = -34.0
-offset_top = -14.0
-offset_right = 1178.0
-offset_bottom = 26.0
-texture = ExtResource("8_ti0og")
-
-[node name="RunButton" type="TextureButton" parent="BattleSim/Control/ActionMenu" unique_id=530523804]
+[node name="RunButton" type="TextureButton" parent="BattleSim/Control/ActionMenu/Buttons" unique_id=530523804]
 texture_filter = 1
 material = SubResource("ShaderMaterial_ti0og")
 layout_mode = 0
-offset_left = 445.0
-offset_top = 396.0
-offset_right = 627.53064
-offset_bottom = 500.0
+offset_left = 434.0
+offset_top = 395.91498
+offset_right = 616.53064
+offset_bottom = 499.91498
 texture_normal = ExtResource("6_yt3ua")
 stretch_mode = 0
 script = ExtResource("3_ti0og")
+
+[node name="FightText" type="TextureRect" parent="BattleSim/Control/ActionMenu/Buttons" unique_id=1549761151]
+texture_filter = 1
+layout_mode = 0
+offset_left = 408.0
+offset_top = 229.91498
+offset_right = 654.0
+offset_bottom = 276.91498
+texture = ExtResource("3_tttxe")
+
+[node name="MoveMenu" type="Control" parent="BattleSim/Control" unique_id=956829585]
+visible = false
+anchors_preset = 0
+offset_left = 2.0
+offset_top = 125.0
+offset_right = 1057.0
+offset_bottom = 603.0
+mouse_filter = 2
+script = ExtResource("9_bg0yk")
+
+[node name="Move1" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=482121701]
+layout_mode = 0
+offset_left = 294.0
+offset_top = 98.0
+offset_right = 470.0
+offset_bottom = 175.0
+theme_override_fonts/font = ExtResource("23_31luo")
+
+[node name="Move2" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1436650208]
+layout_mode = 0
+offset_left = 581.0
+offset_top = 95.0
+offset_right = 761.0
+offset_bottom = 174.0
+theme_override_fonts/font = ExtResource("23_31luo")
+
+[node name="Move3" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1682038971]
+layout_mode = 0
+offset_left = 297.0
+offset_top = 232.0
+offset_right = 468.0
+offset_bottom = 305.0
+theme_override_fonts/font = ExtResource("23_31luo")
+
+[node name="Move4" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1235230906]
+layout_mode = 0
+offset_left = 580.0
+offset_top = 231.0
+offset_right = 763.0
+offset_bottom = 305.0
+theme_override_fonts/font = ExtResource("23_31luo")
+
+[node name="BackButton" type="Button" parent="BattleSim/Control/MoveMenu" unique_id=1196188512]
+layout_mode = 0
+offset_left = 879.0
+offset_top = 364.0
+offset_right = 1026.0
+offset_bottom = 459.0
 
 [node name="VBoxContainer" type="Control" parent="BattleSim" unique_id=1375328551]
 layout_mode = 3
@@ -1017,63 +1389,97 @@ offset_bottom = 415.0
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="BattleSim/VBoxContainer" unique_id=1578669303]
 layout_mode = 0
-offset_right = 1055.0
-offset_bottom = 415.0
+offset_top = -9.0
+offset_right = 1057.0
+offset_bottom = 503.0
 
 [node name="SubViewport" type="SubViewport" parent="BattleSim/VBoxContainer/SubViewportContainer" unique_id=297700716]
 handle_input_locally = false
-size = Vector2i(1055, 415)
+size = Vector2i(1057, 512)
 render_target_update_mode = 4
 
-[node name="Node3D" type="Node3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport" unique_id=1338976755]
+[node name="BattleEntry" type="Node3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport" unique_id=1338976755]
+script = ExtResource("13_dm2tv")
 
-[node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D" unique_id=80455354]
-transform = Transform3D(0.9978726, 0, -0.06519414, 0, 1, 0, 0.06519414, 0, 0.9978726, 1.241183, -0.06272939, 2.2347238)
+[node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
+transform = Transform3D(0.9999984, 0, -0.0017453282, 0, 1, 0, 0.0017453282, 0, 0.9999984, 4.396, 0.037, -3.68)
 keep_aspect = 0
-fov = 89.99999
+fov = 78.0
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D/Camera3D" unique_id=301423137]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Camera3D" unique_id=301423137]
+libraries/ = SubResource("AnimationLibrary_c6fjk")
+speed_scale = 0.752
 
-[node name="TrainerEntry" type="Sprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D" unique_id=1505535313]
+[node name="Trainer" type="Sprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=1505535313]
+transform = Transform3D(0.98293537, 0, -0.18395135, 0, 1, 0, 0.18395135, 0, 0.98293537, 0.096, -0.028, -0.11)
 texture_filter = 0
 texture = ExtResource("1_idkgt")
 hframes = 39
 frame = 1
-script = ExtResource("2_8qdv8")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D/TrainerEntry" unique_id=1550764368]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer" unique_id=1550764368]
 libraries/ = SubResource("AnimationLibrary_pxwbd")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D" unique_id=1609631960]
+[node name="Pokeball" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer" unique_id=249797064]
+transform = Transform3D(0.44602323, 0, -0.08993405, 0, 0.455, 0, 0.08993405, 0, 0.44602323, -0.005, 0.445, 0.073)
+visible = false
+texture_filter = 0
+sprite_frames = SubResource("SpriteFrames_gtd7e")
+animation = &"throw"
+frame = 1
+frame_progress = 0.48800352
+speed_scale = 2.255
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer/Pokeball" unique_id=335166663]
+libraries/ = SubResource("AnimationLibrary_165gl")
+speed_scale = 0.705
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=1609631960]
 transform = Transform3D(2, 0, 0, 0, 0.005, 0, 0, 0, 2, 1.6571447, -0.67208785, -1.3187052)
 mesh = SubResource("CylinderMesh_1i8jf")
 
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D" unique_id=388767759]
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=388767759]
 transform = Transform3D(2, 0, 0, 0, 0.005, 0, 0, 0, 2, 3.7021914, -0.35895944, -3.3982832)
 mesh = SubResource("CylinderMesh_1i8jf")
 
-[node name="OpponentPokemon" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D" unique_id=1886612431]
-transform = Transform3D(0.79223526, 0.19319937, -0.57882404, 0.14628246, 0.8607686, 0.48752305, 0.5924228, -0.47090483, 0.6536696, 3.6341333, -0.1469934, -3.1217802)
+[node name="OpponentPokemon" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=1886612431]
+transform = Transform3D(0.79223526, 0.19319937, -0.57882404, 0.14628246, 0.8607686, 0.48752305, 0.5924228, -0.47090483, 0.6536696, 3.634, 0.423, -3.122)
+visible = false
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_svpld")
 
-[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D" unique_id=305551957]
-transform = Transform3D(0.9989754, 0, 0.045258377, -0.026081294, 0.81725556, 0.575685, -0.03698766, -0.5762754, 0.8164182, 1.7318498, -0.43317977, -1.5111835)
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon" unique_id=1279385364]
+libraries/ = SubResource("AnimationLibrary_16mmc")
+speed_scale = 0.753
+
+[node name="YourPokemon" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=305551957]
+transform = Transform3D(0.9989754, 0, 0.045258377, -0.026081294, 0.81725556, 0.575685, -0.03698766, -0.5762754, 0.8164182, 1.662, 0.357, -1.741)
+visible = false
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_rum4d")
-frame = 6
-frame_progress = 0.8320049
+frame_progress = 0.3877205
 
-[node name="Sprite3D" type="Sprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D" unique_id=1586463371]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon" unique_id=800908672]
+libraries/ = SubResource("AnimationLibrary_arw3n")
+
+[node name="Opponent" type="Sprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=1586463371]
 transform = Transform3D(0.81500643, 0, -0.57945186, 0, 1, 0, 0.57945186, 0, 0.81500643, 4.5186825, 0, -3.3041754)
 texture_filter = 0
 texture = ExtResource("5_pxwbd")
 hframes = 19
-script = ExtResource("2_8qdv8")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/Node3D/Sprite3D" unique_id=1389903143]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Opponent" unique_id=1389903143]
 libraries/ = SubResource("AnimationLibrary_3oc74")
 speed_scale = 0.8
+
+[node name="Pokeball" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Opponent" unique_id=1174302375]
+transform = Transform3D(0.45238656, 0, 0.048697576, 0, 0.455, 0, -0.048697576, 0, 0.45238656, -0.62665105, 0.28081834, 0.4495721)
+visible = false
+texture_filter = 0
+sprite_frames = SubResource("SpriteFrames_gtd7e")
+animation = &"throw"
+frame_progress = 0.814919
+speed_scale = 2.255
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport" unique_id=2003930588]
 environment = SubResource("Environment_1i8jf")
@@ -1081,9 +1487,9 @@ environment = SubResource("Environment_1i8jf")
 [node name="HPBarContainer2" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=1761704178]
 texture_filter = 1
 layout_mode = 0
-offset_top = 4.0
+offset_top = 32.97
 offset_right = 300.0
-offset_bottom = 72.0
+offset_bottom = 100.96997
 texture = ExtResource("17_7mjbx")
 
 [node name="OpponentHPBar" type="TextureProgressBar" parent="BattleSim/VBoxContainer/HPBarContainer2" unique_id=1543880734]
@@ -1105,23 +1511,24 @@ red_bar = ExtResource("20_31luo")
 [node name="Label" type="Label" parent="BattleSim/VBoxContainer/HPBarContainer2" unique_id=1619885835]
 texture_filter = 1
 layout_mode = 0
-offset_left = 125.0
-offset_top = 7.0
-offset_right = 308.0
-offset_bottom = 93.0
+offset_left = 57.0
+offset_top = 5.029999
+offset_right = 196.0
+offset_bottom = 26.029999
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("23_31luo")
 theme_override_font_sizes/font_size = 27
+text_overrun_behavior = 1
 
 [node name="HPBarContainer" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=43815748]
 texture_filter = 1
 layout_mode = 0
 offset_left = 764.0
-offset_top = 236.0
+offset_top = 284.42
 offset_right = 1053.6
-offset_bottom = 304.0
+offset_bottom = 352.42004
 texture = ExtResource("16_sjku2")
 
 [node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/VBoxContainer/HPBarContainer" unique_id=995926816]
@@ -1143,15 +1550,16 @@ red_bar = ExtResource("20_31luo")
 [node name="Label" type="Label" parent="BattleSim/VBoxContainer/HPBarContainer" unique_id=583118817]
 texture_filter = 1
 layout_mode = 0
-offset_left = 117.0
+offset_left = 39.0
 offset_top = -3.0
-offset_right = 188.0
+offset_right = 183.0
 offset_bottom = 18.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("23_31luo")
 theme_override_font_sizes/font_size = 27
+text_overrun_behavior = 1
 
 [node name="PokemonData" parent="BattleSim" unique_id=1085841451 instance=ExtResource("16_05s0e")]
 team_gen_path = NodePath("TeamGeneration")

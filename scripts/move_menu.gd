@@ -5,7 +5,12 @@ extends Control
 @onready var move3 = $Move3
 @onready var move4 = $Move4
 @onready var back_btn = $BackButton
+
 @onready var action_menu = $"../ActionMenu"
+@onready var fight_btn = $"../ActionMenu/FightButton"
+@onready var background_close = $"../ActionMenu/FightButton/Background/AnimationPlayer"
+@onready var buttons = $"../ActionMenu/Buttons"
+
 @onready var battle_sim: Node = $"../../PokemonData"
 
 func _ready():
@@ -36,11 +41,15 @@ func _on_move_selected(index: int):
 	
 	await get_tree().create_timer(0.05).timeout
 	visible = false
-	action_menu.visible = true
+	buttons.visible = true
+	background_close.play_backwards("open")
+	fight_btn.disabled = false
 
 func _on_back():
 	visible = false
-	action_menu.visible = true
+	buttons.visible = true
+	background_close.play_backwards("open")
+	fight_btn.disabled = false
 
 func _input(event):
 	if event.is_action_pressed("ui_cancel") and visible:
