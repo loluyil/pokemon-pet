@@ -37,13 +37,14 @@ func populate_moves():
 
 func _on_move_selected(index: int):
 	var opp_move = battle_sim.get_opponent_move()
+	# execute_turn fires all battle_message signals synchronously;
+	# battle_ui.gd queues them and re-enables the menu when done.
 	battle_sim.execute_turn(index, opp_move)
-	
+
 	await get_tree().create_timer(0.05).timeout
 	visible = false
-	buttons.visible = true
 	background_close.play_backwards("open")
-	fight_btn.disabled = false
+	# Do NOT re-enable fight_btn or show buttons here — battle_ui handles that.
 
 func _on_back():
 	visible = false

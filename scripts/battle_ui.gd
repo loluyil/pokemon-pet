@@ -1,58 +1,214 @@
 extends Node
 
-@onready var your_hp_bar: TextureProgressBar = $VBoxContainer/HPBarContainer/YourHPBar
-@onready var opp_hp_bar: TextureProgressBar = $VBoxContainer/HPBarContainer2/OpponentHPBar
-@onready var your_name_label: Label = $VBoxContainer/HPBarContainer/Label
-@onready var opp_name_label: Label = $VBoxContainer/HPBarContainer2/Label
-@onready var battle_sim: Node = $PokemonData
-@onready var text_box: RichTextLabel            # set your path if you have one
+# ─── HP Bar & Label References ──────────────────────────────────────────────────
+@onready var your_hp_bar: TextureProgressBar = $VBoxContainer/TrainerHPContainer/YourHPBar
+@onready var your_name_label: Label  = $VBoxContainer/TrainerHPContainer/Name
+@onready var your_lvl_label: Label   = $VBoxContainer/TrainerHPContainer/Level
+@onready var current_hp_label: Label = $VBoxContainer/TrainerHPContainer/CurrentHP
+@onready var max_hp_label: Label     = $VBoxContainer/TrainerHPContainer/MaxHP
 
+@onready var opp_hp_bar: TextureProgressBar = $VBoxContainer/OpponentHPContainer/OpponentHPBar
+@onready var opp_name_label: Label = $VBoxContainer/OpponentHPContainer/Name
+@onready var opp_lvl_label: Label  = $VBoxContainer/OpponentHPContainer/Level
+
+# ─── Battle Text Box ─────────────────────────────────────────────────────────────
+@onready var _text_panel: Control = $VBoxContainer/BattleText
+@onready var _msg_label: Label    = $VBoxContainer/BattleText/Label
+
+# ─── Menu References ─────────────────────────────────────────────────────────────
+@onready var battle_sim: Node = $PokemonData
+@onready var _fight_btn       = $Control/ActionMenu/FightButton
+@onready var _action_buttons  = $Control/ActionMenu/Buttons
+
+# ─── Unified Event Queue ─────────────────────────────────────────────────────────
+# Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
+var _event_queue: Array        = []
+var _displaying: bool          = false
+
+# ─── Typewriter / Input State ────────────────────────────────────────────────────
+var _typing: bool              = false
+var _awaiting_input: bool      = false
+var _auto_timer: float         = 0.0
+var _typewriter_tween: Tween   = null
+
+const CHARS_PER_SEC: float     = 40.0
+const AUTO_ADVANCE_SECS: float = 1.6
+const HP_ANIM_SECS: float      = 0.42   # slightly longer than hpbar tween (0.35s)
+
+# ─── Ready ───────────────────────────────────────────────────────────────────────
 func _ready():
 	battle_sim.hp_changed.connect(_on_hp_changed)
 	battle_sim.pokemon_sent_out.connect(_on_pokemon_sent_out)
 	battle_sim.battle_message.connect(_on_battle_message)
 	battle_sim.pokemon_fainted.connect(_on_pokemon_fainted)
 	battle_sim.battle_ended.connect(_on_battle_ended)
-	# battle_sim._ready() already ran start_battle() before this node's _ready,
-	# so signals were missed — initialize display directly from current state
+
+	_text_panel.visible = false
 	_init_display()
 
 func _init_display():
 	var your_mon = battle_sim.your_team[battle_sim.your_active]
 	var opp_mon  = battle_sim.opponent_team[battle_sim.opponent_active]
+
 	your_hp_bar.set_hp_instant(your_mon["current_hp"], your_mon["max_hp"])
-	your_name_label.text = _format_name(your_mon["name"])
+	your_name_label.text  = your_mon["display_name"]
+	your_lvl_label.text   = str(int(your_mon["level"]))
+	current_hp_label.text = str(int(your_mon["current_hp"]))
+	max_hp_label.text     = str(int(your_mon["max_hp"]))
+
 	opp_hp_bar.set_hp_instant(opp_mon["current_hp"], opp_mon["max_hp"])
-	opp_name_label.text = _format_name(opp_mon["name"])
+	opp_name_label.text = opp_mon["display_name"]
+	opp_lvl_label.text  = str(int(opp_mon["level"]))
+
+	# Intro sequence queued manually because start_battle() fires before
+	# this script connects its signals (battle_sim._ready runs first).
+	_push_message("You are challenged by Trainer!")
+	_push_message("Trainer sent out " + opp_mon["display_name"] + "!")
+	_push_message("Go! " + your_mon["display_name"] + "!")
 
 func _format_name(mon_name: String) -> String:
 	return mon_name.replace("-", " ").capitalize()
 
-func _on_hp_changed(is_yours: bool, current_hp: int, max_hp: int):
-	if is_yours:
-		your_hp_bar.update_hp(current_hp, max_hp)
-	else:
-		opp_hp_bar.update_hp(current_hp, max_hp)
-
-func _on_pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name: String):
-	if is_yours:
-		your_hp_bar.set_hp_instant(current_hp, max_hp)
-		your_name_label.text = _format_name(mon_name)
-	else:
-		opp_hp_bar.set_hp_instant(current_hp, max_hp)
-		opp_name_label.text = _format_name(mon_name)
+# ─── Signal Handlers ─────────────────────────────────────────────────────────────
 
 func _on_battle_message(text: String):
-	print(text)
-	# Later: display in your text box
-	# if text_box:
-	#     text_box.text = text
+	_push_message(text)
 
-func _on_pokemon_fainted(is_yours: bool, mon_name: String):
-	print(mon_name + " fainted!")
+func _on_hp_changed(is_yours: bool, current_hp: int, max_hp: int):
+	# Deferred: HP animation is sequenced through the event queue so that
+	# the first Pokemon's bar finishes before the second move plays out.
+	_push_hp(is_yours, current_hp, max_hp)
 
-func _on_battle_ended(you_won: bool):
-	if you_won:
-		print("You win!")
+func _on_pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name: String, level: int):
+	# Queued so it processes after faint messages, preventing the new pokemon's
+	# HP bar from being overwritten by the previous pokemon's pending damage events.
+	_event_queue.append({"type": "sent_out", "is_yours": is_yours,
+		"hp": current_hp, "max": max_hp, "name": mon_name, "level": level})
+	if not _displaying:
+		_start_display()
+
+func _on_pokemon_fainted(_is_yours: bool, _mon_name: String):
+	pass  # Faint message queued via battle_message in battle_sim
+
+func _on_battle_ended(_you_won: bool):
+	pass  # Win/lose messages queued via battle_message in battle_sim
+
+# ─── Event Queue ─────────────────────────────────────────────────────────────────
+
+func _push_message(text: String):
+	_event_queue.append({"type": "msg", "text": text})
+	if not _displaying:
+		_start_display()
+
+func _push_hp(is_yours: bool, hp: int, max_hp: int):
+	_event_queue.append({"type": "hp", "is_yours": is_yours, "hp": hp, "max": max_hp})
+	if not _displaying:
+		_start_display()
+
+func _start_display():
+	_displaying = true
+	_action_buttons.visible = false
+	_fight_btn.disabled     = true
+	_text_panel.visible     = true
+	_process_next()
+
+func _process_next():
+	if _event_queue.is_empty():
+		_end_display()
+		return
+
+	var ev: Dictionary = _event_queue.pop_front()
+	match ev["type"]:
+		"msg":      _do_message(ev["text"])
+		"hp":       _do_hp(ev)
+		"sent_out": _do_sent_out(ev)
+
+func _end_display():
+	_displaying     = false
+	_awaiting_input = false
+	_typing         = false
+	_text_panel.visible = false
+	if not battle_sim.battle_over:
+		_action_buttons.visible = true
+		_fight_btn.disabled     = false
+
+# ─── Message Event ────────────────────────────────────────────────────────────────
+
+func _do_message(text: String):
+	_msg_label.text          = text
+	_msg_label.visible_ratio = 0.0
+	_typing                  = true
+	_awaiting_input          = false
+	_auto_timer              = 0.0
+
+	var duration: float = max(text.length() / CHARS_PER_SEC, 0.2)
+	if _typewriter_tween:
+		_typewriter_tween.kill()
+	_typewriter_tween = create_tween()
+	_typewriter_tween.tween_property(_msg_label, "visible_ratio", 1.0, duration)
+	_typewriter_tween.tween_callback(_on_typewriter_done)
+
+func _on_typewriter_done():
+	_typing         = false
+	_awaiting_input = true
+	_auto_timer     = 0.0
+
+# ─── HP Event (auto-advances after animation) ─────────────────────────────────────
+
+func _do_hp(ev: Dictionary):
+	if ev["is_yours"]:
+		your_hp_bar.update_hp(ev["hp"], ev["max"])
+		current_hp_label.text = str(int(ev["hp"]))
 	else:
-		print("You lose!")
+		opp_hp_bar.update_hp(ev["hp"], ev["max"])
+	# Wait for the HP bar tween to finish, then move on automatically.
+	get_tree().create_timer(HP_ANIM_SECS).timeout.connect(_process_next, CONNECT_ONE_SHOT)
+
+# ─── Sent-Out Event (instant update, no wait) ────────────────────────────────
+
+func _do_sent_out(ev: Dictionary):
+	if ev["is_yours"]:
+		your_hp_bar.set_hp_instant(ev["hp"], ev["max"])
+		your_name_label.text  = ev["name"]
+		your_lvl_label.text   = str(int(ev["level"]))
+		current_hp_label.text = str(int(ev["hp"]))
+		max_hp_label.text     = str(int(ev["max"]))
+	else:
+		opp_hp_bar.set_hp_instant(ev["hp"], ev["max"])
+		opp_name_label.text = ev["name"]
+		opp_lvl_label.text  = str(int(ev["level"]))
+	_process_next()
+
+# ─── Advance Logic ────────────────────────────────────────────────────────────────
+
+func _advance():
+	if _typing:
+		# First press: complete the typewriter instantly
+		if _typewriter_tween:
+			_typewriter_tween.kill()
+		_msg_label.visible_ratio = 1.0
+		_typing         = false
+		_awaiting_input = true
+		_auto_timer     = 0.0
+	else:
+		_awaiting_input = false
+		_auto_timer     = 0.0
+		_process_next()
+
+func _process(delta: float):
+	if not _awaiting_input:
+		return
+	_auto_timer += delta
+	if _auto_timer >= AUTO_ADVANCE_SECS:
+		_advance()
+
+func _input(event: InputEvent):
+	if not (_typing or _awaiting_input):
+		return
+	var pressed: bool = event.is_action_pressed("ui_accept") \
+		or (event is InputEventKey         and event.pressed and not event.echo) \
+		or (event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT)
+	if pressed:
+		get_viewport().set_input_as_handled()
+		_advance()
