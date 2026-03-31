@@ -11,6 +11,12 @@ extends Node
 @onready var opp_name_label: Label = $VBoxContainer/OpponentHPContainer/Name
 @onready var opp_lvl_label: Label  = $VBoxContainer/OpponentHPContainer/Level
 
+# ─── Status Icon References ──────────────────────────────────────────────────────
+@onready var your_status_icon: TextureRect = $VBoxContainer/TrainerHPContainer/Status
+@onready var opp_status_icon: TextureRect  = $VBoxContainer/OpponentHPContainer/Status
+
+const STATUS_ICON_PATH := "res://images/battle/status/"
+
 # ─── Battle Text Box ─────────────────────────────────────────────────────────────
 @onready var _text_panel: Control = $VBoxContainer/BattleText
 @onready var _msg_label: Label    = $VBoxContainer/BattleText/Label
@@ -53,6 +59,7 @@ func _ready():
 	battle_sim.pokemon_fainted.connect(_on_pokemon_fainted)
 	battle_sim.battle_ended.connect(_on_battle_ended)
 	battle_sim.attack_effectiveness.connect(_on_attack_effectiveness)
+	battle_sim.status_changed.connect(_on_status_changed)
 
 	_text_panel.visible = false
 	_init_display()
@@ -74,11 +81,38 @@ func _init_display():
 	_set_pokemon_sprite(your_pokemon_sprite, your_mon["name"], true)
 	_set_pokemon_sprite(opp_pokemon_sprite,  opp_mon["name"],  false)
 
+	_refresh_status_icons()
+
 	# Intro sequence queued manually because start_battle() fires before
 	# this script connects its signals (battle_sim._ready runs first).
 	_push_message("You are challenged by Trainer!")
 	_push_message("Trainer sent out " + opp_mon["display_name"] + "!")
 	_push_message("Go! " + your_mon["display_name"] + "!")
+
+func _refresh_status_icons():
+	var your_mon = battle_sim.your_team[battle_sim.your_active]
+	var opp_mon  = battle_sim.opponent_team[battle_sim.opponent_active]
+	_set_status_icon(your_status_icon, your_mon["status"])
+	_set_status_icon(opp_status_icon, opp_mon["status"])
+
+func _set_status_icon(icon: TextureRect, status: String):
+	if status == "":
+		icon.visible = false
+		return
+	var filename: String
+	match status:
+		"burn": filename = "burn"
+		"paralyze": filename = "paralyze"
+		"poison", "toxic": filename = "poison"
+		"freeze": filename = "frozen"
+		"sleep": filename = "fainted"
+		_: filename = status
+	var path := STATUS_ICON_PATH + filename + ".png"
+	if ResourceLoader.exists(path):
+		icon.texture = load(path)
+		icon.visible = true
+	else:
+		icon.visible = false
 
 func _format_name(mon_name: String) -> String:
 	return mon_name.replace("-", " ").capitalize()
@@ -94,6 +128,11 @@ func _set_pokemon_sprite(sprite: AnimatedSprite3D, mon_name: String, is_back: bo
 
 func _on_battle_message(text: String):
 	_push_message(text)
+
+func _on_status_changed(is_yours: bool, status: String):
+	_event_queue.append({"type": "status", "is_yours": is_yours, "status": status})
+	if not _displaying:
+		_start_display()
 
 func _on_hp_changed(is_yours: bool, current_hp: int, max_hp: int):
 	# Deferred: HP animation is sequenced through the event queue so that
@@ -149,12 +188,14 @@ func _process_next():
 		"hp":       _do_hp(ev)
 		"sent_out": _do_sent_out(ev)
 		"sfx":      _do_sfx(ev)
+		"status":   _do_status(ev)
 
 func _end_display():
 	_displaying     = false
 	_awaiting_input = false
 	_typing         = false
 	_text_panel.visible = false
+	_refresh_status_icons()
 	if not battle_sim.battle_over:
 		_action_buttons.visible = true
 		_fight_btn.disabled     = false
@@ -206,6 +247,7 @@ func _do_sent_out(ev: Dictionary):
 		opp_name_label.text = ev["name"]
 		opp_lvl_label.text  = str(int(ev["level"]))
 		_set_pokemon_sprite(opp_pokemon_sprite, ev["mon_name"], false)
+	_refresh_status_icons()
 	_process_next()
 
 # ─── SFX Event (plays sound, immediately advances) ──────────────────────────────
@@ -219,6 +261,13 @@ func _do_sfx(ev: Dictionary):
 	else:
 		_sfx_player.stream = _sfx_effective
 	_sfx_player.play()
+	_process_next()
+
+# ─── Status Event (instant update, then advance) ────────────────────────────────
+
+func _do_status(ev: Dictionary):
+	var icon: TextureRect = your_status_icon if ev["is_yours"] else opp_status_icon
+	_set_status_icon(icon, ev["status"])
 	_process_next()
 
 # ─── Advance Logic ────────────────────────────────────────────────────────────────

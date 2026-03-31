@@ -13,38 +13,68 @@ extends Control
 var _sfx_select = preload("res://sounds/select-button.wav")
 var _sfx_back = preload("res://sounds/back-button.wav")
 
-const TYPE_ICON_PATH := "res://sprites/battle/types/"
+const TYPE_ICON_PATH := "res://images/battle/types/"
 const STATUS_ICON_PATH := "res://images/battle/status/"
 const SPRITE_PATH := "res://sprites/pokemon/menu_sprites/"
 
-# ─── Summary UI (built at runtime) ──────────────────────────────────────────
-var _summary_panel: PanelContainer
-var _summary_move_btns: Array[TextureRect] = []
-var _summary_move_names: Array[Label] = []
-var _summary_move_pps: Array[Label] = []
-var _summary_level_label: Label
-var _summary_item_label: Label
-var _summary_built := false
+var _tex_panel_normal: Texture2D = preload("res://images/battle/party/panel_rect.png")
+var _tex_panel_hover: Texture2D = preload("res://images/battle/party/panel_rect_sel.png")
+var _tex_panel_faint: Texture2D = preload("res://images/battle/party/panel_rect_faint.png")
+var _tex_panel_faint_hover: Texture2D = preload("res://images/battle/party/panel_rect_faint_sel.png")
+
+# ─── Summary Menu (scene nodes) ─────────────────────────────────────────────
+@onready var summary_menu: Control = $Background/SummaryMenu
+@onready var summary_name: Label = $Background/SummaryMenu/SummaryMoves/PokemonName
+@onready var summary_level: Label = $Background/SummaryMenu/Level
+@onready var summary_item: Label = $Background/SummaryMenu/SummaryMoves/Item
+
+@onready var hover_tween: Button = $Background/HoverTween
+@onready var summary_moves_vbox: VBoxContainer = $Background/SummaryMenu/SummaryMoves/VBoxContainer
+@onready var summary_move1_name: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1/NameLabel
+@onready var summary_move1_pp: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1/PPLabel
+@onready var summary_move1_type: TextureRect = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1/Type
+@onready var summary_move2_name: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2/NameLabel
+@onready var summary_move2_pp: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2/PPLabel
+@onready var summary_move2_type: TextureRect = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2/Type
+@onready var summary_move3_name: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3/NameLabel
+@onready var summary_move3_pp: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3/PPLabel
+@onready var summary_move3_type: TextureRect = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3/Type
+@onready var summary_move4_name: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4/NameLabel
+@onready var summary_move4_pp: Label = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4/PPLabel
+@onready var summary_move4_type: TextureRect = $Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4/Type
 
 # ─── Animation state ─────────────────────────────────────────────────────────
 var _grid_original_x: float
-var _summary_hidden_x: float
-var _summary_shown_x: float
+var _grid_original_h_sep: int
 var _anim_tween: Tween
 var _hovered_index := -1
 
-# ─── Slot cache ──────────────────────────────────────────────────────────────
+# ─── Slot & move arrays (filled in _ready) ──────────────────────────────────
 var _slots: Array[TextureButton] = []
+var _move_names: Array[Label] = []
+var _move_pps: Array[Label] = []
+var _move_types: Array[TextureRect] = []
 
 # ─── Ready ───────────────────────────────────────────────────────────────────
 func _ready():
 	visible = false
 	_cache_slots()
+	_grid_original_x = grid.position.x
+	_grid_original_h_sep = grid.get_theme_constant("h_separation")
+
+	_move_names = [summary_move1_name, summary_move2_name, summary_move3_name, summary_move4_name]
+	_move_pps = [summary_move1_pp, summary_move2_pp, summary_move3_pp, summary_move4_pp]
+	_move_types = [summary_move1_type, summary_move2_type, summary_move3_type, summary_move4_type]
+
 	back_btn.pressed.connect(_on_back)
 
+	# HoverTween is invisible to the mouse — we poll its rect manually in _process
+	# so it never blocks clicks on the Pokemon buttons underneath.
+	hover_tween.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Individual slots update which pokemon the summary displays
 	for i in _slots.size():
 		_slots[i].mouse_entered.connect(_on_slot_hover.bind(i))
-		_slots[i].mouse_exited.connect(_on_slot_unhover.bind(i))
 
 func _cache_slots():
 	for i in range(1, 7):
@@ -55,6 +85,7 @@ func _cache_slots():
 # ─── Open / Close ────────────────────────────────────────────────────────────
 func open():
 	_populate()
+	summary_menu.visible = false
 	visible = true
 	_tween_slots_in()
 
@@ -82,6 +113,15 @@ func _populate():
 			slot.visible = false
 
 func _populate_slot(slot: TextureButton, mon: Dictionary):
+	# Fainted panel swap
+	if mon.get("is_fainted", false):
+		slot.texture_normal = _tex_panel_faint
+		slot.texture_hover = _tex_panel_faint_hover
+		slot.texture_pressed = null
+	else:
+		slot.texture_normal = _tex_panel_normal
+		slot.texture_hover = _tex_panel_hover
+
 	# Name
 	var name_lbl: Label = slot.get_node_or_null("Name")
 	if name_lbl:
@@ -115,10 +155,14 @@ func _populate_slot(slot: TextureButton, mon: Dictionary):
 		var has_item: bool = mon.get("item", "") != "" and mon.get("item", "") != "None"
 		item_icon.visible = has_item
 
-	# Status icon
+	# Status icon (fainted overrides other statuses)
 	var status_icon: TextureRect = slot.get_node_or_null("Status")
 	if status_icon:
-		var status_str: String = mon.get("status", "")
+		var status_str: String
+		if mon.get("is_fainted", false):
+			status_str = "fainted"
+		else:
+			status_str = mon.get("status", "")
 		if status_str == "":
 			status_icon.visible = false
 		else:
@@ -136,6 +180,7 @@ func _status_to_filename(status: String) -> String:
 		"paralyze": return "paralyze"
 		"poison", "toxic": return "poison"
 		"freeze": return "frozen"
+		"fainted": return "fainted"
 		"sleep": return "fainted"  # no sleep icon — use fainted as fallback
 		_: return status
 
@@ -152,101 +197,7 @@ func _tween_slots_in():
 			.set_ease(Tween.EASE_OUT) \
 			.set_delay(i * 0.04)
 
-# ─── Summary Panel (built once) ─────────────────────────────────────────────
-func _build_summary():
-	if _summary_built:
-		return
-	_summary_built = true
-
-	_summary_panel = PanelContainer.new()
-	_summary_panel.name = "SummaryMenu"
-
-	# Style: semi-transparent dark panel
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.18, 0.92)
-	style.corner_radius_top_left = 8
-	style.corner_radius_top_right = 8
-	style.corner_radius_bottom_left = 8
-	style.corner_radius_bottom_right = 8
-	style.content_margin_left = 14
-	style.content_margin_right = 14
-	style.content_margin_top = 10
-	style.content_margin_bottom = 10
-	_summary_panel.add_theme_stylebox_override("panel", style)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 4)
-	_summary_panel.add_child(vbox)
-
-	# Level label
-	_summary_level_label = Label.new()
-	_summary_level_label.add_theme_font_size_override("font_size", 20)
-	_summary_level_label.add_theme_color_override("font_color", Color(1, 1, 1))
-	vbox.add_child(_summary_level_label)
-
-	# Separator
-	vbox.add_child(HSeparator.new())
-
-	# Moves heading
-	var moves_heading := Label.new()
-	moves_heading.text = "MOVES"
-	moves_heading.add_theme_font_size_override("font_size", 16)
-	moves_heading.add_theme_color_override("font_color", Color(0.8, 0.8, 0.6))
-	vbox.add_child(moves_heading)
-
-	# 4 move rows
-	for i in 4:
-		var hbox := HBoxContainer.new()
-		hbox.add_theme_constant_override("separation", 8)
-		vbox.add_child(hbox)
-
-		# Type icon
-		var type_icon := TextureRect.new()
-		type_icon.custom_minimum_size = Vector2(48, 20)
-		type_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		type_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		hbox.add_child(type_icon)
-		_summary_move_btns.append(type_icon)
-
-		var info_vbox := VBoxContainer.new()
-		info_vbox.add_theme_constant_override("separation", 0)
-		hbox.add_child(info_vbox)
-
-		# Move name
-		var name_lbl := Label.new()
-		name_lbl.add_theme_font_size_override("font_size", 18)
-		name_lbl.add_theme_color_override("font_color", Color(1, 1, 1))
-		info_vbox.add_child(name_lbl)
-		_summary_move_names.append(name_lbl)
-
-		# PP label
-		var pp_lbl := Label.new()
-		pp_lbl.add_theme_font_size_override("font_size", 14)
-		pp_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-		info_vbox.add_child(pp_lbl)
-		_summary_move_pps.append(pp_lbl)
-
-	# Separator before item
-	vbox.add_child(HSeparator.new())
-
-	# Item label
-	_summary_item_label = Label.new()
-	_summary_item_label.add_theme_font_size_override("font_size", 18)
-	_summary_item_label.add_theme_color_override("font_color", Color(0.9, 0.85, 0.5))
-	vbox.add_child(_summary_item_label)
-
-	# Add to Background so it's positioned relative to the party menu
-	background.add_child(_summary_panel)
-
-	# Position to the left of the grid, hidden offscreen initially
-	_summary_panel.position = Vector2(grid.position.x - 260, grid.position.y)
-	_summary_panel.visible = false
-
-	# Store positions for animation
-	_grid_original_x = grid.position.x
-	_summary_hidden_x = _grid_original_x - 260
-	_summary_shown_x = 10.0
-
+# ─── Summary Population ─────────────────────────────────────────────────────
 func _populate_summary(mon_index: int):
 	var team: Array = battle_sim.your_team
 	if mon_index >= team.size():
@@ -255,84 +206,93 @@ func _populate_summary(mon_index: int):
 	var mon: Dictionary = team[mon_index]
 	var moveset: Array = mon["moveset"]
 
-	_summary_level_label.text = "Lv. " + str(int(mon["level"]))
+	# Name & Level
+	summary_name.text = mon["display_name"]
+	summary_level.text = str(int(mon["level"]))
 
+	# Moves 1-4
 	for i in 4:
 		if i < moveset.size():
 			var move: Dictionary = moveset[i]
-
-			# Move name
-			_summary_move_names[i].text = move["name"].replace("-", " ").capitalize()
-			_summary_move_names[i].visible = true
-
-			# PP
+			_move_names[i].text = move["name"].replace("-", " ").capitalize()
 			var cur_pp: int = move.get("current_pp", move.get("max_pp", 35))
 			var max_pp: int = move.get("max_pp", 35)
-			_summary_move_pps[i].text = "PP " + str(cur_pp) + "/" + str(max_pp)
-			_summary_move_pps[i].visible = true
-
-			# Type icon
+			_move_pps[i].text = "PP " + str(cur_pp) + "/" + str(max_pp)
 			var type_name: String = (move.get("type", "normal") as String).to_lower()
 			var icon_path := TYPE_ICON_PATH + type_name + ".png"
 			if ResourceLoader.exists(icon_path):
-				_summary_move_btns[i].texture = load(icon_path)
-			else:
-				_summary_move_btns[i].texture = null
-			_summary_move_btns[i].visible = true
+				_move_types[i].texture = load(icon_path)
+			_move_names[i].visible = true
+			_move_pps[i].visible = true
+			_move_types[i].visible = true
 		else:
-			_summary_move_names[i].visible = false
-			_summary_move_pps[i].visible = false
-			_summary_move_btns[i].visible = false
+			_move_names[i].visible = false
+			_move_pps[i].visible = false
+			_move_types[i].visible = false
 
 	# Item
 	var item_str: String = mon.get("item", "")
 	if item_str == "" or item_str == "None":
-		_summary_item_label.text = "No item"
+		summary_item.text = "No item"
 	else:
-		_summary_item_label.text = item_str
+		summary_item.text = item_str
 
-# ─── Hover / Unhover ────────────────────────────────────────────────────────
-func _on_slot_hover(index: int):
+# ─── Hover (poll HoverTween rect, slots update summary content) ─────────────
+var _mouse_in_zone := false
+
+func _process(_delta: float):
 	if not visible:
 		return
-	_build_summary()
-	_populate_summary(index)
-	_hovered_index = index
-	_show_summary()
+	var mouse_pos := hover_tween.get_local_mouse_position()
+	var in_zone := Rect2(Vector2.ZERO, hover_tween.size).has_point(mouse_pos)
+	if in_zone and not _mouse_in_zone:
+		_mouse_in_zone = true
+		_populate_summary(battle_sim.your_active)
+		_hovered_index = 0
+		_show_summary()
+	elif not in_zone and _mouse_in_zone:
+		_mouse_in_zone = false
+		if _hovered_index != -1:
+			_hovered_index = -1
+			_hide_summary()
 
-func _on_slot_unhover(index: int):
-	if _hovered_index == index:
-		_hovered_index = -1
-		_hide_summary()
+func _on_slot_hover(index: int):
+	if not visible or _hovered_index == -1:
+		return
+	_populate_summary(index)
 
 func _show_summary():
-	_summary_panel.visible = true
+	summary_menu.visible = true
 	if _anim_tween:
 		_anim_tween.kill()
 	_anim_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	# Slide grid to the right
-	_anim_tween.tween_property(grid, "position:x", _grid_original_x + 180.0, 0.25)
-	# Slide summary panel in from the left
-	_summary_panel.modulate.a = 0.0
-	_anim_tween.tween_property(_summary_panel, "modulate:a", 1.0, 0.2)
-	_summary_panel.position.x = _summary_shown_x
+	# Slide grid further right and compress h_separation so summary doesn't overlap
+	_anim_tween.tween_property(grid, "position:x", _grid_original_x + 260.0, 0.25)
+	_anim_tween.tween_method(_set_h_separation, _grid_original_h_sep, _grid_original_h_sep - 40, 0.25)
+	# Fade in summary
+	summary_menu.modulate.a = 0.0
+	_anim_tween.tween_property(summary_menu, "modulate:a", 1.0, 0.2)
 
 func _hide_summary():
-	if not _summary_built or not _summary_panel.visible:
+	if not summary_menu.visible:
 		return
 	if _anim_tween:
 		_anim_tween.kill()
 	_anim_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	# Slide grid back
+	# Slide grid back and restore h_separation
 	_anim_tween.tween_property(grid, "position:x", _grid_original_x, 0.2)
+	_anim_tween.tween_method(_set_h_separation, _grid_original_h_sep - 40, _grid_original_h_sep, 0.2)
 	# Fade out summary
-	_anim_tween.tween_property(_summary_panel, "modulate:a", 0.0, 0.15)
-	_anim_tween.chain().tween_callback(func(): _summary_panel.visible = false)
+	_anim_tween.tween_property(summary_menu, "modulate:a", 0.0, 0.15)
+	_anim_tween.chain().tween_callback(func(): summary_menu.visible = false)
 
 func _hide_summary_instant():
-	if not _summary_built:
-		return
-	_summary_panel.visible = false
-	_summary_panel.modulate.a = 0.0
+	summary_menu.visible = false
+	summary_menu.modulate.a = 0.0
 	grid.position.x = _grid_original_x
+	grid.add_theme_constant_override("h_separation", _grid_original_h_sep)
 	_hovered_index = -1
+	_mouse_in_zone = false
+
+func _set_h_separation(value: int):
+	grid.add_theme_constant_override("h_separation", value)

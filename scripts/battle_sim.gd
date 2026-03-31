@@ -6,6 +6,7 @@ signal battle_message(text: String)
 signal pokemon_fainted(is_yours: bool, mon_name: String)
 signal battle_ended(you_won: bool)
 signal attack_effectiveness(effectiveness: float)
+signal status_changed(is_yours: bool, status: String)
 
 @export var team_gen_path: NodePath
 var team_gen: Node
@@ -219,6 +220,7 @@ const SECONDARY_EFFECTS: Dictionary = {
 }
 
 func _ready():
+	randomize()
 	team_gen = get_node(team_gen_path)
 	start_battle()
 
@@ -520,6 +522,7 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		if attacker["sleep_turns"] <= 0:
 			attacker["status"] = ""
 			attacker["sleep_turns"] = 0
+			status_changed.emit(is_yours, "")
 			battle_message.emit(attacker["display_name"] + " woke up!")
 		else:
 			attacker["last_move_used"] = ""
@@ -529,6 +532,7 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if attacker["status"] == "freeze":
 		if randi() % 5 == 0:
 			attacker["status"] = ""
+			status_changed.emit(is_yours, "")
 			battle_message.emit(attacker["display_name"] + " thawed out!")
 		else:
 			attacker["last_move_used"] = ""
@@ -729,6 +733,7 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		attacker["sleep_turns"] = 3
 		attacker["current_hp"] = attacker["max_hp"]
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
+		status_changed.emit(is_yours, "sleep")
 		battle_message.emit(attacker["display_name"] + " went to sleep and restored HP!")
 		return
 
@@ -774,6 +779,7 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 			return
 
 		defender["status"] = new_status
+		status_changed.emit(not is_yours, new_status)
 		match new_status:
 			"toxic":   battle_message.emit(defender["display_name"] + " was badly poisoned!")
 			"poison":  battle_message.emit(defender["display_name"] + " was poisoned!")
@@ -929,9 +935,11 @@ func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 		elif mon["status"] == "":
 			if hazards["toxic_spikes"] >= 2:
 				mon["status"] = "toxic"
+				status_changed.emit(is_yours, "toxic")
 				battle_message.emit(mon["display_name"] + " was badly poisoned by the spikes!")
 			else:
 				mon["status"] = "poison"
+				status_changed.emit(is_yours, "poison")
 				battle_message.emit(mon["display_name"] + " was poisoned by the spikes!")
 
 	# Spikes: 1/8, 1/6, 1/4 HP based on layers
@@ -1017,6 +1025,7 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 			"paralyze":
 				if "electric" in defender["types"]: return
 		defender["status"] = new_status
+		status_changed.emit(not is_yours, new_status)
 		if new_status == "freeze":
 			battle_message.emit(defender["display_name"] + " was frozen solid!")
 		elif new_status == "burn":

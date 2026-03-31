@@ -41,6 +41,7 @@
 [ext_resource type="Texture2D" uid="uid://il84g3ekfrcb" path="res://images/battle/party/bg_4_B2W2.png" id="30_yn2ap"]
 [ext_resource type="Texture2D" uid="uid://bq0ia3totl5fm" path="res://images/battle/types/bug.png" id="31_v8541"]
 [ext_resource type="Texture2D" uid="uid://djtfd72ov15vp" path="res://sprites/placeholders/pokeballplaceholder.png" id="32_vnhh6"]
+[ext_resource type="Script" uid="uid://m5f7xcybu0hd" path="res://scripts/party_menu.gd" id="33_party"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("12_dm2tv")
@@ -901,6 +902,7 @@ text_overrun_behavior = 1
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+script = ExtResource("33_party")
 
 [node name="Background" type="TextureRect" parent="BattleSim/Control/PartyMenu" unique_id=1200001556]
 layout_mode = 0
@@ -1840,6 +1842,15 @@ theme_override_font_sizes/font_size = 28
 text = "50"
 autowrap_mode = 2
 
+[node name="HoverTween" type="Button" parent="BattleSim/Control/PartyMenu/Background" unique_id=1583918471]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = 4.0
+offset_top = 165.0
+offset_right = 1066.0
+offset_bottom = 584.0
+button_mask = 0
+
 [node name="BattleSFX" type="AudioStreamPlayer" parent="BattleSim/Control" unique_id=702662202]
 volume_db = -8.0
 
@@ -1864,7 +1875,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.9999981, 0, -0.0017453277, 0, 1, 0, 0.0017453277, 0, 0.9999981, 4.396, 0.037, -3.68)
+transform = Transform3D(0.999998, 0, -0.0017453275, 0, 1, 0, 0.0017453275, 0, 0.999998, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -1998,6 +2009,14 @@ theme_override_font_sizes/font_size = 27
 text = "100"
 text_overrun_behavior = 1
 
+[node name="Status" type="TextureRect" parent="BattleSim/VBoxContainer/OpponentHPContainer" unique_id=663531499]
+layout_mode = 0
+offset_left = 19.0
+offset_top = 28.029999
+offset_right = 63.35544
+offset_bottom = 40.03
+texture = ExtResource("28_2ihny")
+
 [node name="TrainerHPContainer" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=43815748]
 texture_filter = 1
 layout_mode = 0
@@ -2090,6 +2109,14 @@ theme_override_fonts/font = ExtResource("19_3rlly")
 theme_override_font_sizes/font_size = 11
 text = "100"
 text_overrun_behavior = 1
+
+[node name="Status" type="TextureRect" parent="BattleSim/VBoxContainer/TrainerHPContainer" unique_id=1127268206]
+layout_mode = 0
+offset_left = 47.0
+offset_top = 19.579987
+offset_right = 91.35544
+offset_bottom = 31.579987
+texture = ExtResource("28_2ihny")
 
 [node name="BattleText" type="Panel" parent="BattleSim/VBoxContainer" unique_id=1974608967]
 layout_mode = 0
