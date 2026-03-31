@@ -164,7 +164,7 @@ func _set_status_icon(icon: TextureRect, status: String):
 		"paralyze": filename = "paralyze"
 		"poison", "toxic": filename = "poison"
 		"freeze": filename = "frozen"
-		"sleep": filename = "fainted"
+		"sleep": filename = "sleep"
 		_: filename = status
 	var path := STATUS_ICON_PATH + filename + ".png"
 	if ResourceLoader.exists(path):

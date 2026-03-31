@@ -15,7 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://de5o70b5eibhk" path="res://sprites/battle/types/bug.png" id="12_31luo"]
 [ext_resource type="Shader" uid="uid://bo75fki4aoxs3" path="res://shaders/button_press.gdshader" id="12_dm2tv"]
 [ext_resource type="FontFile" uid="uid://b1hkfygmtfe51" path="res://images/font/PokemonB_W-Regular.otf" id="13_16mmc"]
-[ext_resource type="Script" uid="uid://cu84w74u50xl" path="res://scripts/battle_entry.gd" id="13_dm2tv"]
+[ext_resource type="Script" path="res://scripts/battle_entry.gd" id="13_dm2tv"]
 [ext_resource type="Texture2D" uid="uid://bvhduud0jqi5m" path="res://images/battle/party/bg_B2W2.png" id="14_fg2lh"]
 [ext_resource type="Texture2D" uid="uid://xqsqpm4ugt34" path="res://images/battle/party/panel_rect.png" id="15_tr5ov"]
 [ext_resource type="PackedScene" uid="uid://d4s6ycu0dlvy" path="res://scenes/pokemon_data.tscn" id="16_05s0e"]
@@ -41,7 +41,7 @@
 [ext_resource type="Texture2D" uid="uid://il84g3ekfrcb" path="res://images/battle/party/bg_4_B2W2.png" id="30_yn2ap"]
 [ext_resource type="Texture2D" uid="uid://bq0ia3totl5fm" path="res://images/battle/types/bug.png" id="31_v8541"]
 [ext_resource type="Texture2D" uid="uid://djtfd72ov15vp" path="res://sprites/placeholders/pokeballplaceholder.png" id="32_vnhh6"]
-[ext_resource type="Script" uid="uid://m5f7xcybu0hd" path="res://scripts/party_menu.gd" id="33_party"]
+[ext_resource type="Script" path="res://scripts/party_menu.gd" id="33_party"]
 [ext_resource type="SpriteFrames" uid="uid://sbshelel11xf" path="res://sprites/pokemon/sprites/abomasnow/abomasnow_anim.tres" id="33_vnhh6"]
 [ext_resource type="AudioStream" uid="uid://d3demv7lj7ssu" path="res://sounds/effective.wav" id="35_j86qt"]
 
@@ -1892,7 +1892,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.9999979, 0, -0.0017453274, 0, 1, 0, 0.0017453274, 0, 0.9999979, 4.396, 0.037, -3.68)
+transform = Transform3D(0.99999785, 0, -0.0017453273, 0, 1, 0, 0.0017453273, 0, 0.99999785, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
