@@ -1,17 +1,31 @@
 shader_type canvas_item;
 
-// Classic Pokemon iris-wipe: a shrinking circle reveals black.
-// progress 0.0 = fully transparent, 1.0 = fully black.
+// Pokemon Black/White style battle transition:
+// Rapid horizontal bars sweep across the screen with white flashes,
+// then the whole screen goes black.
 uniform float progress : hint_range(0.0, 1.0) = 0.0;
-// Center of the circle in UV space (0.5, 0.5 = screen center).
-uniform vec2 center = vec2(0.5, 0.5);
+uniform float flash_intensity : hint_range(0.0, 1.0) = 0.0;
+uniform int bar_count : hint_range(1, 20) = 8;
 
 void fragment() {
-	// Correct for aspect ratio so the circle isn't squished
-	vec2 aspect = vec2(SCREEN_PIXEL_SIZE.y / SCREEN_PIXEL_SIZE.x, 1.0);
-	float dist = length((UV - center) * aspect);
-	// Max possible radius (corner distance) ~0.72 for a centered circle
-	float radius = max(0.0, 1.0 - progress) * 0.75;
-	float edge = smoothstep(radius, radius - 0.008, dist);
-	COLOR = vec4(0.0, 0.0, 0.0, edge);
+	float bar_index = floor(UV.y * float(bar_count));
+	// Alternate bars sweep from left and right
+	float direction = mod(bar_index, 2.0) == 0.0 ? 1.0 : -1.0;
+	float x = direction > 0.0 ? UV.x : 1.0 - UV.x;
+
+	// Stagger bars: each bar starts slightly later based on its index
+	float stagger = bar_index / float(bar_count) * 0.15;
+	float bar_progress = clamp((progress - stagger) / (1.0 - stagger), 0.0, 1.0);
+
+	// Sharp edge sweep
+	float sweep = step(x, bar_progress * 1.3);
+
+	// White flash overlay
+	float flash = flash_intensity;
+
+	// Combine: black bars with white flash
+	vec3 color = mix(vec3(0.0), vec3(1.0), flash * (1.0 - sweep));
+	float alpha = max(sweep, flash * 0.5);
+
+	COLOR = vec4(color, alpha);
 }

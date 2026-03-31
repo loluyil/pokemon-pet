@@ -8,6 +8,7 @@ signal battle_ended(you_won: bool)
 signal attack_effectiveness(effectiveness: float)
 signal status_changed(is_yours: bool, status: String)
 signal uturn_switch_request
+signal faint_switch_request
 
 @export var team_gen_path: NodePath
 var team_gen: Node
@@ -30,6 +31,9 @@ var field_hazards := {
 
 # Set by execute_move when a U-turn/Volt Switch hits — checked in execute_turn
 var _pending_uturn := {"yours": false, "opp": false}
+
+# Stores remainder of a turn when player U-turn requires a pick
+var _deferred_turn: Dictionary = {}
 
 # Protect-class moves that block incoming damage for one turn
 const PROTECT_MOVES = ["protect", "detect", "king-s-shield", "spiky-shield", "baneful-bunker"]
@@ -492,7 +496,13 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	if you_go_first:
 		execute_move(your_mon, opp_mon, your_move, true)
 		if _pending_uturn["yours"]:
+			# Player used U-turn — defer the rest of the turn until they pick a switch
+			_deferred_turn = {
+				"opp_move": opp_move,
+				"you_go_first": true,
+			}
 			_do_uturn_switch(true)
+			return  # Turn resumes in _resume_turn_after_uturn()
 		var opp_after_first = opponent_team[opponent_active]
 		if not opp_after_first["is_fainted"] and not opp_after_first["is_flinched"]:
 			execute_move(opp_after_first, your_team[your_active], opp_move, false)
@@ -505,13 +515,13 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 		if not your_mon["is_fainted"] and not your_mon["is_flinched"]:
 			execute_move(your_team[your_active], opponent_team[opponent_active], your_move, true)
 			if _pending_uturn["yours"]:
+				_deferred_turn = {
+					"opp_move": null,
+					"you_go_first": false,
+				}
 				_do_uturn_switch(true)
-
-	apply_end_of_turn(your_team[your_active], true)
-	apply_end_of_turn(opponent_team[opponent_active], false)
-
-	check_faint(true)
-	check_faint(false)
+				return
+	_finish_turn()
 
 func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool):
 	if attacker["is_fainted"]:
@@ -931,14 +941,34 @@ func check_faint(is_yours: bool):
 		return
 
 	if is_yours:
-		your_active = next
+		# Let the player choose which pokemon to send in
+		faint_switch_request.emit()
 	else:
 		opponent_active = next
+		var mon = team[next]
+		pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"], mon["name"])
+		battle_message.emit(mon["display_name"] + " was sent out!")
+		apply_entry_hazards(mon, is_yours)
 
-	var mon = team[next]
-	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"], mon["name"])
+func complete_faint_switch(index: int):
+	var mon = your_team[index]
+	if mon["is_fainted"]:
+		return
+	your_active = index
+	mon["atk_stage"] = 0
+	mon["def_stage"] = 0
+	mon["spa_stage"] = 0
+	mon["spd_stage"] = 0
+	mon["spe_stage"] = 0
+	mon["accuracy_stage"] = 0
+	mon["evasion_stage"] = 0
+	mon["toxic_counter"] = 0
+	mon["sleep_turns"] = 0
+	mon["perish_count"] = -1
+	mon["destiny_bond"] = false
+	pokemon_sent_out.emit(true, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"], mon["name"])
 	battle_message.emit(mon["display_name"] + " was sent out!")
-	apply_entry_hazards(mon, is_yours)
+	apply_entry_hazards(mon, true)
 
 func find_next_alive(team: Array) -> int:
 	for i in team.size():
@@ -1046,6 +1076,30 @@ func _do_uturn_switch(is_yours: bool):
 
 func complete_uturn_switch(index: int):
 	_force_switch(true, index)
+	_resume_turn_after_uturn()
+
+func _resume_turn_after_uturn():
+	if _deferred_turn.is_empty():
+		_finish_turn()
+		return
+	var opp_move = _deferred_turn.get("opp_move")
+	var you_went_first: bool = _deferred_turn.get("you_go_first", true)
+	_deferred_turn = {}
+
+	if you_went_first and opp_move != null:
+		# Opponent still needs to attack the new switch-in
+		var opp_mon = opponent_team[opponent_active]
+		if not opp_mon["is_fainted"] and not opp_mon["is_flinched"]:
+			execute_move(opp_mon, your_team[your_active], opp_move, false)
+			if _pending_uturn["opp"]:
+				_do_uturn_switch(false)
+	_finish_turn()
+
+func _finish_turn():
+	apply_end_of_turn(your_team[your_active], true)
+	apply_end_of_turn(opponent_team[opponent_active], false)
+	check_faint(true)
+	check_faint(false)
 
 func _force_switch(is_yours: bool, index: int):
 	var team = your_team if is_yours else opponent_team

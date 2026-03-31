@@ -3,12 +3,12 @@
 importer="wav"
 type="AudioStreamWAV"
 uid="uid://cgi5laibnyf7d"
-path="res://.godot/imported/pokeball-throw.wav-87991595f6c8332cfec99f1ac41c704d.sample"
+path="res://.godot/imported/pkball-throw.wav-5efc795b631f4f58984257dc9ef52d5a.sample"
 
 [deps]
 
-source_file="res://sounds/pokeball-throw.wav"
-dest_files=["res://.godot/imported/pokeball-throw.wav-87991595f6c8332cfec99f1ac41c704d.sample"]
+source_file="res://sounds/pkball-throw.wav"
+dest_files=["res://.godot/imported/pkball-throw.wav-5efc795b631f4f58984257dc9ef52d5a.sample"]
 
 [params]
 

@@ -43,6 +43,7 @@
 [ext_resource type="Texture2D" uid="uid://djtfd72ov15vp" path="res://sprites/placeholders/pokeballplaceholder.png" id="32_vnhh6"]
 [ext_resource type="Script" uid="uid://m5f7xcybu0hd" path="res://scripts/party_menu.gd" id="33_party"]
 [ext_resource type="SpriteFrames" uid="uid://sbshelel11xf" path="res://sprites/pokemon/sprites/abomasnow/abomasnow_anim.tres" id="33_vnhh6"]
+[ext_resource type="AudioStream" uid="uid://d3demv7lj7ssu" path="res://sounds/effective.wav" id="35_j86qt"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("12_dm2tv")
@@ -1853,7 +1854,8 @@ offset_bottom = 584.0
 button_mask = 0
 
 [node name="BattleSFX" type="AudioStreamPlayer" parent="BattleSim/Control" unique_id=702662202]
-volume_db = -8.0
+stream = ExtResource("35_j86qt")
+volume_db = -10.0
 
 [node name="WantToSwitch?" type="Label" parent="BattleSim/Control" unique_id=1303668390]
 layout_mode = 0
@@ -1914,7 +1916,7 @@ visible = false
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_gtd7e")
 animation = &"throw"
-frame_progress = 0.6841385
+frame_progress = 0.39943722
 speed_scale = 7.775
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer/Pokeball" unique_id=335166663]
@@ -1964,7 +1966,7 @@ visible = false
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_gtd7e")
 animation = &"throw"
-frame_progress = 0.92415696
+frame_progress = 0.9921031
 speed_scale = 4.62
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport" unique_id=2003930588]
@@ -2156,3 +2158,6 @@ team_gen_path = NodePath("TeamGeneration")
 
 [node name="TeamGeneration" type="Node" parent="BattleSim/PokemonData" unique_id=1592360118]
 script = ExtResource("17_j0cvo")
+
+[node name="CriticallyLow" type="AudioStreamPlayer" parent="BattleSim" unique_id=1109264580]
+volume_db = -50.0

@@ -54,6 +54,7 @@ var _hovered_index := -1
 # ─── Black fade overlay ─────────────────────────────────────────────────────
 var _fade_rect: ColorRect
 var _uturn_mode := false
+var _faint_mode := false
 
 # ─── "Want to switch?" typewriter label ──────────────────────────────────────
 @onready var _switch_label: Label = $"../WantToSwitch?"
@@ -106,6 +107,16 @@ func _cache_slots():
 # ─── Open / Close ────────────────────────────────────────────────────────────
 func open():
 	_uturn_mode = false
+	_faint_mode = false
+	_populate()
+	summary_menu.visible = false
+	_switch_label.visible = false
+	visible = true
+	_fade_in()
+
+func open_for_faint():
+	_faint_mode = true
+	_uturn_mode = false
 	_populate()
 	summary_menu.visible = false
 	_switch_label.visible = false
@@ -114,6 +125,7 @@ func open():
 
 func open_for_uturn():
 	_uturn_mode = true
+	_faint_mode = false
 	_populate()
 	summary_menu.visible = false
 	_switch_label.visible = false
@@ -128,8 +140,8 @@ func _fade_in():
 	tween.tween_callback(func(): _fade_rect.visible = false)
 
 func _on_back():
-	if _uturn_mode:
-		return  # Must pick a pokemon for U-turn
+	if _uturn_mode or _faint_mode:
+		return  # Must pick a pokemon
 	_sfx_player.stream = _sfx_back
 	_sfx_player.play()
 	_hide_summary_instant()
@@ -163,6 +175,9 @@ func _on_slot_pressed(index: int):
 	if _uturn_mode:
 		_uturn_mode = false
 		battle_ui._on_uturn_switch_picked(index)
+	elif _faint_mode:
+		_faint_mode = false
+		battle_ui._on_faint_switch_picked(index)
 	else:
 		fight_btn.disabled = true
 		battle_sim.execute_switch_turn(index)

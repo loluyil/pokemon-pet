@@ -44,6 +44,24 @@ const STATUS_ICON_PATH := "res://images/battle/status/"
 var _sfx_effective       = preload("res://sounds/effective.wav")
 var _sfx_super_effective = preload("res://sounds/super-effective.wav")
 var _sfx_not_effective   = preload("res://sounds/not-very-effective.wav")
+var _sfx_pkball_throw    = preload("res://sounds/pkball-throw.wav")
+var _sfx_pkball_release  = preload("res://sounds/pkball-release.wav")
+var _sfx_faint           = preload("res://sounds/faint.wav")
+
+# ─── Battle Music ────────────────────────────────────────────────────────────────
+var _danger_music = preload("res://sounds/battle-music/1-60. Battle Trouble!.mp3")
+var _music_player: AudioStreamPlayer
+var _danger_player: AudioStreamPlayer
+var _in_danger := false
+var _music_original_volume: float = 0.0
+
+# ─── HP Bar Container References ────────────────────────────────────────────────
+@onready var _your_hp_container: TextureRect = $VBoxContainer/TrainerHPContainer
+@onready var _opp_hp_container: TextureRect  = $VBoxContainer/OpponentHPContainer
+var _your_hp_original_x: float
+var _opp_hp_original_x: float
+const HP_SLIDE_OFFSET := 400.0
+const HP_SLIDE_DURATION := 0.35
 
 # ─── Unified Event Queue ─────────────────────────────────────────────────────────
 # Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
@@ -72,6 +90,27 @@ func _ready():
 
 	_text_panel.visible = false
 	battle_sim.uturn_switch_request.connect(_on_uturn_switch_request)
+	battle_sim.faint_switch_request.connect(_on_faint_switch_request)
+
+	# Set up danger music player
+	_danger_player = AudioStreamPlayer.new()
+	_danger_player.bus = "Master"
+	add_child(_danger_player)
+
+	# Find the battle music player reparented to root by main.gd during transition
+	var battle_music_node = get_tree().root.get_node_or_null("BattleMusic")
+	if battle_music_node:
+		_music_player = battle_music_node
+		_music_original_volume = _music_player.volume_db
+	else:
+		_music_player = null
+
+	# Store HP container original positions for slide tweens, then hide offscreen
+	_your_hp_original_x = _your_hp_container.position.x
+	_opp_hp_original_x = _opp_hp_container.position.x
+	_your_hp_container.position.x = _your_hp_original_x + HP_SLIDE_OFFSET
+	_opp_hp_container.position.x = _opp_hp_original_x - HP_SLIDE_OFFSET
+
 	# Defer init so AnimatedSprite3D nodes are fully ready before loading sprite frames
 	call_deferred("_init_display")
 
@@ -99,6 +138,15 @@ func _init_display():
 	_push_message("You are challenged by Trainer!")
 	_push_message("Trainer sent out " + opp_mon["display_name"] + "!")
 	_push_message("Go! " + your_mon["display_name"] + "!")
+
+	# Slide HP containers in after the battle entry cinematic
+	# The cinematic runs ~6s, so tween them in with a delay
+	get_tree().create_timer(5.5).timeout.connect(func():
+		_tween_hp_container_in(false)  # opponent first
+	, CONNECT_ONE_SHOT)
+	get_tree().create_timer(8.0).timeout.connect(func():
+		_tween_hp_container_in(true)  # then yours
+	, CONNECT_ONE_SHOT)
 
 func _refresh_status_icons():
 	var your_mon = battle_sim.your_team[battle_sim.your_active]
@@ -164,8 +212,10 @@ func _on_pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name
 	if not _displaying:
 		_start_display()
 
-func _on_pokemon_fainted(_is_yours: bool, _mon_name: String):
-	pass  # Faint message queued via battle_message in battle_sim
+func _on_pokemon_fainted(is_yours: bool, _mon_name: String):
+	_event_queue.append({"type": "faint_sfx", "is_yours": is_yours})
+	if not _displaying:
+		_start_display()
 
 func _on_uturn_switch_request():
 	# Pause event queue, open party menu for player to pick a switch-in
@@ -173,8 +223,18 @@ func _on_uturn_switch_request():
 	if not _displaying:
 		_start_display()
 
+func _on_faint_switch_request():
+	_event_queue.append({"type": "faint_pick"})
+	if not _displaying:
+		_start_display()
+
 func _on_battle_ended(_you_won: bool):
-	pass  # Win/lose messages queued via battle_message in battle_sim
+	# Stop all battle music
+	if _music_player:
+		var tween := create_tween()
+		tween.tween_property(_music_player, "volume_db", -80.0, 1.0)
+		tween.tween_callback(_music_player.queue_free)
+	_stop_danger_music()
 
 func _on_attack_effectiveness(effectiveness: float):
 	_event_queue.append({"type": "sfx", "effectiveness": effectiveness})
@@ -213,6 +273,8 @@ func _process_next():
 		"sfx":        _do_sfx(ev)
 		"status":     _do_status(ev)
 		"uturn_pick": _do_uturn_pick()
+		"faint_pick": _do_faint_pick()
+		"faint_sfx":  _do_faint_sfx(ev)
 
 func _end_display():
 	_displaying     = false
@@ -253,29 +315,46 @@ func _do_hp(ev: Dictionary):
 		current_hp_label.text = str(int(ev["hp"]))
 	else:
 		opp_hp_bar.update_hp(ev["hp"], ev["max"])
-	# Wait for the HP bar tween to finish, then move on automatically.
-	get_tree().create_timer(HP_ANIM_SECS).timeout.connect(_process_next, CONNECT_ONE_SHOT)
+	# Wait for the HP bar tween to finish, then check danger music + advance
+	get_tree().create_timer(HP_ANIM_SECS).timeout.connect(func():
+		if ev["is_yours"]:
+			_check_danger_music_deferred()
+		_process_next()
+	, CONNECT_ONE_SHOT)
 
 # ─── Sent-Out Event (pokeball + entry animation) ────────────────────────────
 
 func _do_sent_out(ev: Dictionary):
-	if ev["is_yours"]:
-		your_hp_bar.set_hp_instant(ev["hp"], ev["max"])
-		your_name_label.text  = ev["name"]
-		your_lvl_label.text   = str(int(ev["level"]))
-		current_hp_label.text = str(int(ev["hp"]))
-		max_hp_label.text     = str(int(ev["max"]))
-		_set_pokemon_sprite(your_pokemon_sprite, ev["mon_name"], true)
-		_play_switch_anim(true)
-	else:
-		opp_hp_bar.set_hp_instant(ev["hp"], ev["max"])
-		opp_name_label.text = ev["name"]
-		opp_lvl_label.text  = str(int(ev["level"]))
-		_set_pokemon_sprite(opp_pokemon_sprite, ev["mon_name"], false)
-		_play_switch_anim(false)
-	_refresh_status_icons()
-	# Wait for entry animation then advance
-	get_tree().create_timer(0.9).timeout.connect(_process_next, CONNECT_ONE_SHOT)
+	var is_yours: bool = ev["is_yours"]
+	# Slide out old HP container first (may already be offscreen after faint, that's fine)
+	_tween_hp_container_out(is_yours)
+	get_tree().create_timer(HP_SLIDE_DURATION).timeout.connect(func():
+		# Update labels and sprites for the new pokemon
+		if is_yours:
+			your_hp_bar.set_hp_instant(ev["hp"], ev["max"])
+			your_name_label.text  = ev["name"]
+			your_lvl_label.text   = str(int(ev["level"]))
+			current_hp_label.text = str(int(ev["hp"]))
+			max_hp_label.text     = str(int(ev["max"]))
+			_set_pokemon_sprite(your_pokemon_sprite, ev["mon_name"], true)
+			_play_switch_anim(true)
+		else:
+			opp_hp_bar.set_hp_instant(ev["hp"], ev["max"])
+			opp_name_label.text = ev["name"]
+			opp_lvl_label.text  = str(int(ev["level"]))
+			_set_pokemon_sprite(opp_pokemon_sprite, ev["mon_name"], false)
+			_play_switch_anim(false)
+		# Clear status icon — the status event in the queue will set it at the right time
+		var icon: TextureRect = your_status_icon if is_yours else opp_status_icon
+		icon.visible = false
+		# After pokemon lands: slide HP container in, check danger music, advance
+		get_tree().create_timer(0.9).timeout.connect(func():
+			_tween_hp_container_in(is_yours)
+			if is_yours:
+				_check_danger_music_deferred()
+			_process_next()
+		, CONNECT_ONE_SHOT)
+	, CONNECT_ONE_SHOT)
 
 func _play_switch_anim(is_yours: bool):
 	var sprite: AnimatedSprite3D
@@ -285,8 +364,10 @@ func _play_switch_anim(is_yours: bool):
 		sprite = your_pokemon_sprite
 		pokeball = _trainer_pokeball
 		pkmn_anim = _your_pkmn_anim
-		
+
 		sprite.visible = false
+		_sfx_player.stream = _sfx_pkball_throw
+		_sfx_player.play()
 		pokeball.visible = true
 		pokeball.play("throw")
 		_trainer_pokeball_throw.play("switch_throw")
@@ -295,11 +376,15 @@ func _play_switch_anim(is_yours: bool):
 		sprite = opp_pokemon_sprite
 		pokeball = _opp_pokeball
 		pkmn_anim = _opp_pkmn_anim
-		
+
+		_sfx_player.stream = _sfx_pkball_throw
+		_sfx_player.play()
 		pokeball.visible = true
 		pokeball.play("throw")
 
 	get_tree().create_timer(0.4).timeout.connect(func():
+		_sfx_player.stream = _sfx_pkball_release
+		_sfx_player.play()
 		pokeball.visible = false
 		sprite.visible = true
 		pkmn_anim.play("pkmn_entry")
@@ -336,6 +421,92 @@ func _on_uturn_switch_picked(index: int):
 	_text_panel.visible = true
 	battle_sim.complete_uturn_switch(index)
 	_process_next()
+
+# ─── Faint Pick Event (opens party menu for player to choose replacement) ────
+
+func _do_faint_pick():
+	_text_panel.visible = false
+	_party_menu.open_for_faint()
+
+func _on_faint_switch_picked(index: int):
+	_text_panel.visible = true
+	battle_sim.complete_faint_switch(index)
+	_process_next()
+
+# ─── Faint SFX Event ─────────────────────────────────────────────────────────────
+
+func _do_faint_sfx(ev: Dictionary):
+	_sfx_player.stream = _sfx_faint
+	_sfx_player.play()
+	_tween_hp_container_out(ev["is_yours"])
+	if ev["is_yours"]:
+		_stop_danger_music()
+	# Wait for slide-out to finish before advancing
+	get_tree().create_timer(HP_SLIDE_DURATION).timeout.connect(func():
+		_process_next()
+	, CONNECT_ONE_SHOT)
+
+# ─── Danger Music (red HP) ───────────────────────────────────────────────────────
+
+func _check_danger_music_deferred():
+	# Called after animations finish (HP bar done, pokemon landed, etc.)
+	var your_mon = battle_sim.your_team[battle_sim.your_active]
+	var pct: float = float(your_mon["current_hp"]) / float(your_mon["max_hp"]) * 100.0
+	if pct > 0.0 and pct <= 20.0 and not _in_danger:
+		_start_danger_music()
+	elif (pct > 20.0 or pct <= 0.0) and _in_danger:
+		_stop_danger_music()
+
+func _start_danger_music():
+	_in_danger = true
+	# Mute bg music (don't stop, so playback position is preserved)
+	if _music_player:
+		var tween := create_tween()
+		tween.tween_property(_music_player, "volume_db", -80.0, 0.3)
+	_danger_player.stream = _danger_music
+	_danger_player.volume_db = -10.0
+	_danger_player.play()
+
+func _stop_danger_music():
+	_in_danger = false
+	_danger_player.stop()
+	# Restore bg music to its original volume
+	if _music_player and not battle_sim.battle_over:
+		var tween := create_tween()
+		tween.tween_property(_music_player, "volume_db", _music_original_volume, 0.3)
+
+# ─── HP Container Slide Tweens ───────────────────────────────────────────────────
+
+func _tween_hp_container_in(is_yours: bool):
+	var container: TextureRect
+	var original_x: float
+	if is_yours:
+		container = _your_hp_container
+		original_x = _your_hp_original_x
+	else:
+		container = _opp_hp_container
+		original_x = _opp_hp_original_x
+	# Start offscreen: your HP slides from right, opponent from left
+	var offset_x: float = HP_SLIDE_OFFSET if is_yours else -HP_SLIDE_OFFSET
+	container.position.x = original_x + offset_x
+	container.visible = true
+	var tween := create_tween()
+	tween.tween_property(container, "position:x", original_x, HP_SLIDE_DURATION) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func _tween_hp_container_out(is_yours: bool):
+	var container: TextureRect
+	var original_x: float
+	if is_yours:
+		container = _your_hp_container
+		original_x = _your_hp_original_x
+	else:
+		container = _opp_hp_container
+		original_x = _opp_hp_original_x
+	var offset_x: float = HP_SLIDE_OFFSET if is_yours else -HP_SLIDE_OFFSET
+	var tween := create_tween()
+	tween.tween_property(container, "position:x", original_x + offset_x, HP_SLIDE_DURATION) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 # ─── Advance Logic ────────────────────────────────────────────────────────────────
 

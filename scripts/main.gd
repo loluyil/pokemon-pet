@@ -157,10 +157,19 @@ func _trigger_battle() -> void:
 	_battle_triggered = true
 	# Stop all processing so animations/timers don't fire during transition
 	set_process(false)
+	# Fade out town music
+	if $BGmusic.playing:
+		var fade := create_tween()
+		fade.tween_property($BGmusic, "volume_db", -80.0, 0.3)
+		fade.tween_callback($BGmusic.stop)
 	var transition = preload("res://scenes/battle_transition.tscn").instantiate()
 	add_child(transition)
 	transition.play_transition()
 	await transition.transition_finished
+	# Reparent the music player to the root so it survives scene change
+	var music = transition.music_player
+	music.reparent(get_tree().root)
+	music.name = "BattleMusic"
 	get_tree().change_scene_to_file("res://scenes/battle_scene.tscn")
 
 # Set Boundry
