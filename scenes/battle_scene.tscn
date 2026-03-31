@@ -1892,7 +1892,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.99999785, 0, -0.0017453273, 0, 1, 0, 0.0017453273, 0, 0.99999785, 4.396, 0.037, -3.68)
+transform = Transform3D(0.9999978, 0, -0.0017453271, 0, 1, 0, 0.0017453271, 0, 0.9999978, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -1975,9 +1975,9 @@ environment = SubResource("Environment_1i8jf")
 [node name="OpponentHPContainer" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=1761704178]
 texture_filter = 1
 layout_mode = 0
-offset_top = 32.97
+offset_top = 49.0
 offset_right = 300.0
-offset_bottom = 100.96997
+offset_bottom = 116.99997
 texture = ExtResource("17_7mjbx")
 
 [node name="OpponentHPBar" type="TextureProgressBar" parent="BattleSim/VBoxContainer/OpponentHPContainer" unique_id=1543880734]
@@ -2037,9 +2037,9 @@ texture = ExtResource("28_2ihny")
 texture_filter = 1
 layout_mode = 0
 offset_left = 764.0
-offset_top = 284.42
+offset_top = 331.0
 offset_right = 1053.6
-offset_bottom = 352.42004
+offset_bottom = 399.00003
 texture = ExtResource("16_sjku2")
 
 [node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/VBoxContainer/TrainerHPContainer" unique_id=995926816]
