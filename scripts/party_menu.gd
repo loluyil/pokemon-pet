@@ -8,6 +8,7 @@ extends Control
 @onready var action_btns: Control = $"../ActionMenu/Buttons"
 @onready var fight_btn: TextureButton = $"../ActionMenu/FightButton"
 @onready var battle_sim: Node = $"../../PokemonData"
+@onready var battle_ui: Node = $"../.."
 
 @onready var _sfx_player: AudioStreamPlayer = $"../BattleSFX"
 var _sfx_select = preload("res://sounds/select-button.wav")
@@ -27,6 +28,7 @@ var _tex_panel_faint_hover: Texture2D = preload("res://images/battle/party/panel
 @onready var summary_name: Label = $Background/SummaryMenu/SummaryMoves/PokemonName
 @onready var summary_level: Label = $Background/SummaryMenu/Level
 @onready var summary_item: Label = $Background/SummaryMenu/SummaryMoves/Item
+@onready var summary_pokemon_sprite: AnimatedSprite2D = $Background/SummaryMenu/SummaryMoves/Pokemon
 
 @onready var hover_tween: Button = $Background/HoverTween
 @onready var summary_moves_vbox: VBoxContainer = $Background/SummaryMenu/SummaryMoves/VBoxContainer
@@ -48,6 +50,15 @@ var _grid_original_x: float
 var _grid_original_h_sep: int
 var _anim_tween: Tween
 var _hovered_index := -1
+
+# ─── Black fade overlay ─────────────────────────────────────────────────────
+var _fade_rect: ColorRect
+var _uturn_mode := false
+
+# ─── "Want to switch?" typewriter label ──────────────────────────────────────
+@onready var _switch_label: Label = $"../WantToSwitch?"
+var _switch_tween: Tween
+const SWITCH_CHARS_PER_SEC := 150.0
 
 # ─── Slot & move arrays (filled in _ready) ──────────────────────────────────
 var _slots: Array[TextureButton] = []
@@ -72,9 +83,19 @@ func _ready():
 	# so it never blocks clicks on the Pokemon buttons underneath.
 	hover_tween.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Individual slots update which pokemon the summary displays
+	# Individual slots update which pokemon the summary displays + handle switching
 	for i in _slots.size():
 		_slots[i].mouse_entered.connect(_on_slot_hover.bind(i))
+		_slots[i].pressed.connect(_on_slot_pressed.bind(i))
+
+	# Create black fade overlay
+	_fade_rect = ColorRect.new()
+	_fade_rect.color = Color(0, 0, 0, 1)
+	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.add_child(_fade_rect)
+
+	_switch_label.visible = false
 
 func _cache_slots():
 	for i in range(1, 7):
@@ -84,15 +105,35 @@ func _cache_slots():
 
 # ─── Open / Close ────────────────────────────────────────────────────────────
 func open():
+	_uturn_mode = false
 	_populate()
 	summary_menu.visible = false
+	_switch_label.visible = false
 	visible = true
-	_tween_slots_in()
+	_fade_in()
+
+func open_for_uturn():
+	_uturn_mode = true
+	_populate()
+	summary_menu.visible = false
+	_switch_label.visible = false
+	visible = true
+	_fade_in()
+
+func _fade_in():
+	_fade_rect.color = Color(0, 0, 0, 1)
+	_fade_rect.visible = true
+	var tween := create_tween()
+	tween.tween_property(_fade_rect, "color:a", 0.0, 0.3).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(func(): _fade_rect.visible = false)
 
 func _on_back():
+	if _uturn_mode:
+		return  # Must pick a pokemon for U-turn
 	_sfx_player.stream = _sfx_back
 	_sfx_player.play()
 	_hide_summary_instant()
+	_hide_switch_label()
 	visible = false
 	action_btns.visible = true
 	fight_btn.disabled = false
@@ -100,6 +141,31 @@ func _on_back():
 func _input(event):
 	if event.is_action_pressed("ui_cancel") and visible:
 		_on_back()
+
+# ─── Slot pressed — switch immediately ──────────────────────────────────────
+func _on_slot_pressed(index: int):
+	if not visible:
+		return
+	var team: Array = battle_sim.your_team
+	if index >= team.size():
+		return
+	if index == battle_sim.your_active:
+		return
+	if team[index].get("is_fainted", false):
+		return
+
+	_sfx_player.stream = _sfx_select
+	_sfx_player.play()
+	_hide_summary_instant()
+	_hide_switch_label()
+	visible = false
+
+	if _uturn_mode:
+		_uturn_mode = false
+		battle_ui._on_uturn_switch_picked(index)
+	else:
+		fight_btn.disabled = true
+		battle_sim.execute_switch_turn(index)
 
 # ─── Populate all slots from team data ───────────────────────────────────────
 func _populate():
@@ -184,19 +250,6 @@ func _status_to_filename(status: String) -> String:
 		"sleep": return "fainted"  # no sleep icon — use fainted as fallback
 		_: return status
 
-# ─── Tween slots in ──────────────────────────────────────────────────────────
-func _tween_slots_in():
-	var tween := create_tween().set_parallel(true)
-	for i in _slots.size():
-		if not _slots[i].visible:
-			continue
-		_slots[i].scale = Vector2.ZERO
-		_slots[i].pivot_offset = _slots[i].size / 2.0
-		tween.tween_property(_slots[i], "scale", Vector2.ONE, 0.22) \
-			.set_trans(Tween.TRANS_BACK) \
-			.set_ease(Tween.EASE_OUT) \
-			.set_delay(i * 0.04)
-
 # ─── Summary Population ─────────────────────────────────────────────────────
 func _populate_summary(mon_index: int):
 	var team: Array = battle_sim.your_team
@@ -209,6 +262,9 @@ func _populate_summary(mon_index: int):
 	# Name & Level
 	summary_name.text = mon["display_name"]
 	summary_level.text = str(int(mon["level"]))
+
+	# Front sprite animation
+	_set_summary_sprite(mon["name"])
 
 	# Moves 1-4
 	for i in 4:
@@ -237,6 +293,23 @@ func _populate_summary(mon_index: int):
 	else:
 		summary_item.text = item_str
 
+func _set_summary_sprite(mon_name: String):
+	var tres_path := "res://sprites/pokemon/sprites/" + mon_name + "/" + mon_name + "_anim.tres"
+	if not ResourceLoader.exists(tres_path):
+		summary_pokemon_sprite.visible = false
+		return
+	var frames := load(tres_path) as SpriteFrames
+	if frames == null or not frames.has_animation("front") or frames.get_frame_count("front") <= 0:
+		summary_pokemon_sprite.visible = false
+		return
+	var tex := frames.get_frame_texture("front", 0)
+	if tex == null or tex.get_width() <= 0:
+		summary_pokemon_sprite.visible = false
+		return
+	summary_pokemon_sprite.sprite_frames = frames
+	summary_pokemon_sprite.play("front")
+	summary_pokemon_sprite.visible = true
+
 # ─── Hover (poll HoverTween rect, slots update summary content) ─────────────
 var _mouse_in_zone := false
 
@@ -260,6 +333,34 @@ func _on_slot_hover(index: int):
 	if not visible or _hovered_index == -1:
 		return
 	_populate_summary(index)
+	_show_switch_prompt(index)
+
+# ─── "Want to switch?" typewriter prompt ─────────────────────────────────────
+func _show_switch_prompt(index: int):
+	var team: Array = battle_sim.your_team
+	if index >= team.size():
+		return
+	# Don't prompt for active or fainted pokemon
+	if index == battle_sim.your_active or team[index].get("is_fainted", false):
+		_hide_switch_label()
+		return
+
+	var full_text: String = "Do you want to switch into " + team[index]["display_name"] + "?"
+	_switch_label.text = full_text
+	_switch_label.visible_ratio = 0.0
+	_switch_label.visible = true
+
+	if _switch_tween:
+		_switch_tween.kill()
+	var duration: float = max(full_text.length() / SWITCH_CHARS_PER_SEC, 0.2)
+	_switch_tween = create_tween()
+	_switch_tween.tween_property(_switch_label, "visible_ratio", 1.0, duration)
+
+func _hide_switch_label():
+	if _switch_tween:
+		_switch_tween.kill()
+		_switch_tween = null
+	_switch_label.visible = false
 
 func _show_summary():
 	summary_menu.visible = true
@@ -293,6 +394,7 @@ func _hide_summary_instant():
 	grid.add_theme_constant_override("h_separation", _grid_original_h_sep)
 	_hovered_index = -1
 	_mouse_in_zone = false
+	_hide_switch_label()
 
 func _set_h_separation(value: int):
 	grid.add_theme_constant_override("h_separation", value)

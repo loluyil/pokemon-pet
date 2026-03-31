@@ -48,6 +48,7 @@ func _ready() -> void:
 	trainer_pokeball.play("throw")
 	await trainer_sprite.animation_finished
 	
+	trainer_pokeball.visible = false
 	trainer_pkmn.visible = true
 	await get_tree().create_timer(.2).timeout
 	trainer_pkmn_drop.play("pkmn_entry")

@@ -25,10 +25,19 @@ const STATUS_ICON_PATH := "res://images/battle/status/"
 @onready var your_pokemon_sprite: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon
 @onready var opp_pokemon_sprite: AnimatedSprite3D  = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon
 
+# ─── Pokeball & Entry Animation References ──────────────────────────────────────
+@onready var _your_pkmn_anim: AnimationPlayer = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon/AnimationPlayer
+@onready var _opp_pkmn_anim: AnimationPlayer  = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon/AnimationPlayer
+@onready var _trainer_sprite: Sprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer
+@onready var _trainer_pokeball: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer/Pokeball
+@onready var _trainer_pokeball_throw: AnimationPlayer = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer/Pokeball/AnimationPlayer
+@onready var _opp_pokeball: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Opponent/Pokeball
+
 # ─── Menu References ─────────────────────────────────────────────────────────────
 @onready var battle_sim: Node = $PokemonData
 @onready var _fight_btn       = $Control/ActionMenu/FightButton
 @onready var _action_buttons  = $Control/ActionMenu/Buttons
+@onready var _party_menu: Control = $Control/PartyMenu
 
 # ─── Sound Effects ───────────────────────────────────────────────────────────────
 @onready var _sfx_player: AudioStreamPlayer = $Control/BattleSFX
@@ -62,7 +71,9 @@ func _ready():
 	battle_sim.status_changed.connect(_on_status_changed)
 
 	_text_panel.visible = false
-	_init_display()
+	battle_sim.uturn_switch_request.connect(_on_uturn_switch_request)
+	# Defer init so AnimatedSprite3D nodes are fully ready before loading sprite frames
+	call_deferred("_init_display")
 
 func _init_display():
 	var your_mon = battle_sim.your_team[battle_sim.your_active]
@@ -121,8 +132,14 @@ func _set_pokemon_sprite(sprite: AnimatedSprite3D, mon_name: String, is_back: bo
 	var tres_path := "res://sprites/pokemon/sprites/" + mon_name + "/" + mon_name + "_anim.tres"
 	if not ResourceLoader.exists(tres_path):
 		return
-	sprite.sprite_frames = load(tres_path)
-	sprite.play("back" if is_back else "front")
+	var frames := load(tres_path) as SpriteFrames
+	if frames == null:
+		return
+	var anim_name := "back" if is_back else "front"
+	if not frames.has_animation(anim_name) or frames.get_frame_count(anim_name) <= 0:
+		return
+	sprite.sprite_frames = frames
+	sprite.play(anim_name)
 
 # ─── Signal Handlers ─────────────────────────────────────────────────────────────
 
@@ -149,6 +166,12 @@ func _on_pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name
 
 func _on_pokemon_fainted(_is_yours: bool, _mon_name: String):
 	pass  # Faint message queued via battle_message in battle_sim
+
+func _on_uturn_switch_request():
+	# Pause event queue, open party menu for player to pick a switch-in
+	_event_queue.append({"type": "uturn_pick"})
+	if not _displaying:
+		_start_display()
 
 func _on_battle_ended(_you_won: bool):
 	pass  # Win/lose messages queued via battle_message in battle_sim
@@ -184,11 +207,12 @@ func _process_next():
 
 	var ev: Dictionary = _event_queue.pop_front()
 	match ev["type"]:
-		"msg":      _do_message(ev["text"])
-		"hp":       _do_hp(ev)
-		"sent_out": _do_sent_out(ev)
-		"sfx":      _do_sfx(ev)
-		"status":   _do_status(ev)
+		"msg":        _do_message(ev["text"])
+		"hp":         _do_hp(ev)
+		"sent_out":   _do_sent_out(ev)
+		"sfx":        _do_sfx(ev)
+		"status":     _do_status(ev)
+		"uturn_pick": _do_uturn_pick()
 
 func _end_display():
 	_displaying     = false
@@ -232,7 +256,7 @@ func _do_hp(ev: Dictionary):
 	# Wait for the HP bar tween to finish, then move on automatically.
 	get_tree().create_timer(HP_ANIM_SECS).timeout.connect(_process_next, CONNECT_ONE_SHOT)
 
-# ─── Sent-Out Event (instant update, no wait) ────────────────────────────────
+# ─── Sent-Out Event (pokeball + entry animation) ────────────────────────────
 
 func _do_sent_out(ev: Dictionary):
 	if ev["is_yours"]:
@@ -242,13 +266,44 @@ func _do_sent_out(ev: Dictionary):
 		current_hp_label.text = str(int(ev["hp"]))
 		max_hp_label.text     = str(int(ev["max"]))
 		_set_pokemon_sprite(your_pokemon_sprite, ev["mon_name"], true)
+		_play_switch_anim(true)
 	else:
 		opp_hp_bar.set_hp_instant(ev["hp"], ev["max"])
 		opp_name_label.text = ev["name"]
 		opp_lvl_label.text  = str(int(ev["level"]))
 		_set_pokemon_sprite(opp_pokemon_sprite, ev["mon_name"], false)
+		_play_switch_anim(false)
 	_refresh_status_icons()
-	_process_next()
+	# Wait for entry animation then advance
+	get_tree().create_timer(0.9).timeout.connect(_process_next, CONNECT_ONE_SHOT)
+
+func _play_switch_anim(is_yours: bool):
+	var sprite: AnimatedSprite3D
+	var pokeball: AnimatedSprite3D
+	var pkmn_anim: AnimationPlayer
+	if is_yours:
+		sprite = your_pokemon_sprite
+		pokeball = _trainer_pokeball
+		pkmn_anim = _your_pkmn_anim
+		
+		sprite.visible = false
+		pokeball.visible = true
+		pokeball.play("throw")
+		_trainer_pokeball_throw.play("switch_throw")
+		await _trainer_pokeball_throw.animation_finished
+	else:
+		sprite = opp_pokemon_sprite
+		pokeball = _opp_pokeball
+		pkmn_anim = _opp_pkmn_anim
+		
+		pokeball.visible = true
+		pokeball.play("throw")
+
+	get_tree().create_timer(0.4).timeout.connect(func():
+		pokeball.visible = false
+		sprite.visible = true
+		pkmn_anim.play("pkmn_entry")
+	, CONNECT_ONE_SHOT)
 
 # ─── SFX Event (plays sound, immediately advances) ──────────────────────────────
 
@@ -268,6 +323,18 @@ func _do_sfx(ev: Dictionary):
 func _do_status(ev: Dictionary):
 	var icon: TextureRect = your_status_icon if ev["is_yours"] else opp_status_icon
 	_set_status_icon(icon, ev["status"])
+	_process_next()
+
+# ─── U-turn Pick Event (opens party menu, pauses queue) ─────────────────────────
+
+func _do_uturn_pick():
+	_text_panel.visible = false
+	_party_menu.open_for_uturn()
+
+func _on_uturn_switch_picked(index: int):
+	# Called by party_menu when the player picks a switch-in for U-turn
+	_text_panel.visible = true
+	battle_sim.complete_uturn_switch(index)
 	_process_next()
 
 # ─── Advance Logic ────────────────────────────────────────────────────────────────

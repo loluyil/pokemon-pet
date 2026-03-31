@@ -7,6 +7,7 @@ signal pokemon_fainted(is_yours: bool, mon_name: String)
 signal battle_ended(you_won: bool)
 signal attack_effectiveness(effectiveness: float)
 signal status_changed(is_yours: bool, status: String)
+signal uturn_switch_request
 
 @export var team_gen_path: NodePath
 var team_gen: Node
@@ -134,6 +135,9 @@ const USER_STAGE_AFTER = {
 	"psycho-boost": {"spa_stage": -2},
 	"v-create":     {"def_stage": -1, "spd_stage": -1, "spe_stage": -1},
 }
+
+# Moves that faint the user after dealing damage
+const SELF_FAINT_MOVES = ["explosion", "self-destruct"]
 
 # Moves that deal damage then switch the attacker out
 const UTURN_MOVES = ["u-turn", "volt-switch", "flip-turn", "baton-pass"]
@@ -303,6 +307,8 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"substitute_hp": 0,
 		"friendship": 255,
 		"is_flinched": false,
+		"destiny_bond": false,
+		"perish_count": -1,
 	}
 
 func get_stat_multiplier(stage: int) -> float:
@@ -539,6 +545,10 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			battle_message.emit(attacker["display_name"] + " is frozen solid!")
 			return
 
+	# Destiny Bond resets when the user moves again (unless using Destiny Bond itself)
+	if move["name"] != "destiny-bond":
+		attacker["destiny_bond"] = false
+
 	attacker["last_move_used"] = move["name"]
 	if move.has("current_pp"):
 		move["current_pp"] = max(0, move["current_pp"] - 1)
@@ -640,11 +650,26 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if USER_STAGE_AFTER.has(move_name):
 		apply_stages(attacker, USER_STAGE_AFTER[move_name], is_yours)
 
+	# --- Self-faint moves (Explosion, Self-Destruct) ---
+	if move_name in SELF_FAINT_MOVES and not attacker["is_fainted"]:
+		attacker["current_hp"] = 0
+		attacker["is_fainted"] = true
+		hp_changed.emit(is_yours, 0, attacker["max_hp"])
+		battle_message.emit(attacker["display_name"] + " fainted!")
+		pokemon_fainted.emit(is_yours, attacker["name"])
+
 	# --- Faint checks ---
-	if defender["current_hp"] <= 0:
+	if defender["current_hp"] <= 0 and not defender["is_fainted"]:
 		defender["is_fainted"] = true
 		battle_message.emit(defender["display_name"] + " fainted!")
 		pokemon_fainted.emit(not is_yours, defender["name"])
+		# Destiny Bond: if the defender had Destiny Bond active, attacker also faints
+		if defender["destiny_bond"] and not attacker["is_fainted"]:
+			attacker["current_hp"] = 0
+			attacker["is_fainted"] = true
+			hp_changed.emit(is_yours, 0, attacker["max_hp"])
+			battle_message.emit(attacker["display_name"] + " was taken down by Destiny Bond!")
+			pokemon_fainted.emit(is_yours, attacker["name"])
 
 	if attacker["current_hp"] <= 0 and not attacker["is_fainted"]:
 		attacker["is_fainted"] = true
@@ -795,6 +820,23 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		apply_stages(attacker, SELF_STAGE_MOVES[move_name], is_yours)
 		return
 
+	# --- Destiny Bond ---
+	if move_name == "destiny-bond":
+		attacker["destiny_bond"] = true
+		battle_message.emit(attacker["display_name"] + " is trying to take its foe down with it!")
+		return
+
+	# --- Perish Song ---
+	if move_name == "perish-song":
+		var already_active: bool = attacker["perish_count"] >= 0 and defender["perish_count"] >= 0
+		if already_active:
+			battle_message.emit("But it failed!")
+			return
+		attacker["perish_count"] = 3
+		defender["perish_count"] = 3
+		battle_message.emit("All Pokemon hearing the song will faint in three turns!")
+		return
+
 	# --- Opponent-debuffing moves ---
 	if OPP_STAGE_MOVES.has(move_name):
 		# Memento: user faints after using it
@@ -851,6 +893,18 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 			mon["current_hp"] = min(mon["current_hp"] + heal, mon["max_hp"])
 			hp_changed.emit(is_yours, mon["current_hp"], mon["max_hp"])
 			battle_message.emit(mon["display_name"] + " restored HP with " + mon["item"] + "!")
+
+	# Perish Song countdown
+	if mon["perish_count"] > 0:
+		mon["perish_count"] -= 1
+		battle_message.emit(mon["display_name"] + "'s perish count fell to " + str(mon["perish_count"]) + "!")
+	if mon["perish_count"] == 0 and not mon["is_fainted"]:
+		mon["current_hp"] = 0
+		mon["is_fainted"] = true
+		hp_changed.emit(is_yours, 0, mon["max_hp"])
+		battle_message.emit(mon["display_name"] + " fainted due to Perish Song!")
+		pokemon_fainted.emit(is_yours, mon["name"])
+		return
 
 	if mon["current_hp"] <= 0:
 		mon["is_fainted"] = true
@@ -914,6 +968,8 @@ func switch_pokemon(is_yours: bool, index: int):
 	mon["evasion_stage"] = 0
 	mon["toxic_counter"] = 0
 	mon["sleep_turns"] = 0
+	mon["perish_count"] = -1
+	mon["destiny_bond"] = false
 
 	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"], mon["name"])
 	battle_message.emit(mon["display_name"] + " was sent out!")
@@ -982,7 +1038,14 @@ func _do_uturn_switch(is_yours: bool):
 		return
 	var old_name = (your_team[your_active] if is_yours else opponent_team[opponent_active])["display_name"]
 	battle_message.emit(old_name + " came back!")
-	_force_switch(is_yours, idx)
+	if is_yours:
+		# Let the player choose who to switch in
+		uturn_switch_request.emit()
+	else:
+		_force_switch(is_yours, idx)
+
+func complete_uturn_switch(index: int):
+	_force_switch(true, index)
 
 func _force_switch(is_yours: bool, index: int):
 	var team = your_team if is_yours else opponent_team
@@ -995,6 +1058,8 @@ func _force_switch(is_yours: bool, index: int):
 	mon["substitute_hp"]  = 0
 	mon["is_protected"]   = false
 	mon["protect_consecutive"] = 0
+	mon["perish_count"]   = -1
+	mon["destiny_bond"]   = false
 	if is_yours:
 		your_active = index
 	else:
@@ -1008,7 +1073,9 @@ func _force_switch(is_yours: bool, index: int):
 
 func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 		effect: Dictionary, is_yours: bool):
-	if randi() % 100 >= effect["chance"]:
+	var roll = randi() % 100
+	print(roll)
+	if roll >= effect["chance"]:
 		return
 
 	# Status effect on defender
@@ -1058,6 +1125,40 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 
 func _format_name(mon_name: String) -> String:
 	return mon_name.replace("-", " ").capitalize()
+
+func execute_switch_turn(switch_index: int):
+	if battle_over:
+		return
+
+	turn_count += 1
+	var your_mon = your_team[your_active]
+	var opp_mon = opponent_team[opponent_active]
+
+	your_mon["is_protected"] = false
+	opp_mon["is_protected"]  = false
+	if your_mon["last_move_used"] not in PROTECT_MOVES:
+		your_mon["protect_consecutive"] = 0
+	if opp_mon["last_move_used"] not in PROTECT_MOVES:
+		opp_mon["protect_consecutive"] = 0
+
+	# Player switches — counts as their action for the turn
+	battle_message.emit(your_mon["display_name"] + ", come back!")
+	switch_pokemon(true, switch_index)
+	apply_entry_hazards(your_team[your_active], true)
+
+	# Opponent still attacks the new Pokemon
+	var opp_move_idx = get_opponent_move()
+	var opp_move = opp_mon["moveset"][opp_move_idx]
+	opp_mon["is_flinched"] = false
+	execute_move(opp_mon, your_team[your_active], opp_move, false)
+	if _pending_uturn["opp"]:
+		_do_uturn_switch(false)
+
+	apply_end_of_turn(your_team[your_active], true)
+	apply_end_of_turn(opponent_team[opponent_active], false)
+
+	check_faint(true)
+	check_faint(false)
 
 func get_opponent_move() -> int:
 	return randi() % opponent_team[opponent_active]["moveset"].size()

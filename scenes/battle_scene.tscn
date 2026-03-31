@@ -42,6 +42,7 @@
 [ext_resource type="Texture2D" uid="uid://bq0ia3totl5fm" path="res://images/battle/types/bug.png" id="31_v8541"]
 [ext_resource type="Texture2D" uid="uid://djtfd72ov15vp" path="res://sprites/placeholders/pokeballplaceholder.png" id="32_vnhh6"]
 [ext_resource type="Script" uid="uid://m5f7xcybu0hd" path="res://scripts/party_menu.gd" id="33_party"]
+[ext_resource type="SpriteFrames" uid="uid://sbshelel11xf" path="res://sprites/pokemon/sprites/abomasnow/abomasnow_anim.tres" id="33_vnhh6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("12_dm2tv")
@@ -287,18 +288,6 @@ tracks/0/keys = {
 "update": 1,
 "values": [1]
 }
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:modulate")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Color(1, 1, 1, 1)]
-}
 
 [sub_resource type="Animation" id="Animation_rca61"]
 resource_name = "battle_entry"
@@ -314,18 +303,6 @@ tracks/0/keys = {
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
 "values": [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:modulate")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(1.6333333, 1.6666666),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_pxwbd"]
@@ -425,6 +402,22 @@ tracks/1/keys = {
 "values": [Vector3(0, -0.19896753, 0)]
 }
 
+[sub_resource type="Animation" id="Animation_vnhh6"]
+resource_name = "switch_throw"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1765289, 0.36666667),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.005, 0.15, 0.073), Vector3(0.531, 0.406, -0.992), Vector3(1.13, 0.13, -2.182)]
+}
+
 [sub_resource type="Animation" id="Animation_iy28q"]
 resource_name = "trainer_throw"
 length = 0.33333334
@@ -435,10 +428,10 @@ tracks/0/path = NodePath(".:position")
 tracks/0/interp = 2
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.16666667, 0.33333334),
-"transitions": PackedFloat32Array(1, 1, 1),
+"times": PackedFloat32Array(0, 0.0865406, 0.16666667, 0.33333334),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 0,
-"values": [Vector3(-0.045, 0.465, 0.073), Vector3(0.425, 0.893, -0.719), Vector3(1.235, 0.35, -1.672)]
+"values": [Vector3(-0.045, 0.465, 0.073), Vector3(0.269, 0.995, -0.592), Vector3(0.705, 1.023, -1.399), Vector3(1.235, 0.08, -1.672)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -456,6 +449,7 @@ tracks/1/keys = {
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_165gl"]
 _data = {
 &"RESET": SubResource("Animation_3rlly"),
+&"switch_throw": SubResource("Animation_vnhh6"),
 &"trainer_throw": SubResource("Animation_iy28q")
 }
 
@@ -1587,7 +1581,6 @@ texture_pressed = ExtResource("29_hcmo8")
 stretch_mode = 0
 
 [node name="SummaryMenu" type="Control" parent="BattleSim/Control/PartyMenu/Background" unique_id=132589826]
-visible = false
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
@@ -1818,6 +1811,13 @@ text = "Item
 Item Name"
 autowrap_mode = 2
 
+[node name="Pokemon" type="AnimatedSprite2D" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=1006552825]
+texture_filter = 1
+position = Vector2(339, 170.00002)
+scale = Vector2(1.6482435, 1.6928104)
+sprite_frames = ExtResource("33_vnhh6")
+animation = &"back"
+
 [node name="PokeballIcon" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=1240046179]
 layout_mode = 0
 offset_left = 296.0
@@ -1843,6 +1843,7 @@ text = "50"
 autowrap_mode = 2
 
 [node name="HoverTween" type="Button" parent="BattleSim/Control/PartyMenu/Background" unique_id=1583918471]
+visible = false
 modulate = Color(1, 1, 1, 0)
 layout_mode = 0
 offset_left = 4.0
@@ -1853,6 +1854,20 @@ button_mask = 0
 
 [node name="BattleSFX" type="AudioStreamPlayer" parent="BattleSim/Control" unique_id=702662202]
 volume_db = -8.0
+
+[node name="WantToSwitch?" type="Label" parent="BattleSim/Control" unique_id=1303668390]
+layout_mode = 0
+offset_left = 29.0
+offset_top = 504.0
+offset_right = 849.0
+offset_bottom = 599.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 36
+text = "Do you want to switch into Abomasnow?"
+vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="VBoxContainer" type="Control" parent="BattleSim" unique_id=1375328551]
 layout_mode = 3
@@ -1875,7 +1890,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.999998, 0, -0.0017453275, 0, 1, 0, 0.0017453275, 0, 0.999998, 4.396, 0.037, -3.68)
+transform = Transform3D(0.9999979, 0, -0.0017453274, 0, 1, 0, 0.0017453274, 0, 0.9999979, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -1899,8 +1914,7 @@ visible = false
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_gtd7e")
 animation = &"throw"
-frame = 1
-frame_progress = 0.48800352
+frame_progress = 0.6841385
 speed_scale = 7.775
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer/Pokeball" unique_id=335166663]
@@ -1950,7 +1964,7 @@ visible = false
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_gtd7e")
 animation = &"throw"
-frame_progress = 0.28015548
+frame_progress = 0.92415696
 speed_scale = 4.62
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport" unique_id=2003930588]
