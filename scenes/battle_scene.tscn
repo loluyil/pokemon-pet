@@ -38,6 +38,9 @@
 [ext_resource type="Texture2D" uid="uid://b5xyf21idscg" path="res://images/battle/status/burn.png" id="28_2ihny"]
 [ext_resource type="Texture2D" uid="uid://cr6s4muegebwp" path="res://sprites/placeholders/icon_cancel.png" id="28_k2d6m"]
 [ext_resource type="Texture2D" uid="uid://dgsakafenol27" path="res://sprites/placeholders/icon_cancel_sel.png" id="29_hcmo8"]
+[ext_resource type="Texture2D" uid="uid://il84g3ekfrcb" path="res://images/battle/party/bg_4_B2W2.png" id="30_yn2ap"]
+[ext_resource type="Texture2D" uid="uid://bq0ia3totl5fm" path="res://images/battle/types/bug.png" id="31_v8541"]
+[ext_resource type="Texture2D" uid="uid://djtfd72ov15vp" path="res://sprites/placeholders/pokeballplaceholder.png" id="32_vnhh6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("12_dm2tv")
@@ -909,11 +912,11 @@ texture = ExtResource("14_fg2lh")
 
 [node name="VBoxContainer" type="GridContainer" parent="BattleSim/Control/PartyMenu/Background" unique_id=1939806232]
 layout_mode = 0
-offset_left = 234.0
+offset_left = 231.0
 offset_top = 194.0
-offset_right = 841.0
+offset_right = 838.0
 offset_bottom = 554.0
-theme_override_constants/h_separation = 95
+theme_override_constants/h_separation = 82
 theme_override_constants/v_separation = 33
 columns = 2
 
@@ -1581,6 +1584,262 @@ texture_normal = ExtResource("28_k2d6m")
 texture_pressed = ExtResource("29_hcmo8")
 stretch_mode = 0
 
+[node name="SummaryMenu" type="Control" parent="BattleSim/Control/PartyMenu/Background" unique_id=132589826]
+visible = false
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SummaryMoves" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=659304313]
+texture_filter = 1
+layout_mode = 0
+offset_left = 31.0
+offset_top = 213.0
+offset_right = 455.0
+offset_bottom = 531.0
+texture = ExtResource("30_yn2ap")
+expand_mode = 1
+
+[node name="PokemonName" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=815036283]
+layout_mode = 0
+offset_left = 293.0
+offset_top = 41.0
+offset_right = 422.0
+offset_bottom = 63.0
+theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 29
+text = "Regigigas"
+autowrap_mode = 2
+text_overrun_behavior = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=938505374]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 71.0
+offset_right = 276.0
+offset_bottom = 363.0
+theme_override_constants/separation = 53
+
+[node name="Move1" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=111709409]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1" unique_id=1526869949]
+texture_filter = 1
+layout_mode = 0
+offset_left = 64.0
+offset_top = -7.0000305
+offset_right = 214.0
+offset_bottom = 33.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Tackle"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1" unique_id=1381829160]
+texture_filter = 1
+layout_mode = 0
+offset_left = 83.0
+offset_top = 27.99997
+offset_right = 193.0
+offset_bottom = 47.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 24
+text = "PP"
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1" unique_id=1722142687]
+texture_filter = 1
+layout_mode = 0
+offset_left = 3.0
+offset_top = 1.0
+offset_right = 56.812504
+offset_bottom = 22.0
+texture = ExtResource("31_v8541")
+
+[node name="Move2" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=1843668966]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2" unique_id=84978884]
+texture_filter = 1
+layout_mode = 0
+offset_left = 64.0
+offset_top = -7.0000305
+offset_right = 214.0
+offset_bottom = 33.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Tackle"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2" unique_id=1973628194]
+texture_filter = 1
+layout_mode = 0
+offset_left = 83.0
+offset_top = 27.99997
+offset_right = 193.0
+offset_bottom = 47.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 24
+text = "PP"
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2" unique_id=918406316]
+texture_filter = 1
+layout_mode = 0
+offset_left = 3.0
+offset_top = 1.0
+offset_right = 56.812504
+offset_bottom = 22.0
+texture = ExtResource("31_v8541")
+
+[node name="Move3" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=1132729301]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3" unique_id=1020917576]
+texture_filter = 1
+layout_mode = 0
+offset_left = 64.0
+offset_top = -7.0000305
+offset_right = 214.0
+offset_bottom = 33.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Tackle"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3" unique_id=1273088109]
+texture_filter = 1
+layout_mode = 0
+offset_left = 83.0
+offset_top = 27.99997
+offset_right = 193.0
+offset_bottom = 47.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 24
+text = "PP"
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3" unique_id=2051785150]
+texture_filter = 1
+layout_mode = 0
+offset_left = 3.0
+offset_top = 1.0
+offset_right = 56.812504
+offset_bottom = 22.0
+texture = ExtResource("31_v8541")
+
+[node name="Move4" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=1009853996]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4" unique_id=117077907]
+texture_filter = 1
+layout_mode = 0
+offset_left = 64.0
+offset_top = -7.0000305
+offset_right = 214.0
+offset_bottom = 33.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Tackle"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4" unique_id=125789674]
+texture_filter = 1
+layout_mode = 0
+offset_left = 83.0
+offset_top = 27.99997
+offset_right = 193.0
+offset_bottom = 47.99997
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 24
+text = "PP"
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4" unique_id=2047439176]
+texture_filter = 1
+layout_mode = 0
+offset_left = 3.0
+offset_top = 1.0
+offset_right = 56.812504
+offset_bottom = 22.0
+texture = ExtResource("31_v8541")
+
+[node name="Item" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=918701920]
+layout_mode = 0
+offset_left = 240.0
+offset_top = 272.0
+offset_right = 336.0
+offset_bottom = 293.0
+theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 26
+text = "Item
+Item Name"
+autowrap_mode = 2
+
+[node name="PokeballIcon" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=1240046179]
+layout_mode = 0
+offset_left = 296.0
+offset_top = 250.00003
+offset_right = 328.45044
+offset_bottom = 279.16614
+texture = ExtResource("32_vnhh6")
+expand_mode = 1
+
+[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=129978050]
+layout_mode = 0
+offset_left = 316.0
+offset_top = 282.0
+offset_right = 412.0
+offset_bottom = 303.0
+theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "50"
+autowrap_mode = 2
+
 [node name="BattleSFX" type="AudioStreamPlayer" parent="BattleSim/Control" unique_id=702662202]
 volume_db = -8.0
 
@@ -1605,7 +1864,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.99999815, 0, -0.0017453278, 0, 1, 0, 0.0017453278, 0, 0.99999815, 4.396, 0.037, -3.68)
+transform = Transform3D(0.9999981, 0, -0.0017453277, 0, 1, 0, 0.0017453277, 0, 0.9999981, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
