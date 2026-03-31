@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\" -type f -name \"*.gd\" -o -name \"*.tscn\" -o -name \"*.tres\" -o -name \"*.json\")",
+      "Bash(find \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\" -type d)",
+      "Bash(wc:*)",
+      "Bash(find \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\" -type f -name \"*.tscn\")",
+      "Bash(head -300 \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\\\\data\\\\moves.json\")",
+      "Bash(head -100 \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\\\\data\\\\gen5pokemon.json\")",
+      "Bash(head -200 \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\\\\data\\\\gen5sets.json\")",
+      "Bash(find \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\\\\scripts\" -type f -name \"*.gd\")",
+      "Bash(ls -la \"E:\\\\Godot\\\\Projects\\\\pokemon-pet-\\(4.6\\)\\\\data\")",
+      "Bash(node -e \":*)"
+    ]
+  }
+}

@@ -304,6 +304,9 @@ func random_set(species_name: String, team_details: Dictionary, is_lead: bool) -
 	for move_name in moves:
 		var details = get_move_details(move_name)
 		details["name"] = move_name
+		var max_pp := _default_max_pp(details.get("power", 0), details.get("category", "status"))
+		details["current_pp"] = max_pp
+		details["max_pp"]     = max_pp
 		moveset.append(details)
 	moveset.shuffle()
 	
@@ -957,6 +960,13 @@ func get_move_type(move_name: String, types: Array, abilities: Array, preferred_
 	if move_name == "judgment" and types.size() > 0:
 		move_type = types[0]
 	return move_type
+
+func _default_max_pp(power: int, category: String) -> int:
+	if category == "status": return 20
+	if power >= 100:         return 5
+	if power >= 70:          return 10
+	if power >= 45:          return 15
+	return 35
 
 func get_move_details(move_name: String) -> Dictionary:
 	if move_name.begins_with("hidden-power-"):

@@ -1,9 +1,5 @@
 extends Window
 
-# Store direction for animation script
-# Randomize NPC states
-# Create collider for NPC Window
-
 @export var _speed = 20
 @export var npc_sprites: Array[Texture2D]
 var npc_last_direction := "down"
@@ -54,8 +50,13 @@ func _update_window_position(delta):
 			_update_last_direction(_current_direction)
 			current_state = MOVE
 		MOVE:
-			_float_position += _current_direction * _speed * delta
-			position = Vector2i(_float_position)
+			var next_float = _float_position + _current_direction * _speed * delta
+			var next_pos   = Vector2i(next_float)
+			if _would_collide(next_pos):
+				current_state = NEW_DIR
+				return
+			_float_position = next_float
+			position        = next_pos
 
 func _update_last_direction(dir: Vector2):
 	if dir == Vector2.RIGHT:
@@ -66,6 +67,21 @@ func _update_last_direction(dir: Vector2):
 		npc_last_direction = "down"
 	elif dir == Vector2.UP:
 		npc_last_direction = "up"
+
+func _would_collide(next_pos: Vector2i) -> bool:
+	var npc_rect := Rect2i(next_pos, size)
+	# Keep NPC on-screen
+	var screen := DisplayServer.screen_get_usable_rect()
+	if not screen.encloses(npc_rect):
+		return true
+	# Collide with building window
+	var main := get_parent()
+	if main and main.has_node("Window"):
+		var bw: Window = main.get_node("Window")
+		var building_rect := Rect2i(bw.position, bw.size)
+		if npc_rect.intersects(building_rect):
+			return true
+	return false
 
 func choose(array):
 	array.shuffle()
