@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 @onready var animations = $TrainerSprite/TrainerAnimation
-@onready var window_controller = get_parent() # Grabs parent script
+@onready var window_controller = get_parent() 
 @onready var bump_sound: AudioStreamPlayer2D = $"../CollisionBump"
 
 var last_direction: String = "down"

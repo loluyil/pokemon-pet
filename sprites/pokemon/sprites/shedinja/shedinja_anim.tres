@@ -1,0 +1,44 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://dskdr47ke5ypb"]
+
+[ext_resource type="Texture2D" uid="uid://dcoqrflb8l0h3" path="res://sprites/pokemon/sprites/shedinja/shedinja.png" id="fe_kGGyeR"]
+[ext_resource type="Texture2D" uid="uid://j3sso7fps0ix" path="res://sprites/pokemon/sprites/shedinja/shedinja_back.png" id="be_ztGHPd"]
+
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f0"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(0, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f1"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(63, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f2"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(126, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f3"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(189, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f4"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(252, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f5"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(315, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f6"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(378, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f7"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(441, 0, 63, 63)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f8"]
+atlas = ExtResource("fe_kGGyeR")
+region = Rect2(504, 0, 63, 63)
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": SubResource("AtlasTexture_f0")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f1")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f2")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f3")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f4")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f5")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f6")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f7")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_f8")}], "loop": true, "name": &"front", "speed": 6.0}, {"frames": [{"duration": 1.0, "texture": ExtResource("be_ztGHPd")}], "loop": true, "name": &"back", "speed": 6.0}]

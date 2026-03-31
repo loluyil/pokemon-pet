@@ -33,7 +33,6 @@ func _ready() -> void:
 	await get_tree().create_timer(.2).timeout
 	oppo_pkmn_drop.play("pkmn_entry")
 	await oppo_pkmn_drop.animation_finished
-	oppo_pkmn.play("default")
 	await get_tree().create_timer(.5).timeout
 	
 	# Trainer Entrance
@@ -53,7 +52,6 @@ func _ready() -> void:
 	await get_tree().create_timer(.2).timeout
 	trainer_pkmn_drop.play("pkmn_entry")
 	await trainer_pkmn_drop.animation_finished
-	trainer_pkmn.play("default")
 	camera.play("default")
 	
 	

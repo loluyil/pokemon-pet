@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://ba1u4k5q3qysp"]
+
+[ext_resource type="Script" uid="uid://ce8ht8r3rxxyj" path="res://scripts/battle_transition.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://d0w0231ohuqwm" path="res://shaders/battle_transition.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_trans"]
+shader = ExtResource("2_shader")
+shader_parameter/progress = 0.0
+shader_parameter/center = Vector2(0.5, 0.5)
+
+[node name="BattleTransition" type="Window" unique_id=1439858579]
+transparent_bg = true
+oversampling_override = 1.0
+position = Vector2i(0, 36)
+size = Vector2i(1920, 1080)
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1150545362]
+material = SubResource("ShaderMaterial_trans")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0)

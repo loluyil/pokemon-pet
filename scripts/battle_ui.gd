@@ -15,10 +15,20 @@ extends Node
 @onready var _text_panel: Control = $VBoxContainer/BattleText
 @onready var _msg_label: Label    = $VBoxContainer/BattleText/Label
 
+# ─── Sprite References ───────────────────────────────────────────────────────────
+@onready var your_pokemon_sprite: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon
+@onready var opp_pokemon_sprite: AnimatedSprite3D  = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon
+
 # ─── Menu References ─────────────────────────────────────────────────────────────
 @onready var battle_sim: Node = $PokemonData
 @onready var _fight_btn       = $Control/ActionMenu/FightButton
 @onready var _action_buttons  = $Control/ActionMenu/Buttons
+
+# ─── Sound Effects ───────────────────────────────────────────────────────────────
+@onready var _sfx_player: AudioStreamPlayer = $Control/BattleSFX
+var _sfx_effective       = preload("res://sounds/effective.wav")
+var _sfx_super_effective = preload("res://sounds/super-effective.wav")
+var _sfx_not_effective   = preload("res://sounds/not-very-effective.wav")
 
 # ─── Unified Event Queue ─────────────────────────────────────────────────────────
 # Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
@@ -42,6 +52,7 @@ func _ready():
 	battle_sim.battle_message.connect(_on_battle_message)
 	battle_sim.pokemon_fainted.connect(_on_pokemon_fainted)
 	battle_sim.battle_ended.connect(_on_battle_ended)
+	battle_sim.attack_effectiveness.connect(_on_attack_effectiveness)
 
 	_text_panel.visible = false
 	_init_display()
@@ -60,6 +71,9 @@ func _init_display():
 	opp_name_label.text = opp_mon["display_name"]
 	opp_lvl_label.text  = str(int(opp_mon["level"]))
 
+	_set_pokemon_sprite(your_pokemon_sprite, your_mon["name"], true)
+	_set_pokemon_sprite(opp_pokemon_sprite,  opp_mon["name"],  false)
+
 	# Intro sequence queued manually because start_battle() fires before
 	# this script connects its signals (battle_sim._ready runs first).
 	_push_message("You are challenged by Trainer!")
@@ -68,6 +82,13 @@ func _init_display():
 
 func _format_name(mon_name: String) -> String:
 	return mon_name.replace("-", " ").capitalize()
+
+func _set_pokemon_sprite(sprite: AnimatedSprite3D, mon_name: String, is_back: bool):
+	var tres_path := "res://sprites/pokemon/sprites/" + mon_name + "/" + mon_name + "_anim.tres"
+	if not ResourceLoader.exists(tres_path):
+		return
+	sprite.sprite_frames = load(tres_path)
+	sprite.play("back" if is_back else "front")
 
 # ─── Signal Handlers ─────────────────────────────────────────────────────────────
 
@@ -79,11 +100,11 @@ func _on_hp_changed(is_yours: bool, current_hp: int, max_hp: int):
 	# the first Pokemon's bar finishes before the second move plays out.
 	_push_hp(is_yours, current_hp, max_hp)
 
-func _on_pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name: String, level: int):
+func _on_pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name: String, level: int, raw_name: String):
 	# Queued so it processes after faint messages, preventing the new pokemon's
 	# HP bar from being overwritten by the previous pokemon's pending damage events.
 	_event_queue.append({"type": "sent_out", "is_yours": is_yours,
-		"hp": current_hp, "max": max_hp, "name": mon_name, "level": level})
+		"hp": current_hp, "max": max_hp, "name": mon_name, "level": level, "mon_name": raw_name})
 	if not _displaying:
 		_start_display()
 
@@ -92,6 +113,11 @@ func _on_pokemon_fainted(_is_yours: bool, _mon_name: String):
 
 func _on_battle_ended(_you_won: bool):
 	pass  # Win/lose messages queued via battle_message in battle_sim
+
+func _on_attack_effectiveness(effectiveness: float):
+	_event_queue.append({"type": "sfx", "effectiveness": effectiveness})
+	if not _displaying:
+		_start_display()
 
 # ─── Event Queue ─────────────────────────────────────────────────────────────────
 
@@ -122,6 +148,7 @@ func _process_next():
 		"msg":      _do_message(ev["text"])
 		"hp":       _do_hp(ev)
 		"sent_out": _do_sent_out(ev)
+		"sfx":      _do_sfx(ev)
 
 func _end_display():
 	_displaying     = false
@@ -173,10 +200,25 @@ func _do_sent_out(ev: Dictionary):
 		your_lvl_label.text   = str(int(ev["level"]))
 		current_hp_label.text = str(int(ev["hp"]))
 		max_hp_label.text     = str(int(ev["max"]))
+		_set_pokemon_sprite(your_pokemon_sprite, ev["mon_name"], true)
 	else:
 		opp_hp_bar.set_hp_instant(ev["hp"], ev["max"])
 		opp_name_label.text = ev["name"]
 		opp_lvl_label.text  = str(int(ev["level"]))
+		_set_pokemon_sprite(opp_pokemon_sprite, ev["mon_name"], false)
+	_process_next()
+
+# ─── SFX Event (plays sound, immediately advances) ──────────────────────────────
+
+func _do_sfx(ev: Dictionary):
+	var eff: float = ev["effectiveness"]
+	if eff > 1.0:
+		_sfx_player.stream = _sfx_super_effective
+	elif eff < 1.0:
+		_sfx_player.stream = _sfx_not_effective
+	else:
+		_sfx_player.stream = _sfx_effective
+	_sfx_player.play()
 	_process_next()
 
 # ─── Advance Logic ────────────────────────────────────────────────────────────────

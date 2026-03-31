@@ -1,10 +1,11 @@
 extends Node
 
 signal hp_changed(is_yours: bool, current_hp: int, max_hp: int)
-signal pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name: String, level: int)
+signal pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name: String, level: int, raw_name: String)
 signal battle_message(text: String)
 signal pokemon_fainted(is_yours: bool, mon_name: String)
 signal battle_ended(you_won: bool)
+signal attack_effectiveness(effectiveness: float)
 
 @export var team_gen_path: NodePath
 var team_gen: Node
@@ -18,6 +19,15 @@ var turn_count: int = 0
 
 # Tracks a pending Wish heal for each side (stores HP amount, 0 = none pending)
 var wish_pending := {"yours": 0, "opp": 0}
+
+# Entry hazards on each side
+var field_hazards := {
+	"yours": {"stealth_rock": false, "spikes": 0, "toxic_spikes": 0},
+	"opp":   {"stealth_rock": false, "spikes": 0, "toxic_spikes": 0},
+}
+
+# Set by execute_move when a U-turn/Volt Switch hits — checked in execute_turn
+var _pending_uturn := {"yours": false, "opp": false}
 
 # Protect-class moves that block incoming damage for one turn
 const PROTECT_MOVES = ["protect", "detect", "king-s-shield", "spiky-shield", "baneful-bunker"]
@@ -124,6 +134,90 @@ const USER_STAGE_AFTER = {
 	"v-create":     {"def_stage": -1, "spd_stage": -1, "spe_stage": -1},
 }
 
+# Moves that deal damage then switch the attacker out
+const UTURN_MOVES = ["u-turn", "volt-switch", "flip-turn", "baton-pass"]
+
+# Status-category moves that force the opponent to switch
+const PHAZING_MOVES = ["whirlwind", "roar"]
+
+# Damaging moves that force the TARGET to switch after being hit
+const PHAZING_DAMAGE_MOVES = ["dragon-tail", "circle-throw"]
+
+# Entry-hazard setup moves  →  field key
+const HAZARD_SETUP = {
+	"stealth-rock": "stealth_rock",
+	"spikes":       "spikes",
+	"toxic-spikes": "toxic_spikes",
+}
+
+# Secondary effects on damaging moves: status / stat-drop / flinch
+# "target" true = affects defender (default), false = affects attacker
+const SECONDARY_EFFECTS: Dictionary = {
+	# ── Freeze ──────────────────────────────────────────────────
+	"ice-beam":       {"status":"freeze",   "chance":10},
+	"blizzard":       {"status":"freeze",   "chance":10},
+	"ice-punch":      {"status":"freeze",   "chance":10},
+	"powder-snow":    {"status":"freeze",   "chance":10},
+	"aurora-beam":    {"stat":"atk_stage",  "change":-1, "chance":10},
+	# ── Burn ────────────────────────────────────────────────────
+	"flamethrower":   {"status":"burn",     "chance":10},
+	"fire-blast":     {"status":"burn",     "chance":10},
+	"fire-punch":     {"status":"burn",     "chance":10},
+	"ember":          {"status":"burn",     "chance":10},
+	"lava-plume":     {"status":"burn",     "chance":30},
+	"scald":          {"status":"burn",     "chance":30},
+	"heat-wave":      {"status":"burn",     "chance":10},
+	"flame-wheel":    {"status":"burn",     "chance":10},
+	# ── Paralysis ───────────────────────────────────────────────
+	"thunder":        {"status":"paralyze", "chance":30},
+	"thunderbolt":    {"status":"paralyze", "chance":10},
+	"thunder-punch":  {"status":"paralyze", "chance":10},
+	"body-slam":      {"status":"paralyze", "chance":30},
+	"discharge":      {"status":"paralyze", "chance":30},
+	"spark":          {"status":"paralyze", "chance":30},
+	"zap-cannon":     {"status":"paralyze", "chance":100},
+	"force-palm":     {"status":"paralyze", "chance":30},
+	# ── Defender stat drops ─────────────────────────────────────
+	"psychic":        {"stat":"spd_stage",      "change":-1, "chance":10},
+	"shadow-ball":    {"stat":"spd_stage",      "change":-1, "chance":20},
+	"crunch":         {"stat":"def_stage",       "change":-1, "chance":20},
+	"bite":           {"stat":"def_stage",       "change":-1, "chance":20},
+	"rock-smash":     {"stat":"def_stage",       "change":-1, "chance":50},
+	"muddy-water":    {"stat":"accuracy_stage",  "change":-1, "chance":30},
+	"mud-slap":       {"stat":"accuracy_stage",  "change":-1, "chance":100},
+	"icy-wind":       {"stat":"spe_stage",       "change":-1, "chance":100},
+	"electroweb":     {"stat":"spe_stage",       "change":-1, "chance":100},
+	"bulldoze":       {"stat":"spe_stage",       "change":-1, "chance":100},
+	"rock-tomb":      {"stat":"spe_stage",       "change":-1, "chance":100},
+	"bubble-beam":    {"stat":"spe_stage",       "change":-1, "chance":10},
+	"constrict":      {"stat":"spe_stage",       "change":-1, "chance":10},
+	"low-sweep":      {"stat":"spe_stage",       "change":-1, "chance":100},
+	"octazooka":      {"stat":"accuracy_stage",  "change":-1, "chance":50},
+	"mud-bomb":       {"stat":"accuracy_stage",  "change":-1, "chance":30},
+	# ── Attacker stat rises ─────────────────────────────────────
+	"charge-beam":    {"stat_self":"spa_stage", "change":1, "chance":70},
+	"metal-claw":     {"stat_self":"atk_stage", "change":1, "chance":10},
+	"steel-wing":     {"stat_self":"def_stage", "change":1, "chance":10},
+	"flame-charge":   {"stat_self":"spe_stage", "change":1, "chance":100},
+	# ── All-stat rise (ancientpower family) ─────────────────────
+	"ancientpower":   {"all_self":1, "chance":10},
+	"ominous-wind":   {"all_self":1, "chance":10},
+	"silver-wind":    {"all_self":1, "chance":10},
+	# ── Flinch ──────────────────────────────────────────────────
+	"iron-head":      {"flinch":true, "chance":30},
+	"air-slash":      {"flinch":true, "chance":30},
+	"rock-slide":     {"flinch":true, "chance":30},
+	"waterfall":      {"flinch":true, "chance":20},
+	"headbutt":       {"flinch":true, "chance":30},
+	"zen-headbutt":   {"flinch":true, "chance":20},
+	"extrasensory":   {"flinch":true, "chance":10},
+	"dark-pulse":     {"flinch":true, "chance":20},
+	"stomp":          {"flinch":true, "chance":30},
+	"snore":          {"flinch":true, "chance":30},
+	"twister":        {"flinch":true, "chance":20},
+	"needle-arm":     {"flinch":true, "chance":30},
+}
+
 func _ready():
 	team_gen = get_node(team_gen_path)
 	start_battle()
@@ -144,12 +238,17 @@ func start_battle():
 	opponent_active = 0
 	battle_over = false
 	turn_count = 0
-	wish_pending = {"yours": 0, "opp": 0}
+	wish_pending     = {"yours": 0, "opp": 0}
+	field_hazards    = {
+		"yours": {"stealth_rock": false, "spikes": 0, "toxic_spikes": 0},
+		"opp":   {"stealth_rock": false, "spikes": 0, "toxic_spikes": 0},
+	}
+	_pending_uturn = {"yours": false, "opp": false}
 
 	var your_mon = your_team[your_active]
 	var opp_mon = opponent_team[opponent_active]
-	pokemon_sent_out.emit(true,  your_mon["current_hp"], your_mon["max_hp"], your_mon["display_name"], your_mon["level"])
-	pokemon_sent_out.emit(false, opp_mon["current_hp"],  opp_mon["max_hp"],  opp_mon["display_name"],  opp_mon["level"])
+	pokemon_sent_out.emit(true,  your_mon["current_hp"], your_mon["max_hp"], your_mon["display_name"], your_mon["level"], your_mon["name"])
+	pokemon_sent_out.emit(false, opp_mon["current_hp"],  opp_mon["max_hp"],  opp_mon["display_name"],  opp_mon["level"], opp_mon["name"])
 
 	print_teams()
 
@@ -199,6 +298,9 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"protect_consecutive": 0,
 		"last_move_used": "",
 		"sleep_turns": 0,
+		"substitute_hp": 0,
+		"friendship": 255,
+		"is_flinched": false,
 	}
 
 func get_stat_multiplier(stage: int) -> float:
@@ -251,6 +353,12 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 
 	var level = attacker["level"]
 	var power = move["power"]
+
+	# Return: power scales with friendship (max 102 at 255 friendship)
+	if move["name"] == "return":
+		power = max(1, int(attacker.get("friendship", 255) * 2 / 5))
+	elif move["name"] == "frustration":
+		power = max(1, int((255 - attacker.get("friendship", 255)) * 2 / 5))
 	var crit = is_critical_hit(move)
 
 	var atk: float
@@ -368,17 +476,31 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	else:
 		you_go_first = randi() % 2 == 0
 
+	# Reset per-turn flags
+	your_mon["is_flinched"] = false
+	opp_mon["is_flinched"]  = false
+	_pending_uturn          = {"yours": false, "opp": false}
+
 	if you_go_first:
 		execute_move(your_mon, opp_mon, your_move, true)
-		if not opp_mon["is_fainted"]:
-			execute_move(opp_mon, your_mon, opp_move, false)
+		if _pending_uturn["yours"]:
+			_do_uturn_switch(true)
+		var opp_after_first = opponent_team[opponent_active]
+		if not opp_after_first["is_fainted"] and not opp_after_first["is_flinched"]:
+			execute_move(opp_after_first, your_team[your_active], opp_move, false)
+			if _pending_uturn["opp"]:
+				_do_uturn_switch(false)
 	else:
 		execute_move(opp_mon, your_mon, opp_move, false)
-		if not your_mon["is_fainted"]:
-			execute_move(your_mon, opp_mon, your_move, true)
+		if _pending_uturn["opp"]:
+			_do_uturn_switch(false)
+		if not your_mon["is_fainted"] and not your_mon["is_flinched"]:
+			execute_move(your_team[your_active], opponent_team[opponent_active], your_move, true)
+			if _pending_uturn["yours"]:
+				_do_uturn_switch(true)
 
-	apply_end_of_turn(your_mon, true)
-	apply_end_of_turn(opp_mon, false)
+	apply_end_of_turn(your_team[your_active], true)
+	apply_end_of_turn(opponent_team[opponent_active], false)
 
 	check_faint(true)
 	check_faint(false)
@@ -414,6 +536,8 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			return
 
 	attacker["last_move_used"] = move["name"]
+	if move.has("current_pp"):
+		move["current_pp"] = max(0, move["current_pp"] - 1)
 	battle_message.emit(attacker["display_name"] + " used " + _format_name(move["name"]) + "!")
 
 	if not accuracy_check(attacker, defender, move):
@@ -430,24 +554,69 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		battle_message.emit(defender["display_name"] + " protected itself!")
 		return
 
-	var result = calculate_damage(attacker, defender, move)
-	var damage = result["damage"]
+	var move_name  = move["name"]
+	var result     = calculate_damage(attacker, defender, move)
+	var damage     = result["damage"]
 	var effectiveness = get_type_effectiveness(move["type"], defender["types"])
 
-	defender["current_hp"] = max(defender["current_hp"] - damage, 0)
-	hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
-
-	if result["crit"]:
-		battle_message.emit("A critical hit!")
-	if effectiveness > 1.0:
-		battle_message.emit("It's super effective!")
-	elif effectiveness > 0.0 and effectiveness < 1.0:
-		battle_message.emit("It's not very effective...")
-	elif effectiveness == 0.0:
+	if effectiveness == 0.0:
 		battle_message.emit("It had no effect!")
+		return
 
-	# Move recoil (rock-head / magic-guard abilities negate it)
-	var move_name = move["name"]
+	attack_effectiveness.emit(effectiveness)
+
+	# --- Rapid Spin: remove hazards from attacker's side ---
+	if move_name == "rapid-spin":
+		var hkey = "yours" if is_yours else "opp"
+		var h    = field_hazards[hkey]
+		var cleared = false
+		if h["stealth_rock"]:
+			h["stealth_rock"] = false
+			cleared = true
+		if h["spikes"] > 0:
+			h["spikes"] = 0
+			cleared = true
+		if h["toxic_spikes"] > 0:
+			h["toxic_spikes"] = 0
+			cleared = true
+		if cleared:
+			battle_message.emit(attacker["display_name"] + " blew away the hazards!")
+
+	# --- Substitute absorbs damage ---
+	if defender["substitute_hp"] > 0:
+		defender["substitute_hp"] = max(defender["substitute_hp"] - damage, 0)
+		if result["crit"]:
+			battle_message.emit("A critical hit!")
+		if defender["substitute_hp"] <= 0:
+			battle_message.emit(defender["display_name"] + "'s substitute broke!")
+		else:
+			battle_message.emit("The substitute took the hit!")
+	else:
+		# Normal HP damage
+		defender["current_hp"] = max(defender["current_hp"] - damage, 0)
+		hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+
+		if result["crit"]:
+			battle_message.emit("A critical hit!")
+		if effectiveness > 1.0:
+			battle_message.emit("It's super effective!")
+		elif effectiveness < 1.0:
+			battle_message.emit("It's not very effective...")
+
+	# --- Secondary effects ---
+	if SECONDARY_EFFECTS.has(move_name) and not defender["is_fainted"] and effectiveness > 0.0:
+		_apply_secondary(attacker, defender, SECONDARY_EFFECTS[move_name], is_yours)
+
+	# --- Phazing damage moves (Dragon Tail, Circle Throw) ---
+	if move_name in PHAZING_DAMAGE_MOVES and not defender["is_fainted"]:
+		var next_idx = _random_alive_not_active(not is_yours)
+		if next_idx != -1:
+			battle_message.emit(defender["display_name"] + " was dragged out!")
+			_force_switch(not is_yours, next_idx)
+		else:
+			battle_message.emit("But it failed!")
+
+	# --- Recoil (rock-head / magic-guard negate) ---
 	if RECOIL_FRACTION.has(move_name) \
 			and attacker["ability"] != "rock-head" \
 			and attacker["ability"] != "magic-guard":
@@ -456,31 +625,86 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " was hurt by recoil!")
 
-	# Life Orb recoil
+	# --- Life Orb recoil ---
 	if attacker["item"] == "Life Orb" and attacker["ability"] != "magic-guard":
 		var lo_recoil = max(int(attacker["max_hp"] / 10), 1)
 		attacker["current_hp"] = max(attacker["current_hp"] - lo_recoil, 0)
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " lost HP to Life Orb!")
 
-	# Post-hit stat drops on the attacker (close-combat, draco-meteor, etc.)
+	# --- Post-hit self stat drops ---
 	if USER_STAGE_AFTER.has(move_name):
 		apply_stages(attacker, USER_STAGE_AFTER[move_name], is_yours)
 
+	# --- Faint checks ---
 	if defender["current_hp"] <= 0:
 		defender["is_fainted"] = true
 		battle_message.emit(defender["display_name"] + " fainted!")
 		pokemon_fainted.emit(not is_yours, defender["name"])
 
-	# Attacker may have fainted from recoil
 	if attacker["current_hp"] <= 0 and not attacker["is_fainted"]:
 		attacker["is_fainted"] = true
 		battle_message.emit(attacker["display_name"] + " fainted!")
 		pokemon_fainted.emit(is_yours, attacker["name"])
 
+	# --- U-turn / Volt Switch: flag a switch after this move resolves ---
+	if move_name in UTURN_MOVES and not attacker["is_fainted"]:
+		if _random_alive_not_active(is_yours) != -1:
+			_pending_uturn["yours" if is_yours else "opp"] = true
+
 # Handles all category=="status" moves: healing, status infliction, and stat changes.
 func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool):
 	var move_name = move["name"]
+
+	# --- Entry hazard setup (Stealth Rock, Spikes, Toxic Spikes) ---
+	if HAZARD_SETUP.has(move_name):
+		var hkey    = "yours" if is_yours else "opp"
+		var fkey    = HAZARD_SETUP[move_name]
+		var hazards = field_hazards[hkey]
+		if fkey == "stealth_rock":
+			if hazards["stealth_rock"]:
+				battle_message.emit("But it failed!")
+			else:
+				hazards["stealth_rock"] = true
+				battle_message.emit("Pointed stones float in the air!")
+		elif fkey == "spikes":
+			if hazards["spikes"] >= 3:
+				battle_message.emit("But it failed!")
+			else:
+				hazards["spikes"] += 1
+				battle_message.emit("Spikes were scattered on the ground!")
+		elif fkey == "toxic_spikes":
+			if hazards["toxic_spikes"] >= 2:
+				battle_message.emit("But it failed!")
+			else:
+				hazards["toxic_spikes"] += 1
+				battle_message.emit("Poison spikes were scattered on the ground!")
+		return
+
+	# --- Substitute ---
+	if move_name == "substitute":
+		if attacker["substitute_hp"] > 0:
+			battle_message.emit(attacker["display_name"] + " already has a substitute!")
+			return
+		var cost = max(int(attacker["max_hp"] / 4), 1)
+		if attacker["current_hp"] <= cost:
+			battle_message.emit(attacker["display_name"] + " doesn't have enough HP!")
+			return
+		attacker["current_hp"] -= cost
+		attacker["substitute_hp"] = cost
+		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
+		battle_message.emit(attacker["display_name"] + " made a substitute!")
+		return
+
+	# --- Whirlwind / Roar: force opponent to switch ---
+	if move_name in PHAZING_MOVES:
+		var next_idx = _random_alive_not_active(not is_yours)
+		if next_idx == -1:
+			battle_message.emit("But it failed!")
+			return
+		battle_message.emit(defender["display_name"] + " was blown away!")
+		_force_switch(not is_yours, next_idx)
+		return
 
 	# --- Protect / Detect / King's Shield etc. ---
 	if move_name in PROTECT_MOVES:
@@ -652,8 +876,9 @@ func check_faint(is_yours: bool):
 		opponent_active = next
 
 	var mon = team[next]
-	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"])
+	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"], mon["name"])
 	battle_message.emit(mon["display_name"] + " was sent out!")
+	apply_entry_hazards(mon, is_yours)
 
 func find_next_alive(team: Array) -> int:
 	for i in team.size():
@@ -684,8 +909,143 @@ func switch_pokemon(is_yours: bool, index: int):
 	mon["toxic_counter"] = 0
 	mon["sleep_turns"] = 0
 
-	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"])
+	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"], mon["name"])
 	battle_message.emit(mon["display_name"] + " was sent out!")
+
+# ─── Entry hazards ────────────────────────────────────────────────────────────
+
+func apply_entry_hazards(mon: Dictionary, is_yours: bool):
+	if mon["is_fainted"] or mon["ability"] == "magic-guard":
+		return
+	var hkey    = "yours" if is_yours else "opp"
+	var hazards = field_hazards[hkey]
+	var is_grounded = "flying" not in mon["types"] and mon["ability"] != "levitate"
+
+	# Toxic Spikes: absorbed by incoming Poison-type, otherwise poison/badly poison
+	if hazards["toxic_spikes"] > 0 and is_grounded:
+		if "poison" in mon["types"]:
+			hazards["toxic_spikes"] = 0
+			battle_message.emit(mon["display_name"] + " absorbed the toxic spikes!")
+		elif mon["status"] == "":
+			if hazards["toxic_spikes"] >= 2:
+				mon["status"] = "toxic"
+				battle_message.emit(mon["display_name"] + " was badly poisoned by the spikes!")
+			else:
+				mon["status"] = "poison"
+				battle_message.emit(mon["display_name"] + " was poisoned by the spikes!")
+
+	# Spikes: 1/8, 1/6, 1/4 HP based on layers
+	if hazards["spikes"] > 0 and is_grounded:
+		var fracs = [0.125, 0.1666, 0.25]
+		var dmg = max(int(mon["max_hp"] * fracs[hazards["spikes"] - 1]), 1)
+		mon["current_hp"] = max(mon["current_hp"] - dmg, 0)
+		hp_changed.emit(is_yours, mon["current_hp"], mon["max_hp"])
+		battle_message.emit(mon["display_name"] + " was hurt by the spikes!")
+
+	# Stealth Rock: Rock-type effectiveness damage
+	if hazards["stealth_rock"]:
+		var eff = get_type_effectiveness("rock", mon["types"])
+		var dmg = max(int(mon["max_hp"] * 0.125 * eff), 1)
+		mon["current_hp"] = max(mon["current_hp"] - dmg, 0)
+		hp_changed.emit(is_yours, mon["current_hp"], mon["max_hp"])
+		battle_message.emit(mon["display_name"] + " was hurt by the stealth rocks!")
+
+	if mon["current_hp"] <= 0 and not mon["is_fainted"]:
+		mon["is_fainted"] = true
+		battle_message.emit(mon["display_name"] + " fainted!")
+		pokemon_fainted.emit(is_yours, mon["name"])
+
+# ─── Switch helpers ───────────────────────────────────────────────────────────
+
+func _random_alive_not_active(is_yours: bool) -> int:
+	var team   = your_team if is_yours else opponent_team
+	var active = your_active if is_yours else opponent_active
+	var opts: Array = []
+	for i in team.size():
+		if i != active and not team[i]["is_fainted"]:
+			opts.append(i)
+	if opts.is_empty():
+		return -1
+	return opts[randi() % opts.size()]
+
+func _do_uturn_switch(is_yours: bool):
+	var idx = _random_alive_not_active(is_yours)
+	if idx == -1:
+		return
+	var old_name = (your_team[your_active] if is_yours else opponent_team[opponent_active])["display_name"]
+	battle_message.emit(old_name + " came back!")
+	_force_switch(is_yours, idx)
+
+func _force_switch(is_yours: bool, index: int):
+	var team = your_team if is_yours else opponent_team
+	var mon  = team[index]
+	# Clear stat stages and volatile state on forced switch-in
+	for stage_key in ["atk_stage","def_stage","spa_stage","spd_stage","spe_stage",
+			"accuracy_stage","evasion_stage"]:
+		mon[stage_key] = 0
+	mon["toxic_counter"]  = 0
+	mon["substitute_hp"]  = 0
+	mon["is_protected"]   = false
+	mon["protect_consecutive"] = 0
+	if is_yours:
+		your_active = index
+	else:
+		opponent_active = index
+	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"],
+		mon["display_name"], mon["level"], mon["name"])
+	battle_message.emit(mon["display_name"] + " was sent out!")
+	apply_entry_hazards(mon, is_yours)
+
+# ─── Secondary effect application ─────────────────────────────────────────────
+
+func _apply_secondary(attacker: Dictionary, defender: Dictionary,
+		effect: Dictionary, is_yours: bool):
+	if randi() % 100 >= effect["chance"]:
+		return
+
+	# Status effect on defender
+	if effect.has("status"):
+		if defender["status"] != "":
+			return
+		var new_status: String = effect["status"]
+		# Type immunities for freeze/burn/paralyze
+		match new_status:
+			"freeze":
+				if "ice" in defender["types"]: return
+			"burn":
+				if "fire" in defender["types"]: return
+			"paralyze":
+				if "electric" in defender["types"]: return
+		defender["status"] = new_status
+		if new_status == "freeze":
+			battle_message.emit(defender["display_name"] + " was frozen solid!")
+		elif new_status == "burn":
+			battle_message.emit(defender["display_name"] + " was burned!")
+		elif new_status == "paralyze":
+			battle_message.emit(defender["display_name"] + " was paralyzed!")
+		return
+
+	# Stat drop on defender
+	if effect.has("stat"):
+		apply_stages(defender, {effect["stat"]: effect["change"]}, not is_yours)
+		return
+
+	# Stat rise on attacker
+	if effect.has("stat_self"):
+		apply_stages(attacker, {effect["stat_self"]: effect["change"]}, is_yours)
+		return
+
+	# All-stat rise on attacker (Ancientpower family)
+	if effect.has("all_self"):
+		var v = effect["all_self"]
+		apply_stages(attacker,
+			{"atk_stage":v,"def_stage":v,"spa_stage":v,"spd_stage":v,"spe_stage":v},
+			is_yours)
+		return
+
+	# Flinch (only useful if attacker moved first — checked in execute_turn)
+	if effect.get("flinch", false):
+		defender["is_flinched"] = true
 
 func _format_name(mon_name: String) -> String:
 	return mon_name.replace("-", " ").capitalize()

@@ -1,15 +1,12 @@
 extends Node3D
 
-# 1. Create player and environment
-# 2. NPCs that walk around and will occasionally take files (from desktop? or in the folders?)
-# 3. Import GEN 1 || GEN 5 (Other gens later) and implement battle system
-
 @onready var gender_window: Window = $GenderReveal
 @onready var are_you_male: TextureRect = $GenderReveal/AreYouMale
 @onready var are_you_female: TextureRect = $GenderReveal/AreYouFemale
 
 # Prevent error when trying to move before sprites are initialized
 var game_ready = false
+var _battle_triggered: bool = false
 
 func _ready() -> void:
 	var window = get_window()
@@ -26,6 +23,7 @@ func _process(delta):
 	if not game_ready:
 		return
 	_update_window_position(delta)
+	_check_npc_overlap()
 
 # Function is also in charge of loading the trainers, npcs, and buildings
 func choose_gender():
@@ -142,6 +140,28 @@ func load_entities():
 	
 	# pick_random() doesnt output an index, it actually outputs the name
 	npc_sprite.texture = npc_window.npc_sprites.pick_random()
+
+func _check_npc_overlap() -> void:
+	if _battle_triggered:
+		return
+	var npc_window: Window = get_node_or_null("NPCWindow")
+	if not npc_window:
+		return
+	var trainer_window := get_window()
+	var trainer_rect   := Rect2i(trainer_window.position, trainer_window.size)
+	var npc_rect       := Rect2i(npc_window.position, npc_window.size)
+	if trainer_rect.intersects(npc_rect):
+		_trigger_battle()
+
+func _trigger_battle() -> void:
+	_battle_triggered = true
+	# Stop all processing so animations/timers don't fire during transition
+	set_process(false)
+	var transition = preload("res://scenes/battle_transition.tscn").instantiate()
+	add_child(transition)
+	transition.play_transition()
+	await transition.transition_finished
+	get_tree().change_scene_to_file("res://scenes/battle_scene.tscn")
 
 # Set Boundry
 func collision_check(next_pos: Vector2i) -> bool:
