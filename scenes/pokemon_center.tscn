@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dcni5tpixyuie"]
+
+[ext_resource type="ArrayMesh" uid="uid://5x86d1xr1cu1" path="res://models/imports/Pokemon Center.obj" id="1_qhpen"]
+[ext_resource type="Texture2D" uid="uid://cj4lbodv6kdoh" path="res://models/imports/h_kage.png" id="2_f54et"]
+[ext_resource type="Texture2D" uid="uid://dffk4tvwur7m7" path="res://models/imports/pc_win1.png" id="3_j7kqw"]
+[ext_resource type="Texture2D" uid="uid://dk11mapf66f3" path="res://models/imports/pc_kabe02.png" id="4_sra0m"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iihn4"]
+albedo_texture = ExtResource("2_f54et")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b42nv"]
+albedo_texture = ExtResource("3_j7kqw")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1oimw"]
+albedo_texture = ExtResource("4_sra0m")
+
+[node name="PokemonCenter" type="MeshInstance3D" unique_id=55444264]
+mesh = ExtResource("1_qhpen")
+surface_material_override/0 = SubResource("StandardMaterial3D_iihn4")
+surface_material_override/1 = SubResource("StandardMaterial3D_b42nv")
+surface_material_override/2 = SubResource("StandardMaterial3D_1oimw")
