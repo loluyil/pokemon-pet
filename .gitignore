@@ -8,3 +8,6 @@
 # Compiled binaries (build outputs)
 bin/*.dll
 bin/~*
+
+
+.claude
