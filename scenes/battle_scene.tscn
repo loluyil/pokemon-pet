@@ -44,6 +44,7 @@
 [ext_resource type="Script" uid="uid://m5f7xcybu0hd" path="res://scripts/party_menu.gd" id="33_party"]
 [ext_resource type="SpriteFrames" uid="uid://sbshelel11xf" path="res://sprites/pokemon/sprites/abomasnow/abomasnow_anim.tres" id="33_vnhh6"]
 [ext_resource type="AudioStream" uid="uid://d3demv7lj7ssu" path="res://sounds/effective.wav" id="35_j86qt"]
+[ext_resource type="SpriteFrames" uid="uid://dvlo0j08whwei" path="res://sprites/pokemon/sprites/spiritomb/spiritomb_anim.tres" id="45_qg24k"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("12_dm2tv")
@@ -1879,7 +1880,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.99999774, 0, -0.001745327, 0, 1, 0, 0.001745327, 0, 0.99999774, 4.396, 0.037, -3.68)
+transform = Transform3D(0.9999977, 0, -0.0017453269, 0, 1, 0, 0.0017453269, 0, 0.9999977, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -2148,3 +2149,11 @@ script = ExtResource("17_j0cvo")
 
 [node name="CriticallyLow" type="AudioStreamPlayer" parent="BattleSim" unique_id=1109264580]
 volume_db = -50.0
+
+[node name="pokemon test" type="AnimatedSprite3D" parent="BattleSim" unique_id=800428327]
+visible = false
+texture_filter = 1
+sprite_frames = ExtResource("45_qg24k")
+animation = &"front"
+frame = 105
+frame_progress = 0.112956524
