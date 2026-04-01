@@ -1,10 +1,10 @@
 extends Control
 
 # ─── Node References ─────────────────────────────────────────────────────────
-@onready var move1: TextureButton = $Move1
-@onready var move2: TextureButton = $Move2
-@onready var move3: TextureButton = $Move3
-@onready var move4: TextureButton = $Move4
+@onready var move1: TextureButton = $GridContainer/Move1
+@onready var move2: TextureButton = $GridContainer/Move2
+@onready var move3: TextureButton = $GridContainer/Move3
+@onready var move4: TextureButton = $GridContainer/Move4
 @onready var back_btn = $BackButton
 
 @onready var fight_btn:  TextureButton  = $"../ActionMenu/FightButton"
