@@ -61,7 +61,7 @@ var _music_original_volume: float = 0.0
 var _your_hp_original_x: float
 var _opp_hp_original_x: float
 const HP_SLIDE_OFFSET := 400.0
-const HP_SLIDE_DURATION := 0.35
+const HP_SLIDE_DURATION := 0.15
 
 # ─── Unified Event Queue ─────────────────────────────────────────────────────────
 # Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
@@ -141,7 +141,7 @@ func _init_display():
 
 	# Slide HP containers in after the battle entry cinematic
 	# The cinematic runs ~6s, so tween them in with a delay
-	get_tree().create_timer(5.5).timeout.connect(func():
+	get_tree().create_timer(3.75).timeout.connect(func():
 		_tween_hp_container_in(false)  # opponent first
 	, CONNECT_ONE_SHOT)
 	get_tree().create_timer(8.0).timeout.connect(func():
@@ -164,7 +164,7 @@ func _set_status_icon(icon: TextureRect, status: String):
 		"paralyze": filename = "paralyze"
 		"poison", "toxic": filename = "poison"
 		"freeze": filename = "frozen"
-		"sleep": filename = "fainted"
+		"sleep": filename = "sleep"
 		_: filename = status
 	var path := STATUS_ICON_PATH + filename + ".png"
 	if ResourceLoader.exists(path):
