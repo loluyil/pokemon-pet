@@ -35,6 +35,50 @@ var _pending_uturn := {"yours": false, "opp": false}
 # Stores remainder of a turn when player U-turn requires a pick
 var _deferred_turn: Dictionary = {}
 
+# Each Pokemon's chosen move name this turn (used by Sucker Punch / Counter / Mirror Coat)
+var _current_turn_moves := {"yours": "", "opp": ""}
+
+# Last damaging hit received per side — for Counter / Mirror Coat
+var _last_hit_received := {
+	"yours": {"damage": 0, "category": ""},
+	"opp":   {"damage": 0, "category": ""},
+}
+
+# Multi-hit moves: value is fixed int (always that many hits) or Array [min, max]
+# 2-5 hit moves use the Gen5 distribution: 35% × 2, 35% × 3, 15% × 4, 15% × 5
+const MULTI_HIT_MOVES: Dictionary = {
+	# Fixed 2 hits
+	"bonemerang":  2,
+	"double-hit":  2,
+	"double-kick": 2,
+	"dual-chop":   2,
+	"gear-grind":  2,
+	"twineedle":   2,
+	# Variable 2–5 hits (Skill Link → always 5)
+	"arm-thrust":  [2, 5],
+	"barrage":     [2, 5],
+	"bullet-seed": [2, 5],
+	"comet-punch": [2, 5],
+	"double-slap": [2, 5],
+	"fury-attack": [2, 5],
+	"fury-swipes": [2, 5],
+	"icicle-spear":[2, 5],
+	"pin-missile": [2, 5],
+	"rock-blast":  [2, 5],
+	"spike-cannon":[2, 5],
+	"tail-slap":   [2, 5],
+}
+
+# OHKO moves (always deal full damage if they hit; level-gated accuracy)
+const OHKO_MOVES = ["fissure", "guillotine", "horn-drill", "sheer-cold"]
+
+# Fixed-damage moves (bypass the stat-based damage formula)
+const FIXED_DAMAGE_MOVES = [
+	"seismic-toss", "night-shade", "dragon-rage", "sonic-boom",
+	"super-fang", "endeavor", "final-gambit", "psywave",
+	"counter", "mirror-coat",
+]
+
 # Protect-class moves that block incoming damage for one turn
 const PROTECT_MOVES = ["protect", "detect", "king-s-shield", "spiky-shield", "baneful-bunker"]
 
@@ -360,17 +404,77 @@ func is_critical_hit(move: Dictionary) -> bool:
 	return randi() % threshold == 0
 
 func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictionary) -> Dictionary:
-	if move["category"] == "status" or move["power"] == 0:
+	if move["category"] == "status":
 		return {"damage": 0, "crit": false}
 
 	var level = attacker["level"]
 	var power = move["power"]
 
-	# Return: power scales with friendship (max 102 at 255 friendship)
-	if move["name"] == "return":
-		power = max(1, int(attacker.get("friendship", 255) * 2 / 5))
-	elif move["name"] == "frustration":
-		power = max(1, int((255 - attacker.get("friendship", 255)) * 2 / 5))
+	# --- Variable-power move overrides (must happen before the power == 0 guard) ---
+	match move["name"]:
+		"return":
+			power = max(1, int(attacker.get("friendship", 255) * 2 / 5))
+		"frustration":
+			power = max(1, int((255 - attacker.get("friendship", 255)) * 2 / 5))
+		"gyro-ball":
+			var atk_spe = max(1, get_effective_stat(attacker, "speed"))
+			var def_spe = max(1, get_effective_stat(defender, "speed"))
+			power = min(150, int(ceil(25.0 * def_spe / atk_spe)))
+		"low-kick", "grass-knot":
+			power = team_gen.get_weight_power(defender["name"])
+		"heat-crash", "heavy-slam":
+			var atk_w = team_gen.get_pokemon_weight(attacker["name"])
+			var def_w = team_gen.get_pokemon_weight(defender["name"])
+			var wrat  = atk_w / max(1.0, def_w)
+			if   wrat >= 5.0: power = 120
+			elif wrat >= 4.0: power = 100
+			elif wrat >= 3.0: power = 80
+			elif wrat >= 2.0: power = 60
+			else:             power = 40
+		"electro-ball":
+			var as2 = max(1.0, float(get_effective_stat(attacker, "speed")))
+			var ds2 = max(1.0, float(get_effective_stat(defender, "speed")))
+			var sr  = as2 / ds2
+			if   sr >= 4.0: power = 150
+			elif sr >= 3.0: power = 120
+			elif sr >= 2.0: power = 80
+			else:           power = 60
+		"reversal", "flail":
+			var hp_r = float(attacker["current_hp"]) / float(attacker["max_hp"])
+			if   hp_r <= 0.0417: power = 200
+			elif hp_r <= 0.1042: power = 150
+			elif hp_r <= 0.2083: power = 100
+			elif hp_r <= 0.3542: power = 80
+			elif hp_r <= 0.6875: power = 40
+			else:                power = 20
+		"wring-out", "crush-grip":
+			power = max(1, int(120.0 * float(defender["current_hp"]) / float(defender["max_hp"])))
+		"punishment":
+			var pos_stages = 0
+			for sk in ["atk_stage","def_stage","spa_stage","spd_stage","spe_stage","accuracy_stage","evasion_stage"]:
+				pos_stages += max(0, defender[sk])
+			power = min(200, 60 + 20 * pos_stages)
+		"magnitude":
+			var mr = randi() % 100
+			if   mr < 5:  power = 10
+			elif mr < 15: power = 30
+			elif mr < 35: power = 50
+			elif mr < 65: power = 70
+			elif mr < 85: power = 90
+			elif mr < 95: power = 110
+			else:         power = 150
+		"trump-card":
+			var pp_left = move.get("current_pp", 0)
+			if   pp_left <= 1: power = 200
+			elif pp_left == 2: power = 80
+			elif pp_left == 3: power = 60
+			elif pp_left == 4: power = 50
+			else:              power = 40
+
+	# Moves with power 0 that we can't resolve to a real power use the fixed-damage path instead
+	if power == 0:
+		return {"damage": 0, "crit": false}
+
 	var crit = is_critical_hit(move)
 
 	var atk: float
@@ -492,6 +596,8 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	your_mon["is_flinched"] = false
 	opp_mon["is_flinched"]  = false
 	_pending_uturn          = {"yours": false, "opp": false}
+	_current_turn_moves     = {"yours": your_move["name"], "opp": opp_move["name"]}
+	_last_hit_received      = {"yours": {"damage": 0, "category": ""}, "opp": {"damage": 0, "category": ""}}
 
 	if you_go_first:
 		execute_move(your_mon, opp_mon, your_move, true)
@@ -564,6 +670,17 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		move["current_pp"] = max(0, move["current_pp"] - 1)
 	battle_message.emit(attacker["display_name"] + " used " + _format_name(move["name"]) + "!")
 
+	var move_name = move["name"]
+
+	# --- Sucker Punch: fails if the defender did not choose a damaging move this turn ---
+	if move_name == "sucker-punch":
+		var def_side     = "opp" if is_yours else "yours"
+		var def_chosen   = _current_turn_moves.get(def_side, "")
+		var def_mdata    = team_gen.get_move_details(def_chosen)
+		if def_mdata["category"] == "status" or def_chosen == "":
+			battle_message.emit("But it failed!")
+			return
+
 	if not accuracy_check(attacker, defender, move):
 		battle_message.emit("It missed!")
 		return
@@ -578,9 +695,84 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		battle_message.emit(defender["display_name"] + " protected itself!")
 		return
 
-	var move_name  = move["name"]
-	var result     = calculate_damage(attacker, defender, move)
-	var damage     = result["damage"]
+	# --- OHKO moves ---
+	if move_name in OHKO_MOVES:
+		# Fail if attacker's level is lower than defender's
+		if attacker["level"] < defender["level"]:
+			battle_message.emit("It doesn't affect " + defender["display_name"] + "...")
+			return
+		# Type immunity (e.g. Guillotine/Horn Drill are Normal — no effect on Ghost)
+		var ohko_eff = get_type_effectiveness(move["type"], defender["types"])
+		if ohko_eff == 0.0:
+			battle_message.emit("It had no effect!")
+			return
+		# Level-adjusted accuracy: 30 + (atk_level - def_level)
+		var ohko_acc = 30 + (attacker["level"] - defender["level"])
+		if randi() % 100 >= ohko_acc:
+			battle_message.emit("It missed!")
+			return
+		battle_message.emit("It's a one-hit KO!")
+		_deal_damage(defender, defender["current_hp"], attacker, is_yours, move)
+		return
+
+	# --- Fixed-damage moves (level-based, HP-based, etc.) ---
+	if move_name in FIXED_DAMAGE_MOVES:
+		var eff_check = get_type_effectiveness(move["type"], defender["types"])
+		if eff_check == 0.0:
+			battle_message.emit("It had no effect!")
+			return
+		var fixed_dmg = 0
+		var failed    = false
+		match move_name:
+			"seismic-toss":
+				# No effect on Ghost types (already caught above by Fighting type chart)
+				fixed_dmg = attacker["level"]
+			"night-shade":
+				# No effect on Normal types (Ghost type chart)
+				fixed_dmg = attacker["level"]
+			"dragon-rage":
+				fixed_dmg = 40
+			"sonic-boom":
+				fixed_dmg = 20
+			"super-fang":
+				fixed_dmg = max(1, defender["current_hp"] / 2)
+			"endeavor":
+				if attacker["current_hp"] >= defender["current_hp"]:
+					failed = true
+				else:
+					fixed_dmg = defender["current_hp"] - attacker["current_hp"]
+			"final-gambit":
+				fixed_dmg = attacker["current_hp"]
+			"psywave":
+				fixed_dmg = max(1, int(attacker["level"] * randi_range(5, 15) / 10.0))
+			"counter":
+				var my_side_c = "yours" if is_yours else "opp"
+				var last_c    = _last_hit_received[my_side_c]
+				if last_c["category"] != "physical" or last_c["damage"] == 0:
+					failed = true
+				else:
+					fixed_dmg = last_c["damage"] * 2
+			"mirror-coat":
+				var my_side_m = "yours" if is_yours else "opp"
+				var last_m    = _last_hit_received[my_side_m]
+				if last_m["category"] != "special" or last_m["damage"] == 0:
+					failed = true
+				else:
+					fixed_dmg = last_m["damage"] * 2
+		if failed:
+			battle_message.emit("But it failed!")
+			return
+		if fixed_dmg > 0:
+			_deal_damage(defender, fixed_dmg, attacker, is_yours, move)
+			# Final Gambit: attacker faints after use
+			if move_name == "final-gambit" and not attacker["is_fainted"]:
+				attacker["current_hp"] = 0
+				attacker["is_fainted"] = true
+				hp_changed.emit(is_yours, 0, attacker["max_hp"])
+				battle_message.emit(attacker["display_name"] + " fainted!")
+				pokemon_fainted.emit(is_yours, attacker["name"])
+		return
+
 	var effectiveness = get_type_effectiveness(move["type"], defender["types"])
 
 	if effectiveness == 0.0:
@@ -588,6 +780,14 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		return
 
 	attack_effectiveness.emit(effectiveness)
+
+	# --- Multi-hit moves (handled separately) ---
+	if move_name in MULTI_HIT_MOVES or move_name in ["triple-kick", "beat-up"]:
+		_execute_multi_hit(attacker, defender, move, is_yours)
+		return
+
+	var result = calculate_damage(attacker, defender, move)
+	var damage = result["damage"]
 
 	# --- Rapid Spin: remove hazards from attacker's side ---
 	if move_name == "rapid-spin":
@@ -626,6 +826,11 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			battle_message.emit("It's super effective!")
 		elif effectiveness < 1.0:
 			battle_message.emit("It's not very effective...")
+
+		# Track last hit for Counter / Mirror Coat (only real HP damage, not substitute)
+		var def_side_key = "opp" if is_yours else "yours"
+		_last_hit_received[def_side_key]["damage"]   = damage
+		_last_hit_received[def_side_key]["category"] = move["category"]
 
 	# --- Secondary effects ---
 	if SECONDARY_EFFECTS.has(move_name) and not defender["is_fainted"] and effectiveness > 0.0:
@@ -1004,6 +1209,145 @@ func switch_pokemon(is_yours: bool, index: int):
 	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"], mon["display_name"], mon["level"], mon["name"])
 	battle_message.emit(mon["display_name"] + " was sent out!")
 
+# ─── Fixed-damage helper ──────────────────────────────────────────────────────
+# Applies a flat damage amount to `defender`, handles faint + Destiny Bond.
+# Used by OHKO moves, Counter, Mirror Coat, Seismic Toss, etc.
+func _deal_damage(defender: Dictionary, dmg: int, attacker: Dictionary, is_yours: bool, _move: Dictionary):
+	defender["current_hp"] = max(defender["current_hp"] - dmg, 0)
+	hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+	if defender["current_hp"] <= 0 and not defender["is_fainted"]:
+		defender["is_fainted"] = true
+		battle_message.emit(defender["display_name"] + " fainted!")
+		pokemon_fainted.emit(not is_yours, defender["name"])
+		if defender["destiny_bond"] and not attacker["is_fainted"]:
+			attacker["current_hp"] = 0
+			attacker["is_fainted"] = true
+			hp_changed.emit(is_yours, 0, attacker["max_hp"])
+			battle_message.emit(attacker["display_name"] + " was taken down by Destiny Bond!")
+			pokemon_fainted.emit(is_yours, attacker["name"])
+
+# ─── Multi-hit move execution ────────────────────────────────────────────────
+# Handles all multi-hit, Triple Kick, and Beat Up logic.
+func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool):
+	var move_name  = move["name"]
+	var hit_count  = 0
+	var hp_damage  = 0  # damage that landed on real HP (for Life Orb trigger)
+
+	# ── Beat Up (each alive party member lands one hit) ──────────────────────
+	if move_name == "beat-up":
+		var team: Array = your_team if is_yours else opponent_team
+		for contributor in team:
+			if contributor["is_fainted"] or defender["current_hp"] <= 0:
+				continue
+			var base_atk = team_gen.gen5_pokemon.get(contributor["name"], {}).get("attack", 80)
+			var bu_move  = move.duplicate()
+			bu_move["power"] = int(base_atk / 10) + 5
+			var res     = calculate_damage(attacker, defender, bu_move)
+			if defender["substitute_hp"] > 0:
+				defender["substitute_hp"] = max(defender["substitute_hp"] - res["damage"], 0)
+				if defender["substitute_hp"] <= 0:
+					battle_message.emit(defender["display_name"] + "'s substitute broke!")
+			else:
+				defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
+				hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+				hp_damage += res["damage"]
+			battle_message.emit(contributor["display_name"] + "'s attack!")
+			hit_count += 1
+		battle_message.emit("Hit " + str(hit_count) + " time(s)!")
+		_multihit_finish(attacker, defender, is_yours, hp_damage)
+		return
+
+	# ── Determine number of hits ──────────────────────────────────────────────
+	var num_hits = 1
+	if move_name == "triple-kick":
+		num_hits = 3
+	elif MULTI_HIT_MOVES.has(move_name):
+		var hit_spec = MULTI_HIT_MOVES[move_name]
+		if hit_spec is int:
+			num_hits = hit_spec
+		else:
+			# Variable 2-5 hit distribution: 35% / 35% / 15% / 15%
+			if attacker["ability"] == "skill-link":
+				num_hits = 5
+			else:
+				var roll = randi() % 100
+				if   roll < 35: num_hits = 2
+				elif roll < 70: num_hits = 3
+				elif roll < 85: num_hits = 4
+				else:           num_hits = 5
+
+	# ── Execute each hit ──────────────────────────────────────────────────────
+	for i in num_hits:
+		if defender["current_hp"] <= 0:
+			break
+
+		# Triple Kick: accuracy checked per hit and power increases each hit
+		if move_name == "triple-kick":
+			if not accuracy_check(attacker, defender, move):
+				break
+			var tk_move  = move.duplicate()
+			tk_move["power"] = 10 * (i + 1)
+			var res = calculate_damage(attacker, defender, tk_move)
+			if res["crit"]:
+				battle_message.emit("A critical hit!")
+			if defender["substitute_hp"] > 0:
+				defender["substitute_hp"] = max(defender["substitute_hp"] - res["damage"], 0)
+				if defender["substitute_hp"] <= 0:
+					battle_message.emit(defender["display_name"] + "'s substitute broke!")
+			else:
+				defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
+				hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+				hp_damage += res["damage"]
+			hit_count += 1
+			continue
+
+		# Standard hit
+		var res = calculate_damage(attacker, defender, move)
+		if res["crit"]:
+			battle_message.emit("A critical hit!")
+		if defender["substitute_hp"] > 0:
+			defender["substitute_hp"] = max(defender["substitute_hp"] - res["damage"], 0)
+			if defender["substitute_hp"] <= 0:
+				battle_message.emit(defender["display_name"] + "'s substitute broke!")
+		else:
+			defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
+			hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+			hp_damage += res["damage"]
+		hit_count += 1
+
+		# Twineedle: 20% chance to poison per hit
+		if move_name == "twineedle" and defender["status"] == "" and defender["current_hp"] > 0:
+			if "poison" not in defender["types"] and "steel" not in defender["types"]:
+				if randi() % 100 < 20:
+					defender["status"] = "poison"
+					status_changed.emit(not is_yours, "poison")
+					battle_message.emit(defender["display_name"] + " was poisoned!")
+
+	battle_message.emit("Hit " + str(hit_count) + " time(s)!")
+	_multihit_finish(attacker, defender, is_yours, hp_damage)
+
+# Shared post-hit cleanup for multi-hit moves (Life Orb + faint checks).
+func _multihit_finish(attacker: Dictionary, defender: Dictionary, is_yours: bool, hp_damage: int):
+	if hp_damage > 0 and attacker["item"] == "Life Orb" and attacker["ability"] != "magic-guard":
+		var lo = max(int(attacker["max_hp"] / 10), 1)
+		attacker["current_hp"] = max(attacker["current_hp"] - lo, 0)
+		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
+		battle_message.emit(attacker["display_name"] + " lost HP to Life Orb!")
+	if defender["current_hp"] <= 0 and not defender["is_fainted"]:
+		defender["is_fainted"] = true
+		battle_message.emit(defender["display_name"] + " fainted!")
+		pokemon_fainted.emit(not is_yours, defender["name"])
+		if defender["destiny_bond"] and not attacker["is_fainted"]:
+			attacker["current_hp"] = 0
+			attacker["is_fainted"] = true
+			hp_changed.emit(is_yours, 0, attacker["max_hp"])
+			battle_message.emit(attacker["display_name"] + " was taken down by Destiny Bond!")
+			pokemon_fainted.emit(is_yours, attacker["name"])
+	if attacker["current_hp"] <= 0 and not attacker["is_fainted"]:
+		attacker["is_fainted"] = true
+		battle_message.emit(attacker["display_name"] + " fainted!")
+		pokemon_fainted.emit(is_yours, attacker["name"])
+
 # ─── Entry hazards ────────────────────────────────────────────────────────────
 
 func apply_entry_hazards(mon: Dictionary, is_yours: bool):
@@ -1204,6 +1548,8 @@ func execute_switch_turn(switch_index: int):
 	var opp_move_idx = get_opponent_move()
 	var opp_move = opp_mon["moveset"][opp_move_idx]
 	opp_mon["is_flinched"] = false
+	_current_turn_moves  = {"yours": "", "opp": opp_move["name"]}
+	_last_hit_received   = {"yours": {"damage": 0, "category": ""}, "opp": {"damage": 0, "category": ""}}
 	execute_move(opp_mon, your_team[your_active], opp_move, false)
 	if _pending_uturn["opp"]:
 		_do_uturn_switch(false)
