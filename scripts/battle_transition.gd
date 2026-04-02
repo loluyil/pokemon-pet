@@ -14,8 +14,6 @@ var _battle_tracks: Array = [
 var chosen_track: AudioStream
 
 func _ready():
-	# Window starts offscreen (-9999,-9999) via .tscn to avoid flicker.
-	# Size to screen, then move into position after a frame.
 	var screen := DisplayServer.screen_get_usable_rect()
 	size = screen.size
 
@@ -29,19 +27,16 @@ func _ready():
 func play_transition():
 	var mat = rect.material
 
-	# Pick random battle music and start it with the transition
 	chosen_track = _battle_tracks.pick_random()
 	music_player.stream = chosen_track
 	music_player.play()
 
-	# Phase 1: Rapid white flashes (Pokemon BW style quick flashes)
 	var flash_tween := create_tween()
 	for i in 3:
 		flash_tween.tween_property(mat, "shader_parameter/flash_intensity", 0.9, 0.04)
 		flash_tween.tween_property(mat, "shader_parameter/flash_intensity", 0.0, 0.06)
 	await flash_tween.finished
 
-	# Phase 2: Black bars sweep across with a final flash
 	var sweep_tween := create_tween().set_parallel(true)
 	sweep_tween.tween_property(mat, "shader_parameter/progress", 1.0, 0.5) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -51,6 +46,5 @@ func play_transition():
 	flash2.tween_property(mat, "shader_parameter/flash_intensity", 0.0, 0.08)
 	await sweep_tween.finished
 
-	# Phase 3: Hold black
-	await get_tree().create_timer(0.25).timeout
+	await get_tree().create_timer(.5).timeout
 	transition_finished.emit()

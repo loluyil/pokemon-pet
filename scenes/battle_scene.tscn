@@ -37,12 +37,14 @@
 [ext_resource type="Texture2D" uid="uid://bqxyuvkr4j8vx" path="res://images/battle/party/icon_item.png" id="27_arw3n"]
 [ext_resource type="Texture2D" uid="uid://b5xyf21idscg" path="res://images/battle/status/burn.png" id="28_2ihny"]
 [ext_resource type="Texture2D" uid="uid://cr6s4muegebwp" path="res://sprites/placeholders/icon_cancel.png" id="28_k2d6m"]
+[ext_resource type="Texture2D" uid="uid://pronupffi6uj" path="res://images/battle/party/boy.png" id="29_gh42v"]
 [ext_resource type="Texture2D" uid="uid://dgsakafenol27" path="res://sprites/placeholders/icon_cancel_sel.png" id="29_hcmo8"]
 [ext_resource type="Texture2D" uid="uid://il84g3ekfrcb" path="res://images/battle/party/bg_4_B2W2.png" id="30_yn2ap"]
 [ext_resource type="Texture2D" uid="uid://bq0ia3totl5fm" path="res://images/battle/types/bug.png" id="31_v8541"]
 [ext_resource type="Texture2D" uid="uid://djtfd72ov15vp" path="res://sprites/placeholders/pokeballplaceholder.png" id="32_vnhh6"]
 [ext_resource type="Script" uid="uid://m5f7xcybu0hd" path="res://scripts/party_menu.gd" id="33_party"]
 [ext_resource type="SpriteFrames" uid="uid://sbshelel11xf" path="res://sprites/pokemon/sprites/abomasnow/abomasnow_anim.tres" id="33_vnhh6"]
+[ext_resource type="Texture2D" uid="uid://c6wfwygblrj2d" path="res://images/battle/party/bg_hidden_B2W2.png" id="35_fpcek"]
 [ext_resource type="AudioStream" uid="uid://d3demv7lj7ssu" path="res://sounds/effective.wav" id="35_j86qt"]
 [ext_resource type="SpriteFrames" uid="uid://dvlo0j08whwei" path="res://sprites/pokemon/sprites/spiritomb/spiritomb_anim.tres" id="45_qg24k"]
 
@@ -586,8 +588,9 @@ sky_custom_fov = 16.6
 
 [node name="Window" type="Window" unique_id=1004138377]
 oversampling_override = 1.0
-position = Vector2i(0, 36)
+initial_position = 1
 size = Vector2i(1054, 1018)
+borderless = true
 
 [node name="BattleSim" type="Node" parent="." unique_id=1206383916]
 script = ExtResource("1_y8gcu")
@@ -596,8 +599,8 @@ script = ExtResource("1_y8gcu")
 layout_mode = 3
 anchors_preset = 0
 offset_top = 419.0
-offset_right = 1055.0
-offset_bottom = 419.0
+offset_right = 1059.0
+offset_bottom = 1018.0
 
 [node name="ActionMenu" type="Control" parent="BattleSim/Control" unique_id=1213057848]
 anchors_preset = 0
@@ -891,7 +894,7 @@ script = ExtResource("33_party")
 layout_mode = 0
 offset_left = -8.0
 offset_top = -80.0
-offset_right = 1067.0
+offset_right = 1057.0
 offset_bottom = 608.0
 texture = ExtResource("14_fg2lh")
 
@@ -939,7 +942,7 @@ autowrap_mode = 2
 layout_mode = 0
 offset_left = 65.0
 offset_top = 23.0
-offset_right = 224.0
+offset_right = 221.0
 offset_bottom = 44.0
 theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
 theme_override_constants/shadow_offset_x = 1
@@ -1014,13 +1017,22 @@ offset_right = 119.0
 offset_bottom = 81.0
 texture = ExtResource("28_2ihny")
 
-[node name="Pokemon2" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=1515468163]
+[node name="Gender" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon1" unique_id=1935347774]
+texture_filter = 1
+layout_mode = 0
+offset_left = 226.0
+offset_top = 24.000008
+offset_right = 240.0
+offset_bottom = 45.0
+texture = ExtResource("29_gh42v")
+
+[node name="Pokemon2" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=1030693881]
 layout_mode = 2
 texture_normal = ExtResource("15_tr5ov")
 texture_pressed = ExtResource("16_tr5ov")
 texture_hover = ExtResource("16_c6fjk")
 
-[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=1616571849]
+[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=1216491671]
 texture_filter = 1
 layout_mode = 0
 offset_left = 21.0
@@ -1030,7 +1042,7 @@ offset_bottom = 98.0
 texture = ExtResource("18_wflg7")
 stretch_mode = 2
 
-[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=315360448]
+[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=414273029]
 layout_mode = 0
 offset_left = 43.0
 offset_top = 68.0
@@ -1044,11 +1056,11 @@ theme_override_font_sizes/font_size = 22
 text = "50"
 autowrap_mode = 2
 
-[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=82628961]
+[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=406550736]
 layout_mode = 0
 offset_left = 65.0
 offset_top = 23.0
-offset_right = 224.0
+offset_right = 221.0
 offset_bottom = 44.0
 theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
 theme_override_constants/shadow_offset_x = 1
@@ -1058,7 +1070,7 @@ theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 30
 text = "Tepig"
 
-[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=1897056915]
+[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=724435866]
 layout_mode = 0
 offset_left = 73.0
 offset_top = 51.0
@@ -1066,16 +1078,16 @@ offset_right = 211.0
 offset_bottom = 65.0
 texture = ExtResource("20_iy28q")
 
-[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=1370939503]
+[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=201363630]
 texture_filter = 1
 position = Vector2(38, 25)
 scale = Vector2(1.4821428, 1.4821428)
 texture = ExtResource("21_165gl")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2/Pokemon" unique_id=639932453]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2/Pokemon" unique_id=1730298725]
 libraries/ = SubResource("AnimationLibrary_yn2ap")
 
-[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=293311128]
+[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=1330570049]
 layout_mode = 0
 offset_left = 126.0
 offset_top = 65.0
@@ -1090,7 +1102,7 @@ text = "100 / 100"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=253726470]
+[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=543630290]
 texture_filter = 1
 layout_mode = 0
 offset_left = 105.0
@@ -1106,7 +1118,7 @@ green_bar = ExtResource("18_g6hvt")
 yellow_bar = ExtResource("19_y8gcu")
 red_bar = ExtResource("20_31luo")
 
-[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=707225575]
+[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=2059075457]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 45.0
@@ -1114,7 +1126,7 @@ offset_right = 58.0
 offset_bottom = 61.0
 texture = ExtResource("27_arw3n")
 
-[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=238647504]
+[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=633165759]
 texture_filter = 1
 layout_mode = 0
 offset_left = 82.0
@@ -1123,13 +1135,22 @@ offset_right = 119.0
 offset_bottom = 81.0
 texture = ExtResource("28_2ihny")
 
-[node name="Pokemon3" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=891735799]
+[node name="Gender" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon2" unique_id=1355778979]
+texture_filter = 1
+layout_mode = 0
+offset_left = 226.0
+offset_top = 24.000008
+offset_right = 240.0
+offset_bottom = 45.0
+texture = ExtResource("29_gh42v")
+
+[node name="Pokemon3" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=832688503]
 layout_mode = 2
 texture_normal = ExtResource("15_tr5ov")
 texture_pressed = ExtResource("16_tr5ov")
 texture_hover = ExtResource("16_c6fjk")
 
-[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1239010773]
+[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=2009915062]
 texture_filter = 1
 layout_mode = 0
 offset_left = 21.0
@@ -1139,7 +1160,7 @@ offset_bottom = 98.0
 texture = ExtResource("18_wflg7")
 stretch_mode = 2
 
-[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=516089303]
+[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1013598169]
 layout_mode = 0
 offset_left = 43.0
 offset_top = 68.0
@@ -1153,11 +1174,11 @@ theme_override_font_sizes/font_size = 22
 text = "50"
 autowrap_mode = 2
 
-[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=805686615]
+[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=264004582]
 layout_mode = 0
 offset_left = 65.0
 offset_top = 23.0
-offset_right = 224.0
+offset_right = 221.0
 offset_bottom = 44.0
 theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
 theme_override_constants/shadow_offset_x = 1
@@ -1167,7 +1188,7 @@ theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 30
 text = "Tepig"
 
-[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=410445775]
+[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=458419361]
 layout_mode = 0
 offset_left = 73.0
 offset_top = 51.0
@@ -1175,16 +1196,16 @@ offset_right = 211.0
 offset_bottom = 65.0
 texture = ExtResource("20_iy28q")
 
-[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=978983697]
+[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1764058714]
 texture_filter = 1
 position = Vector2(38, 25)
 scale = Vector2(1.4821428, 1.4821428)
 texture = ExtResource("21_165gl")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3/Pokemon" unique_id=1871458600]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3/Pokemon" unique_id=1876512723]
 libraries/ = SubResource("AnimationLibrary_yn2ap")
 
-[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=35728025]
+[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1916379362]
 layout_mode = 0
 offset_left = 126.0
 offset_top = 65.0
@@ -1199,7 +1220,7 @@ text = "100 / 100"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1282091331]
+[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=410101905]
 texture_filter = 1
 layout_mode = 0
 offset_left = 105.0
@@ -1215,7 +1236,7 @@ green_bar = ExtResource("18_g6hvt")
 yellow_bar = ExtResource("19_y8gcu")
 red_bar = ExtResource("20_31luo")
 
-[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1451590200]
+[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1247215176]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 45.0
@@ -1223,7 +1244,7 @@ offset_right = 58.0
 offset_bottom = 61.0
 texture = ExtResource("27_arw3n")
 
-[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1051721386]
+[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=1135319501]
 texture_filter = 1
 layout_mode = 0
 offset_left = 82.0
@@ -1232,13 +1253,22 @@ offset_right = 119.0
 offset_bottom = 81.0
 texture = ExtResource("28_2ihny")
 
-[node name="Pokemon4" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=1219035011]
+[node name="Gender" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon3" unique_id=2136124945]
+texture_filter = 1
+layout_mode = 0
+offset_left = 226.0
+offset_top = 24.000008
+offset_right = 240.0
+offset_bottom = 45.0
+texture = ExtResource("29_gh42v")
+
+[node name="Pokemon4" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=105666430]
 layout_mode = 2
 texture_normal = ExtResource("15_tr5ov")
 texture_pressed = ExtResource("16_tr5ov")
 texture_hover = ExtResource("16_c6fjk")
 
-[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=858590025]
+[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1051167065]
 texture_filter = 1
 layout_mode = 0
 offset_left = 21.0
@@ -1248,7 +1278,7 @@ offset_bottom = 98.0
 texture = ExtResource("18_wflg7")
 stretch_mode = 2
 
-[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=173338745]
+[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=2138276540]
 layout_mode = 0
 offset_left = 43.0
 offset_top = 68.0
@@ -1262,11 +1292,11 @@ theme_override_font_sizes/font_size = 22
 text = "50"
 autowrap_mode = 2
 
-[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=200834475]
+[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=441200381]
 layout_mode = 0
 offset_left = 65.0
 offset_top = 23.0
-offset_right = 224.0
+offset_right = 221.0
 offset_bottom = 44.0
 theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
 theme_override_constants/shadow_offset_x = 1
@@ -1276,7 +1306,7 @@ theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 30
 text = "Tepig"
 
-[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1225553471]
+[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1908836043]
 layout_mode = 0
 offset_left = 73.0
 offset_top = 51.0
@@ -1284,16 +1314,16 @@ offset_right = 211.0
 offset_bottom = 65.0
 texture = ExtResource("20_iy28q")
 
-[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1045947082]
+[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1134708514]
 texture_filter = 1
 position = Vector2(38, 25)
 scale = Vector2(1.4821428, 1.4821428)
 texture = ExtResource("21_165gl")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4/Pokemon" unique_id=948705889]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4/Pokemon" unique_id=462845142]
 libraries/ = SubResource("AnimationLibrary_yn2ap")
 
-[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=295058186]
+[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=2062929633]
 layout_mode = 0
 offset_left = 126.0
 offset_top = 65.0
@@ -1308,7 +1338,7 @@ text = "100 / 100"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1362520190]
+[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1896427489]
 texture_filter = 1
 layout_mode = 0
 offset_left = 105.0
@@ -1324,7 +1354,7 @@ green_bar = ExtResource("18_g6hvt")
 yellow_bar = ExtResource("19_y8gcu")
 red_bar = ExtResource("20_31luo")
 
-[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=74568828]
+[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1128886957]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 45.0
@@ -1332,7 +1362,7 @@ offset_right = 58.0
 offset_bottom = 61.0
 texture = ExtResource("27_arw3n")
 
-[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1307153712]
+[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=897986430]
 texture_filter = 1
 layout_mode = 0
 offset_left = 82.0
@@ -1341,13 +1371,22 @@ offset_right = 119.0
 offset_bottom = 81.0
 texture = ExtResource("28_2ihny")
 
-[node name="Pokemon5" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=1120915428]
+[node name="Gender" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon4" unique_id=1691102393]
+texture_filter = 1
+layout_mode = 0
+offset_left = 226.0
+offset_top = 24.000008
+offset_right = 240.0
+offset_bottom = 45.0
+texture = ExtResource("29_gh42v")
+
+[node name="Pokemon5" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=679219008]
 layout_mode = 2
 texture_normal = ExtResource("15_tr5ov")
 texture_pressed = ExtResource("16_tr5ov")
 texture_hover = ExtResource("16_c6fjk")
 
-[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=615364028]
+[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1777605464]
 texture_filter = 1
 layout_mode = 0
 offset_left = 21.0
@@ -1357,7 +1396,7 @@ offset_bottom = 98.0
 texture = ExtResource("18_wflg7")
 stretch_mode = 2
 
-[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=629991613]
+[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=113876704]
 layout_mode = 0
 offset_left = 43.0
 offset_top = 68.0
@@ -1371,11 +1410,11 @@ theme_override_font_sizes/font_size = 22
 text = "50"
 autowrap_mode = 2
 
-[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=901983361]
+[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1847376351]
 layout_mode = 0
 offset_left = 65.0
 offset_top = 23.0
-offset_right = 224.0
+offset_right = 221.0
 offset_bottom = 44.0
 theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
 theme_override_constants/shadow_offset_x = 1
@@ -1385,7 +1424,7 @@ theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 30
 text = "Tepig"
 
-[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=991137975]
+[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1015781804]
 layout_mode = 0
 offset_left = 73.0
 offset_top = 51.0
@@ -1393,16 +1432,16 @@ offset_right = 211.0
 offset_bottom = 65.0
 texture = ExtResource("20_iy28q")
 
-[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=536340852]
+[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1049590982]
 texture_filter = 1
 position = Vector2(38, 25)
 scale = Vector2(1.4821428, 1.4821428)
 texture = ExtResource("21_165gl")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5/Pokemon" unique_id=1796642165]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5/Pokemon" unique_id=223292812]
 libraries/ = SubResource("AnimationLibrary_yn2ap")
 
-[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=399308049]
+[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1835782295]
 layout_mode = 0
 offset_left = 126.0
 offset_top = 65.0
@@ -1417,7 +1456,7 @@ text = "100 / 100"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=425658646]
+[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1152423132]
 texture_filter = 1
 layout_mode = 0
 offset_left = 105.0
@@ -1433,7 +1472,7 @@ green_bar = ExtResource("18_g6hvt")
 yellow_bar = ExtResource("19_y8gcu")
 red_bar = ExtResource("20_31luo")
 
-[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1925864995]
+[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1549803174]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 45.0
@@ -1441,7 +1480,7 @@ offset_right = 58.0
 offset_bottom = 61.0
 texture = ExtResource("27_arw3n")
 
-[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=428762506]
+[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=1277663457]
 texture_filter = 1
 layout_mode = 0
 offset_left = 82.0
@@ -1450,13 +1489,22 @@ offset_right = 119.0
 offset_bottom = 81.0
 texture = ExtResource("28_2ihny")
 
-[node name="Pokemon6" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=2056447639]
+[node name="Gender" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon5" unique_id=811032705]
+texture_filter = 1
+layout_mode = 0
+offset_left = 226.0
+offset_top = 24.000008
+offset_right = 240.0
+offset_bottom = 45.0
+texture = ExtResource("29_gh42v")
+
+[node name="Pokemon6" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer" unique_id=1793601671]
 layout_mode = 2
 texture_normal = ExtResource("15_tr5ov")
 texture_pressed = ExtResource("16_tr5ov")
 texture_hover = ExtResource("16_c6fjk")
 
-[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1854221964]
+[node name="TextureRect" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1440207067]
 texture_filter = 1
 layout_mode = 0
 offset_left = 21.0
@@ -1466,7 +1514,7 @@ offset_bottom = 98.0
 texture = ExtResource("18_wflg7")
 stretch_mode = 2
 
-[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1624395433]
+[node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=549422388]
 layout_mode = 0
 offset_left = 43.0
 offset_top = 68.0
@@ -1480,11 +1528,11 @@ theme_override_font_sizes/font_size = 22
 text = "50"
 autowrap_mode = 2
 
-[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1652390880]
+[node name="Name" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1697661404]
 layout_mode = 0
 offset_left = 65.0
 offset_top = 23.0
-offset_right = 224.0
+offset_right = 221.0
 offset_bottom = 44.0
 theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
 theme_override_constants/shadow_offset_x = 1
@@ -1494,7 +1542,7 @@ theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 30
 text = "Tepig"
 
-[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=268647842]
+[node name="HPContainer" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1819105230]
 layout_mode = 0
 offset_left = 73.0
 offset_top = 51.0
@@ -1502,16 +1550,16 @@ offset_right = 211.0
 offset_bottom = 65.0
 texture = ExtResource("20_iy28q")
 
-[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1155369516]
+[node name="Pokemon" type="Sprite2D" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1781723009]
 texture_filter = 1
 position = Vector2(38, 25)
 scale = Vector2(1.4821428, 1.4821428)
 texture = ExtResource("21_165gl")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6/Pokemon" unique_id=1786699768]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6/Pokemon" unique_id=261515174]
 libraries/ = SubResource("AnimationLibrary_yn2ap")
 
-[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=43479017]
+[node name="HP" type="Label" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=446877943]
 layout_mode = 0
 offset_left = 126.0
 offset_top = 65.0
@@ -1526,7 +1574,7 @@ text = "100 / 100"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1215512287]
+[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1245639650]
 texture_filter = 1
 layout_mode = 0
 offset_left = 105.0
@@ -1542,7 +1590,7 @@ green_bar = ExtResource("18_g6hvt")
 yellow_bar = ExtResource("19_y8gcu")
 red_bar = ExtResource("20_31luo")
 
-[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=721875113]
+[node name="hasItem?" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=61706133]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 45.0
@@ -1550,7 +1598,7 @@ offset_right = 58.0
 offset_bottom = 61.0
 texture = ExtResource("27_arw3n")
 
-[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=1968945673]
+[node name="Status" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=915148859]
 texture_filter = 1
 layout_mode = 0
 offset_left = 82.0
@@ -1558,6 +1606,15 @@ offset_top = 70.0
 offset_right = 119.0
 offset_bottom = 81.0
 texture = ExtResource("28_2ihny")
+
+[node name="Gender" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/VBoxContainer/Pokemon6" unique_id=889618638]
+texture_filter = 1
+layout_mode = 0
+offset_left = 226.0
+offset_top = 24.000008
+offset_right = 240.0
+offset_bottom = 45.0
+texture = ExtResource("29_gh42v")
 
 [node name="BackButton" type="TextureButton" parent="BattleSim/Control/PartyMenu/Background" unique_id=1346350880]
 layout_mode = 0
@@ -1574,7 +1631,7 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="SummaryMoves" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=659304313]
+[node name="SummaryMoves-----" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=659304313]
 texture_filter = 1
 layout_mode = 0
 offset_left = 31.0
@@ -1584,23 +1641,7 @@ offset_bottom = 531.0
 texture = ExtResource("30_yn2ap")
 expand_mode = 1
 
-[node name="PokemonName" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=815036283]
-layout_mode = 0
-offset_left = 293.0
-offset_top = 41.0
-offset_right = 422.0
-offset_bottom = 63.0
-theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
-theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
-theme_override_constants/shadow_offset_x = 2
-theme_override_constants/shadow_offset_y = 1
-theme_override_fonts/font = ExtResource("13_16mmc")
-theme_override_font_sizes/font_size = 29
-text = "Regigigas"
-autowrap_mode = 2
-text_overrun_behavior = 4
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=938505374]
+[node name="VBoxContainer" type="VBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----" unique_id=938505374]
 layout_mode = 0
 offset_left = 24.0
 offset_top = 71.0
@@ -1608,10 +1649,10 @@ offset_right = 276.0
 offset_bottom = 363.0
 theme_override_constants/separation = 53
 
-[node name="Move1" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=111709409]
+[node name="Move1" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer" unique_id=111709409]
 layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1" unique_id=1526869949]
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move1" unique_id=1526869949]
 texture_filter = 1
 layout_mode = 0
 offset_left = 64.0
@@ -1627,7 +1668,7 @@ text = "Tackle"
 vertical_alignment = 1
 text_overrun_behavior = 5
 
-[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1" unique_id=1381829160]
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move1" unique_id=1381829160]
 texture_filter = 1
 layout_mode = 0
 offset_left = 83.0
@@ -1643,7 +1684,7 @@ text = "PP"
 vertical_alignment = 1
 text_overrun_behavior = 1
 
-[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move1" unique_id=1722142687]
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move1" unique_id=1722142687]
 texture_filter = 1
 layout_mode = 0
 offset_left = 3.0
@@ -1652,10 +1693,10 @@ offset_right = 56.812504
 offset_bottom = 22.0
 texture = ExtResource("31_v8541")
 
-[node name="Move2" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=729715799]
+[node name="Move2" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer" unique_id=729715799]
 layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2" unique_id=1011314576]
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move2" unique_id=1011314576]
 texture_filter = 1
 layout_mode = 0
 offset_left = 64.0
@@ -1671,7 +1712,7 @@ text = "Tackle"
 vertical_alignment = 1
 text_overrun_behavior = 5
 
-[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2" unique_id=35093182]
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move2" unique_id=35093182]
 texture_filter = 1
 layout_mode = 0
 offset_left = 83.0
@@ -1687,7 +1728,7 @@ text = "PP"
 vertical_alignment = 1
 text_overrun_behavior = 1
 
-[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move2" unique_id=1671783575]
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move2" unique_id=1671783575]
 texture_filter = 1
 layout_mode = 0
 offset_left = 3.0
@@ -1696,10 +1737,10 @@ offset_right = 56.812504
 offset_bottom = 22.0
 texture = ExtResource("31_v8541")
 
-[node name="Move3" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=1290745968]
+[node name="Move3" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer" unique_id=1290745968]
 layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3" unique_id=1451204791]
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move3" unique_id=1451204791]
 texture_filter = 1
 layout_mode = 0
 offset_left = 64.0
@@ -1715,7 +1756,7 @@ text = "Tackle"
 vertical_alignment = 1
 text_overrun_behavior = 5
 
-[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3" unique_id=2128547296]
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move3" unique_id=2128547296]
 texture_filter = 1
 layout_mode = 0
 offset_left = 83.0
@@ -1731,7 +1772,7 @@ text = "PP"
 vertical_alignment = 1
 text_overrun_behavior = 1
 
-[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move3" unique_id=972324029]
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move3" unique_id=972324029]
 texture_filter = 1
 layout_mode = 0
 offset_left = 3.0
@@ -1740,10 +1781,10 @@ offset_right = 56.812504
 offset_bottom = 22.0
 texture = ExtResource("31_v8541")
 
-[node name="Move4" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer" unique_id=1689075538]
+[node name="Move4" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer" unique_id=1689075538]
 layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4" unique_id=1515540404]
+[node name="NameLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move4" unique_id=1515540404]
 texture_filter = 1
 layout_mode = 0
 offset_left = 64.0
@@ -1759,7 +1800,7 @@ text = "Tackle"
 vertical_alignment = 1
 text_overrun_behavior = 5
 
-[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4" unique_id=1735542326]
+[node name="PPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move4" unique_id=1735542326]
 texture_filter = 1
 layout_mode = 0
 offset_left = 83.0
@@ -1775,7 +1816,7 @@ text = "PP"
 vertical_alignment = 1
 text_overrun_behavior = 1
 
-[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/VBoxContainer/Move4" unique_id=213645596]
+[node name="Type" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/VBoxContainer/Move4" unique_id=213645596]
 texture_filter = 1
 layout_mode = 0
 offset_left = 3.0
@@ -1784,30 +1825,14 @@ offset_right = 56.812504
 offset_bottom = 22.0
 texture = ExtResource("31_v8541")
 
-[node name="Item" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=918701920]
-layout_mode = 0
-offset_left = 240.0
-offset_top = 272.0
-offset_right = 336.0
-offset_bottom = 293.0
-theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
-theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
-theme_override_constants/shadow_offset_x = 2
-theme_override_constants/shadow_offset_y = 1
-theme_override_fonts/font = ExtResource("13_16mmc")
-theme_override_font_sizes/font_size = 26
-text = "Item
-Item Name"
-autowrap_mode = 2
-
-[node name="Pokemon" type="AnimatedSprite2D" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=1006552825]
+[node name="Pokemon" type="AnimatedSprite2D" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----" unique_id=1006552825]
 texture_filter = 1
 position = Vector2(339, 170.00002)
 scale = Vector2(1.6482435, 1.6928104)
 sprite_frames = ExtResource("33_vnhh6")
-animation = &"back"
+animation = &"front"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=717938485]
+[node name="TypeContainer" type="HBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----" unique_id=717938485]
 layout_direction = 2
 layout_mode = 0
 offset_left = 348.0
@@ -1817,11 +1842,11 @@ offset_bottom = 84.0
 theme_override_constants/separation = 1
 alignment = 1
 
-[node name="Type1" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/HBoxContainer" unique_id=1479460192]
+[node name="Type1" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/TypeContainer" unique_id=1479460192]
 texture_filter = 1
 layout_mode = 2
 
-[node name="Type2" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/HBoxContainer" unique_id=1364429238]
+[node name="Type2" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves-----/TypeContainer" unique_id=1364429238]
 texture_filter = 1
 layout_mode = 2
 
@@ -1833,6 +1858,474 @@ offset_right = 328.45044
 offset_bottom = 279.16614
 texture = ExtResource("32_vnhh6")
 expand_mode = 1
+
+[node name="SummaryStats-----" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=1626890270]
+texture_filter = 1
+layout_mode = 0
+offset_left = 31.0
+offset_top = 213.0
+offset_right = 455.0
+offset_bottom = 531.0
+texture = ExtResource("35_fpcek")
+expand_mode = 1
+
+[node name="Pokemon" type="AnimatedSprite2D" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=657015542]
+texture_filter = 1
+position = Vector2(338, 170.00002)
+scale = Vector2(1.6482435, 1.6928104)
+sprite_frames = ExtResource("33_vnhh6")
+animation = &"front"
+
+[node name="TypeContainer" type="HBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=1767444118]
+layout_direction = 2
+layout_mode = 0
+offset_left = 348.0
+offset_top = 72.0
+offset_right = 416.0
+offset_bottom = 84.0
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Type1" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/TypeContainer" unique_id=2095249277]
+texture_filter = 1
+layout_mode = 2
+
+[node name="Type2" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/TypeContainer" unique_id=291875173]
+texture_filter = 1
+layout_mode = 2
+
+[node name="HBoxContainer" type="VBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=11338785]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 110.0
+offset_right = 109.0
+offset_bottom = 234.0
+theme_override_constants/separation = 6
+
+[node name="AttackLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HBoxContainer" unique_id=1962924484]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Attack"
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="DefendLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HBoxContainer" unique_id=1236835143]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Defense"
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpAtkLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HBoxContainer" unique_id=771767801]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Sp. Atk"
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpDefLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HBoxContainer" unique_id=246517495]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Sp. Def"
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpeedLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HBoxContainer" unique_id=2068865621]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Speed"
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="YourHPBar" type="TextureProgressBar" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=1983458830]
+texture_filter = 1
+layout_mode = 0
+offset_left = 157.0
+offset_top = 94.0
+offset_right = 238.0
+offset_bottom = 98.0
+value = 100.0
+nine_patch_stretch = true
+texture_under = ExtResource("17_g6hvt")
+texture_progress = ExtResource("18_g6hvt")
+script = ExtResource("17_0hs4o")
+green_bar = ExtResource("18_g6hvt")
+yellow_bar = ExtResource("19_y8gcu")
+red_bar = ExtResource("20_31luo")
+
+[node name="HPContainer" type="Control" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=656014167]
+anchors_preset = 0
+offset_left = 55.0
+offset_top = 62.0
+offset_right = 90.0
+offset_bottom = 87.0
+
+[node name="HPLabel" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HPContainer" unique_id=873429866]
+texture_filter = 1
+layout_mode = 0
+offset_left = -2.0
+offset_top = 6.0
+offset_right = 33.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "HP"
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Attack" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HPContainer" unique_id=1514406076]
+texture_filter = 1
+layout_mode = 0
+offset_left = 58.0
+offset_top = 6.0
+offset_right = 128.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Attack2" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HPContainer" unique_id=252335975]
+texture_filter = 1
+layout_mode = 0
+offset_left = 133.0
+offset_top = 6.0
+offset_right = 169.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Attack3" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/HPContainer" unique_id=102133393]
+texture_filter = 1
+layout_mode = 0
+offset_left = 171.0
+offset_top = 6.0
+offset_right = 207.0
+offset_bottom = 26.0
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="StatsContainer" type="VBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=1877475993]
+layout_mode = 0
+offset_left = 110.54
+offset_top = 110.0
+offset_right = 186.0
+offset_bottom = 257.0
+theme_override_constants/separation = 6
+
+[node name="Attack" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/StatsContainer" unique_id=1077165948]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Defend" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/StatsContainer" unique_id=1471019793]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpAtk" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/StatsContainer" unique_id=949960130]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpDef" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/StatsContainer" unique_id=964142723]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Speed" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/StatsContainer" unique_id=1662266208]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="EVsContainer" type="VBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=1607854910]
+layout_mode = 0
+offset_left = 169.0
+offset_top = 110.0
+offset_right = 244.45999
+offset_bottom = 257.0
+theme_override_constants/separation = 6
+
+[node name="Attack" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/EVsContainer" unique_id=429844466]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Defend" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/EVsContainer" unique_id=2050666431]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpAtk" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/EVsContainer" unique_id=696072552]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpDef" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/EVsContainer" unique_id=793368222]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Speed" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/EVsContainer" unique_id=97481523]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="IVsContainer" type="VBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=1515614846]
+layout_mode = 0
+offset_left = 208.0
+offset_top = 110.0
+offset_right = 283.46
+offset_bottom = 257.0
+theme_override_constants/separation = 6
+
+[node name="Attack" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/IVsContainer" unique_id=1425872572]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Defend" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/IVsContainer" unique_id=1474294888]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpAtk" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/IVsContainer" unique_id=1180273393]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="SpDef" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/IVsContainer" unique_id=1254759825]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42745098, 0.42745098, 0.42745098, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="Speed" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/IVsContainer" unique_id=770456568]
+texture_filter = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "100
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="AbilityContainer" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----" unique_id=1343348522]
+texture_filter = 1
+layout_mode = 0
+offset_left = 31.0
+offset_top = 244.0
+offset_right = 92.0
+offset_bottom = 264.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 28
+text = "Ability"
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="AbilityName" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/AbilityContainer" unique_id=242159238]
+texture_filter = 1
+layout_mode = 0
+offset_left = 103.0
+offset_top = -1.0
+offset_right = 236.0
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 23
+text = "Serene Grace"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 5
+
+[node name="AbilityDesc" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/AbilityContainer" unique_id=414391177]
+texture_filter = 1
+layout_mode = 0
+offset_left = -20.0
+offset_top = 28.0
+offset_right = 193.0
+offset_bottom = 67.0
+theme_override_colors/font_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 24
+text = "Redirects single-target electric moves to this PoRedirects single-target electric moves to this Pokemon where possible.  Absorbs Electric moves, raising Special Attack one stage."
+autowrap_mode = 2
+text_overrun_behavior = 3
+
+[node name="AbilityHover" type="Button" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryStats-----/AbilityContainer" unique_id=553533829]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_left = -31.0
+offset_top = -6.0
+offset_right = 195.0
+offset_bottom = 73.0
+
+[node name="PokemonName" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=815036283]
+layout_mode = 0
+offset_left = 324.0
+offset_top = 254.0
+offset_right = 434.0
+offset_bottom = 276.0
+theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 29
+text = "Regigigas"
+autowrap_mode = 2
+text_overrun_behavior = 4
 
 [node name="Level" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=129978050]
 layout_mode = 0
@@ -1849,6 +2342,31 @@ theme_override_font_sizes/font_size = 28
 text = "100"
 autowrap_mode = 2
 
+[node name="Item" type="Label" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=918701920]
+layout_mode = 0
+offset_left = 271.0
+offset_top = 485.0
+offset_right = 367.0
+offset_bottom = 526.0
+theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 26
+text = "Item
+Item Name"
+autowrap_mode = 2
+
+[node name="Gender" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=636901171]
+texture_filter = 1
+layout_mode = 0
+offset_left = 437.0
+offset_top = 254.0
+offset_right = 451.0
+offset_bottom = 274.0
+texture = ExtResource("29_gh42v")
+
 [node name="HoverTween" type="Button" parent="BattleSim/Control/PartyMenu/Background" unique_id=1583918471]
 visible = false
 modulate = Color(1, 1, 1, 0)
@@ -1863,7 +2381,7 @@ button_mask = 0
 stream = ExtResource("35_j86qt")
 volume_db = -10.0
 
-[node name="WantToSwitch?" type="Label" parent="BattleSim/Control" unique_id=1303668390]
+[node name="ContextLabel" type="Label" parent="BattleSim/Control" unique_id=1303668390]
 layout_mode = 0
 offset_left = 29.0
 offset_top = 504.0
@@ -1898,7 +2416,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.9999977, 0, -0.0017453269, 0, 1, 0, 0.0017453269, 0, 0.9999977, 4.396, 0.037, -3.68)
+transform = Transform3D(0.99999756, 0, -0.0017453268, 0, 1, 0, 0.0017453268, 0, 0.99999756, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -2002,20 +2520,6 @@ green_bar = ExtResource("18_g6hvt")
 yellow_bar = ExtResource("19_y8gcu")
 red_bar = ExtResource("20_31luo")
 
-[node name="Name" type="Label" parent="BattleSim/VBoxContainer/OpponentHPContainer" unique_id=1619885835]
-texture_filter = 1
-layout_mode = 0
-offset_left = 57.0
-offset_top = 5.029999
-offset_right = 196.0
-offset_bottom = 26.029999
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("13_16mmc")
-theme_override_font_sizes/font_size = 27
-text_overrun_behavior = 1
-
 [node name="Level" type="Label" parent="BattleSim/VBoxContainer/OpponentHPContainer" unique_id=1911705066]
 texture_filter = 1
 layout_mode = 0
@@ -2038,6 +2542,29 @@ offset_top = 28.029999
 offset_right = 63.35544
 offset_bottom = 40.03
 texture = ExtResource("28_2ihny")
+
+[node name="Gender" type="TextureRect" parent="BattleSim/VBoxContainer/OpponentHPContainer" unique_id=373729161]
+texture_filter = 1
+layout_mode = 0
+offset_left = 185.0
+offset_top = 7.0000076
+offset_right = 199.0
+offset_bottom = 28.0
+texture = ExtResource("29_gh42v")
+
+[node name="Name" type="Label" parent="BattleSim/VBoxContainer/OpponentHPContainer" unique_id=1205539938]
+texture_filter = 1
+layout_mode = 0
+offset_left = 43.0
+offset_top = 4.0
+offset_right = 181.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 27
+text_overrun_behavior = 1
 
 [node name="TrainerHPContainer" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=43815748]
 texture_filter = 1
@@ -2067,9 +2594,9 @@ red_bar = ExtResource("20_31luo")
 [node name="Name" type="Label" parent="BattleSim/VBoxContainer/TrainerHPContainer" unique_id=583118817]
 texture_filter = 1
 layout_mode = 0
-offset_left = 39.0
+offset_left = 35.0
 offset_top = -3.0
-offset_right = 183.0
+offset_right = 173.0
 offset_bottom = 18.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
@@ -2139,6 +2666,15 @@ offset_top = 19.579987
 offset_right = 91.35544
 offset_bottom = 31.579987
 texture = ExtResource("28_2ihny")
+
+[node name="Gender" type="TextureRect" parent="BattleSim/VBoxContainer/TrainerHPContainer" unique_id=803364549]
+texture_filter = 1
+layout_mode = 0
+offset_left = 177.0
+offset_top = -4.0
+offset_right = 191.0
+offset_bottom = 16.999992
+texture = ExtResource("29_gh42v")
 
 [node name="BattleText" type="Panel" parent="BattleSim/VBoxContainer" unique_id=1974608967]
 layout_mode = 0

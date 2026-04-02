@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/1-26. Battle! Trainer.mp3-25d9d293401b978573b
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

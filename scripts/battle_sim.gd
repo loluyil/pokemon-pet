@@ -146,6 +146,52 @@ const PUNCHING_MOVES = {
 	"shadow-punch": true, "sky-uppercut": true, "thunder-punch": true,
 }
 
+const CONFUSION_SECONDARY_MOVES = {
+	"chatter": 100,
+	"confusion": 10,
+	"dynamic-punch": 100,
+	"psybeam": 10,
+	"rock-climb": 20,
+	"signal-beam": 10,
+	"water-pulse": 20,
+}
+
+const GENDERLESS_POKEMON = {
+	"arceus": true, "articuno": true, "azelf": true, "baltoy": true, "beldum": true,
+	"bronzong": true, "bronzor": true, "celebi": true, "claydol": true, "cobalion": true,
+	"cryogonal": true, "darkrai": true, "deoxys-attack": true, "deoxys-defense": true,
+	"deoxys-normal": true, "deoxys-speed": true, "dialga": true, "ditto": true,
+	"electrode": true, "genesect": true, "giratina-altered": true, "giratina-origin": true,
+	"golett": true, "golurk": true, "groudon": true, "ho-oh": true,
+	"jirachi": true, "keldeo-ordinary": true, "klink": true, "klang": true, "klinklang": true, "kyogre": true,
+	"kyurem": true, "kyurem-black": true, "kyurem-white": true, "lugia": true,
+	"lunatone": true, "magnemite": true, "magneton": true,
+	"magnezone": true, "manaphy": true, "meloetta-aria": true, "mesprit": true,
+	"metagross": true, "metang": true, "mew": true, "mewtwo": true, "moltres": true,
+	"palkia": true, "phione": true, "porygon": true, "porygon-z": true, "porygon2": true,
+	"rayquaza": true, "regice": true, "regigigas": true, "regirock": true,
+	"registeel": true, "reshiram": true, "rotom": true, "rotom-fan": true,
+	"rotom-frost": true, "rotom-heat": true, "rotom-mow": true, "rotom-wash": true,
+	"shaymin-land": true, "shaymin-sky": true, "solrock": true, "starmie": true,
+	"staryu": true, "suicune": true, "terrakion": true, "uxie": true, "victini": true,
+	"virizion": true, "voltorb": true, "zapdos": true, "zekrom": true,
+}
+
+const ALWAYS_MALE_POKEMON = {
+	"braviary": true, "gallade": true, "hitmonchan": true, "hitmonlee": true,
+	"hitmontop": true, "landorus-incarnate": true, "landorus-therian": true, "latios": true,
+	"nidoking": true, "nidoran-m": true, "sawk": true, "tauros": true,
+	"throh": true, "thundurus-incarnate": true, "thundurus-therian": true,
+	"tornadus-incarnate": true, "tornadus-therian": true, "volbeat": true,
+}
+
+const ALWAYS_FEMALE_POKEMON = {
+	"blissey": true, "chansey": true, "cresselia": true, "froslass": true,
+	"happiny": true, "illumise": true, "jynx": true, "kangaskhan": true,
+	"latias": true, "miltank": true, "nidoqueen": true, "nidoran-f": true,
+	"vespiquen": true,
+}
+
 const MOLD_BREAKER_ABILITIES = {
 	"mold-breaker": true,
 	"teravolt": true,
@@ -376,8 +422,10 @@ func start_battle():
 
 	var your_mon = your_team[your_active]
 	var opp_mon = opponent_team[opponent_active]
-	pokemon_sent_out.emit(true,  your_mon["current_hp"], your_mon["max_hp"], your_mon["display_name"], your_mon["level"], your_mon["name"])
-	pokemon_sent_out.emit(false, opp_mon["current_hp"],  opp_mon["max_hp"],  opp_mon["display_name"],  opp_mon["level"], opp_mon["name"])
+	_apply_illusion(true)
+	_apply_illusion(false)
+	_emit_active_identity(true)
+	_emit_active_identity(false)
 	_handle_on_switch_in_ability(false)
 	_handle_on_switch_in_ability(true)
 	_refresh_active_ability_state()
@@ -406,14 +454,20 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 	var speed_stat = calc_stat(raw["base_speed"], ivs["spe"], evs["spe"], level)
 	return {
 		"name": raw["name"],
+		"true_display_name": _format_name(raw["name"]),
 		"display_name": _format_name(raw["name"]),
+		"appearance_name": raw["name"],
 		"level": level,
 		"types": raw["types"].duplicate(true),
 		"base_types": raw["types"].duplicate(true),
 		"ability": raw["ability"],
 		"base_ability": raw["ability"],
 		"item": raw["item"],
+		"base_item": raw["item"],
+		"last_consumed_item": "",
 		"role": raw["role"],
+		"ivs": raw.get("ivs", {}).duplicate(true),
+		"evs": raw.get("evs", {}).duplicate(true),
 		"moveset": raw["moveset"],
 		"base_moveset": raw["moveset"].duplicate(true),
 		"move_names": raw["move_names"],
@@ -444,6 +498,10 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"protect_consecutive": 0,
 		"last_move_used": "",
 		"sleep_turns": 0,
+		"is_confused": false,
+		"confusion_turns": 0,
+		"infatuated_with": "",
+		"gender": _determine_gender(raw["name"]),
 		"substitute_hp": 0,
 		"leech_seed_source": "",
 		"friendship": 255,
@@ -456,7 +514,159 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"disabled_move": "",
 		"disable_turns": 0,
 		"analytic_active": false,
+		"choice_lock": "",
+		"air_balloon_active": raw["item"] == "Air Balloon",
+		"unburden_active": false,
+		"illusion_active": false,
+		"transformed": false,
 	}
+
+func _get_base_species_name(mon_name: String) -> String:
+	if mon_name.ends_with("-male"):
+		return mon_name.trim_suffix("-male")
+	if mon_name.ends_with("-female"):
+		return mon_name.trim_suffix("-female")
+	return mon_name
+
+func _determine_gender(mon_name: String) -> String:
+	if mon_name.ends_with("-male"):
+		return "M"
+	if mon_name.ends_with("-female"):
+		return "F"
+	var base_name = _get_base_species_name(mon_name)
+	if GENDERLESS_POKEMON.get(mon_name, false) or GENDERLESS_POKEMON.get(base_name, false):
+		return ""
+	if ALWAYS_MALE_POKEMON.get(mon_name, false) or ALWAYS_MALE_POKEMON.get(base_name, false):
+		return "M"
+	if ALWAYS_FEMALE_POKEMON.get(mon_name, false) or ALWAYS_FEMALE_POKEMON.get(base_name, false):
+		return "F"
+	return "M" if randi() % 2 == 0 else "F"
+
+func _update_mon_appearance(mon: Dictionary, visible_name: String, visible_display_name: String):
+	mon["appearance_name"] = visible_name
+	mon["display_name"] = visible_display_name
+
+func _emit_active_identity(is_yours: bool):
+	var mon = _get_active_mon(is_yours)
+	pokemon_sent_out.emit(
+		is_yours,
+		mon["current_hp"],
+		mon["max_hp"],
+		mon["display_name"],
+		mon["level"],
+		mon.get("appearance_name", mon["name"])
+	)
+
+func _find_illusion_partner(is_yours: bool) -> Dictionary:
+	var team = your_team if is_yours else opponent_team
+	var active_index = your_active if is_yours else opponent_active
+	for i in range(team.size() - 1, -1, -1):
+		if i == active_index:
+			continue
+		if not team[i]["is_fainted"]:
+			return team[i]
+	return {}
+
+func _apply_illusion(is_yours: bool):
+	var mon = _get_active_mon(is_yours)
+	_update_mon_appearance(mon, mon["name"], mon["true_display_name"])
+	mon["illusion_active"] = false
+	if not _has_ability(mon, "illusion"):
+		return
+	var partner = _find_illusion_partner(is_yours)
+	if partner.is_empty():
+		return
+	_update_mon_appearance(mon, partner["name"], partner["true_display_name"])
+	mon["illusion_active"] = true
+
+func _break_illusion(mon: Dictionary, is_yours: bool):
+	if not mon.get("illusion_active", false):
+		return
+	mon["illusion_active"] = false
+	_update_mon_appearance(mon, mon["name"], mon["true_display_name"])
+	battle_message.emit(mon["display_name"] + "'s Illusion wore off!")
+	if not mon["is_fainted"]:
+		_emit_active_identity(is_yours)
+
+func _apply_confusion(mon: Dictionary, is_yours: bool) -> bool:
+	if _has_ability(mon, "own-tempo"):
+		battle_message.emit(mon["display_name"] + " cannot become confused!")
+		return false
+	if mon.get("is_confused", false):
+		return false
+	mon["is_confused"] = true
+	mon["confusion_turns"] = randi_range(2, 5)
+	battle_message.emit(mon["display_name"] + " became confused!")
+	if not _berry_is_blocked(mon, is_yours) and mon.get("item", "") == "Persim Berry":
+		mon["is_confused"] = false
+		mon["confusion_turns"] = 0
+		_consume_item(mon, is_yours, mon["display_name"] + " snapped out of confusion with Persim Berry!")
+	return true
+
+func _clear_infatuation(mon: Dictionary):
+	mon["infatuated_with"] = ""
+
+func _can_infatuate(source: Dictionary, target: Dictionary) -> bool:
+	if source["gender"] == "" or target["gender"] == "":
+		return false
+	if source["gender"] == target["gender"]:
+		return false
+	if _has_ability(target, "oblivious"):
+		return false
+	return true
+
+func _apply_infatuation(source: Dictionary, target: Dictionary, target_is_yours: bool) -> bool:
+	if target.get("infatuated_with", "") != "":
+		return false
+	if not _can_infatuate(source, target):
+		if _has_ability(target, "oblivious"):
+			battle_message.emit(target["display_name"] + " is too oblivious to fall in love!")
+		else:
+			battle_message.emit("But it failed!")
+		return false
+	target["infatuated_with"] = _side_key(not target_is_yours)
+	battle_message.emit(target["display_name"] + " fell in love!")
+	if _can_use_held_item(target) and target.get("item", "") == "Mental Herb":
+		_clear_infatuation(target)
+		_consume_item(target, target_is_yours, target["display_name"] + " cured its infatuation with Mental Herb!")
+	return true
+
+func _apply_confusion_self_hit(mon: Dictionary, is_yours: bool):
+	var atk = float(get_effective_stat(mon, "attack"))
+	if mon["status"] == "burn" and not _has_ability(mon, "guts"):
+		atk *= 0.5
+	var def_stat = max(float(get_effective_stat(mon, "defense")), 1.0)
+	var damage = int((((2.0 * mon["level"] / 5.0 + 2.0) * 40.0 * atk / def_stat) / 50.0) + 2.0)
+	damage = max(damage, 1)
+	_break_illusion(mon, is_yours)
+	_damage_mon(mon, damage, is_yours, mon["display_name"] + " hurt itself in its confusion!")
+	_resolve_faint_from_residual(mon, is_yours)
+
+func _apply_transform(attacker: Dictionary, defender: Dictionary, is_yours: bool):
+	attacker["types"] = defender["types"].duplicate(true)
+	attacker["attack"] = defender["attack"]
+	attacker["defense"] = defender["defense"]
+	attacker["sp_atk"] = defender["sp_atk"]
+	attacker["sp_def"] = defender["sp_def"]
+	attacker["speed"] = defender["speed"]
+	attacker["atk_stage"] = defender["atk_stage"]
+	attacker["def_stage"] = defender["def_stage"]
+	attacker["spa_stage"] = defender["spa_stage"]
+	attacker["spd_stage"] = defender["spd_stage"]
+	attacker["spe_stage"] = defender["spe_stage"]
+	attacker["moveset"] = []
+	for foe_move in defender["moveset"]:
+		var copied_move = foe_move.duplicate(true)
+		copied_move["current_pp"] = min(copied_move.get("max_pp", 5), 5)
+		copied_move["max_pp"] = min(copied_move.get("max_pp", 5), 5)
+		attacker["moveset"].append(copied_move)
+	attacker["move_names"] = defender["move_names"].duplicate(true)
+	attacker["transformed"] = true
+	attacker["illusion_active"] = false
+	_update_mon_appearance(attacker, defender.get("appearance_name", defender["name"]), defender["display_name"])
+	if not attacker["is_fainted"]:
+		_emit_active_identity(is_yours)
+	battle_message.emit(attacker["true_display_name"] + " transformed into " + defender["display_name"] + "!")
 
 func _side_key(is_yours: bool) -> String:
 	return "yours" if is_yours else "opp"
@@ -517,6 +727,144 @@ func _damage_mon(mon: Dictionary, amount: int, is_yours: bool, message: String =
 	hp_changed.emit(is_yours, mon["current_hp"], mon["max_hp"])
 	if message != "":
 		battle_message.emit(message)
+	if mon["current_hp"] > 0:
+		_try_trigger_hp_item(mon, is_yours)
+
+func _is_berry_item(item_name: String) -> bool:
+	return item_name.ends_with("Berry")
+
+func _can_use_held_item(mon: Dictionary) -> bool:
+	return not _has_ability(mon, "klutz")
+
+func _berry_is_blocked(mon: Dictionary, is_yours: bool) -> bool:
+	if not _is_berry_item(mon.get("item", "")):
+		return false
+	if _can_use_held_item(mon) == false:
+		return true
+	var foe = _get_active_mon(not is_yours)
+	return not foe["is_fainted"] and _has_ability(foe, "unnerve")
+
+func _consume_item(mon: Dictionary, is_yours: bool, message: String = ""):
+	var held_item = mon.get("item", "")
+	if held_item == "" or held_item == "None":
+		return
+	mon["last_consumed_item"] = held_item
+	mon["item"] = ""
+	if held_item == "Air Balloon":
+		mon["air_balloon_active"] = false
+	if _has_ability(mon, "unburden"):
+		mon["unburden_active"] = true
+	if message != "":
+		battle_message.emit(message)
+
+func _try_trigger_status_cure_item(mon: Dictionary, is_yours: bool):
+	if mon["status"] == "":
+		return
+	if _berry_is_blocked(mon, is_yours):
+		return
+	if mon["item"] == "Lum Berry":
+		var held_item = mon["item"]
+		mon["status"] = ""
+		mon["sleep_turns"] = 0
+		mon["toxic_counter"] = 0
+		status_changed.emit(is_yours, "")
+		_consume_item(mon, is_yours, mon["display_name"] + " cured its status with " + held_item + "!")
+	elif mon["status"] == "sleep" and mon["item"] == "Chesto Berry":
+		var held_item = mon["item"]
+		mon["status"] = ""
+		mon["sleep_turns"] = 0
+		status_changed.emit(is_yours, "")
+		_consume_item(mon, is_yours, mon["display_name"] + " woke up with " + held_item + "!")
+
+func _try_trigger_hp_item(mon: Dictionary, is_yours: bool):
+	if mon["current_hp"] <= 0:
+		return
+	if _berry_is_blocked(mon, is_yours):
+		return
+	if mon["item"] == "Sitrus Berry" and mon["current_hp"] <= int(mon["max_hp"] / 2):
+		var heal_amount = max(int(mon["max_hp"] / 4), 1)
+		var held_item = mon["item"]
+		_consume_item(mon, is_yours, mon["display_name"] + " restored HP with " + held_item + "!")
+		_heal_mon(mon, heal_amount, is_yours)
+
+func _try_activate_orb(mon: Dictionary, is_yours: bool):
+	if not _can_use_held_item(mon):
+		return
+	if mon["status"] != "":
+		return
+	if mon["item"] == "Flame Orb" and _can_receive_status(mon, "burn"):
+		mon["status"] = "burn"
+		status_changed.emit(is_yours, "burn")
+		battle_message.emit(mon["display_name"] + " was burned by its Flame Orb!")
+		_try_trigger_status_cure_item(mon, is_yours)
+	elif mon["item"] == "Toxic Orb" and _can_receive_status(mon, "toxic"):
+		mon["status"] = "toxic"
+		mon["toxic_counter"] = 0
+		status_changed.emit(is_yours, "toxic")
+		battle_message.emit(mon["display_name"] + " was badly poisoned by its Toxic Orb!")
+		_try_trigger_status_cure_item(mon, is_yours)
+
+func _apply_white_herb(mon: Dictionary, is_yours: bool):
+	if not _can_use_held_item(mon):
+		return
+	if mon["item"] != "White Herb":
+		return
+	var restored = false
+	for stage_key in ["atk_stage", "def_stage", "spa_stage", "spd_stage", "spe_stage", "accuracy_stage", "evasion_stage"]:
+		if mon[stage_key] < 0:
+			mon[stage_key] = 0
+			restored = true
+	if restored:
+		_consume_item(mon, is_yours, mon["display_name"] + " restored its lowered stats with White Herb!")
+
+func _matching_gem_type(item_name: String) -> String:
+	match item_name:
+		"Flying Gem":
+			return "flying"
+		"Normal Gem":
+			return "normal"
+		"Fighting Gem":
+			return "fighting"
+	return ""
+
+func _is_choice_item(item_name: String) -> bool:
+	return item_name in ["Choice Band", "Choice Specs", "Choice Scarf"]
+
+func _prepare_move_for_use(attacker: Dictionary, move: Dictionary) -> Dictionary:
+	var prepared_move = move.duplicate(true)
+	if _has_ability(attacker, "normalize"):
+		prepared_move["type"] = "normal"
+	var gem_type = _matching_gem_type(attacker.get("item", ""))
+	prepared_move["gem_boost"] = gem_type != "" and gem_type == prepared_move.get("type", "")
+	return prepared_move
+
+func _resolve_choice_locked_move(mon: Dictionary, selected_move: Dictionary) -> Dictionary:
+	if not _can_use_held_item(mon) or not _is_choice_item(mon.get("item", "")):
+		return selected_move
+	var locked_name = mon.get("choice_lock", "")
+	if locked_name == "":
+		return selected_move
+	for move in mon["moveset"]:
+		if move["name"] == locked_name:
+			return move
+	return selected_move
+
+func _handle_on_hit_items(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, hp_damage: int, hit_substitute: bool):
+	if not hit_substitute and hp_damage > 0:
+		if _can_use_held_item(defender) and defender.get("air_balloon_active", false) and defender.get("item", "") == "Air Balloon":
+			_consume_item(defender, not is_yours, defender["display_name"] + "'s Air Balloon popped!")
+		_try_trigger_hp_item(defender, not is_yours)
+
+	if not hit_substitute and not defender["is_fainted"] and _is_contact_move(move["name"], move) and _can_use_held_item(defender) and defender.get("item", "") == "Rocky Helmet" and not attacker["is_fainted"]:
+		_damage_mon(attacker, max(int(attacker["max_hp"] / 6), 1), is_yours, attacker["display_name"] + " was hurt by Rocky Helmet!")
+		_try_trigger_hp_item(attacker, is_yours)
+
+	if not hit_substitute and not defender["is_fainted"] and _is_contact_move(move["name"], move) and _has_ability(defender, "pickpocket") and defender.get("item", "") == "" and attacker.get("item", "") != "" and _can_use_held_item(attacker):
+		defender["item"] = attacker["item"]
+		attacker["item"] = ""
+		battle_message.emit(defender["display_name"] + " picked the attacker's pocket!")
+		if _has_ability(attacker, "unburden"):
+			attacker["unburden_active"] = true
 
 func _is_contact_move(move_name: String, move: Dictionary) -> bool:
 	return CONTACT_MOVES.has(move_name)
@@ -528,20 +876,20 @@ func _is_powder_move(move_name: String) -> bool:
 	return POWDER_MOVES.has(move_name)
 
 func _move_has_secondary_effect(move_name: String) -> bool:
-	return SECONDARY_EFFECTS.has(move_name)
+	return SECONDARY_EFFECTS.has(move_name) or CONFUSION_SECONDARY_MOVES.has(move_name)
 
 func _can_receive_status(mon: Dictionary, status_name: String) -> bool:
 	match status_name:
 		"sleep":
-			return not (_has_ability(mon, "insomnia") or _has_ability(mon, "vital-spirit"))
+			return not (_has_ability(mon, "insomnia") or _has_ability(mon, "vital-spirit") or (_has_ability(mon, "leaf-guard") and _effective_weather() == "sun"))
 		"paralyze":
-			return not _has_ability(mon, "limber")
+			return not (_has_ability(mon, "limber") or (_has_ability(mon, "leaf-guard") and _effective_weather() == "sun"))
 		"poison", "toxic":
-			return not _has_ability(mon, "immunity") and "poison" not in mon["types"] and "steel" not in mon["types"]
+			return not (_has_ability(mon, "immunity") or (_has_ability(mon, "leaf-guard") and _effective_weather() == "sun")) and "poison" not in mon["types"] and "steel" not in mon["types"]
 		"burn":
-			return not _has_ability(mon, "water-veil") and "fire" not in mon["types"]
+			return not (_has_ability(mon, "water-veil") or (_has_ability(mon, "leaf-guard") and _effective_weather() == "sun")) and "fire" not in mon["types"]
 		"freeze":
-			return not _has_ability(mon, "magma-armor") and "ice" not in mon["types"]
+			return not (_has_ability(mon, "magma-armor") or (_has_ability(mon, "leaf-guard") and _effective_weather() == "sun")) and "ice" not in mon["types"]
 	return true
 
 func _is_move_blocked_by_ability(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool) -> bool:
@@ -559,6 +907,9 @@ func _is_move_blocked_by_ability(attacker: Dictionary, defender: Dictionary, mov
 
 	if move_type == "ground" and _has_ability(defender, "levitate") and not attacker_breaks:
 		battle_message.emit(defender["display_name"] + " is immune thanks to Levitate!")
+		return true
+	if move_type == "ground" and _can_use_held_item(defender) and defender.get("air_balloon_active", false):
+		battle_message.emit(defender["display_name"] + " is floating on its Air Balloon!")
 		return true
 
 	if move_type == "electric":
@@ -626,6 +977,21 @@ func _handle_on_switch_in_ability(is_yours: bool):
 			var foe = _get_active_mon(not is_yours)
 			if foe["item"] != "":
 				battle_message.emit(mon["display_name"] + " frisked " + foe["display_name"] + " and found its " + foe["item"] + "!")
+		"forewarn":
+			var foe = _get_active_mon(not is_yours)
+			var best_move_name := ""
+			var best_power := -1
+			for foe_move in foe["moveset"]:
+				var candidate_power = int(foe_move.get("power", 0))
+				if foe_move["name"] in OHKO_MOVES:
+					candidate_power = 150
+				elif foe_move["name"] in ["counter", "mirror-coat", "metal-burst"]:
+					candidate_power = 120
+				if candidate_power > best_power:
+					best_power = candidate_power
+					best_move_name = foe_move["name"]
+			if best_move_name != "":
+				battle_message.emit(mon["display_name"] + "'s Forewarn alerted it to " + _format_name(best_move_name) + "!")
 		"trace":
 			var foe = _get_active_mon(not is_yours)
 			var traced = foe["ability"]
@@ -636,31 +1002,15 @@ func _handle_on_switch_in_ability(is_yours: bool):
 					_handle_on_switch_in_ability(is_yours)
 		"imposter":
 			var foe = _get_active_mon(not is_yours)
-			mon["types"] = foe["types"].duplicate(true)
-			mon["attack"] = foe["attack"]
-			mon["defense"] = foe["defense"]
-			mon["sp_atk"] = foe["sp_atk"]
-			mon["sp_def"] = foe["sp_def"]
-			mon["speed"] = foe["speed"]
-			mon["atk_stage"] = foe["atk_stage"]
-			mon["def_stage"] = foe["def_stage"]
-			mon["spa_stage"] = foe["spa_stage"]
-			mon["spd_stage"] = foe["spd_stage"]
-			mon["spe_stage"] = foe["spe_stage"]
-			mon["moveset"] = []
-			for foe_move in foe["moveset"]:
-				var copied_move = foe_move.duplicate(true)
-				copied_move["current_pp"] = min(copied_move.get("max_pp", 5), 5)
-				copied_move["max_pp"] = min(copied_move.get("max_pp", 5), 5)
-				mon["moveset"].append(copied_move)
-			mon["move_names"] = foe["move_names"].duplicate(true)
-			battle_message.emit(mon["display_name"] + " transformed into " + foe["display_name"] + "!")
+			_apply_transform(mon, foe, is_yours)
 
 func _reset_switch_in_state(mon: Dictionary):
 	mon["types"] = mon["base_types"].duplicate(true)
 	mon["ability"] = mon["base_ability"]
 	mon["moveset"] = mon["base_moveset"].duplicate(true)
 	mon["move_names"] = mon["base_move_names"].duplicate(true)
+	mon["display_name"] = mon["true_display_name"]
+	mon["appearance_name"] = mon["name"]
 	mon["attack"] = mon["base_attack"]
 	mon["defense"] = mon["base_defense"]
 	mon["sp_atk"] = mon["base_sp_atk"]
@@ -670,6 +1020,9 @@ func _reset_switch_in_state(mon: Dictionary):
 			"accuracy_stage", "evasion_stage"]:
 		mon[stage_key] = 0
 	mon["toxic_counter"] = 0
+	mon["is_confused"] = false
+	mon["confusion_turns"] = 0
+	mon["infatuated_with"] = ""
 	mon["substitute_hp"] = 0
 	mon["is_protected"] = false
 	mon["protect_consecutive"] = 0
@@ -679,13 +1032,17 @@ func _reset_switch_in_state(mon: Dictionary):
 	mon["disabled_move"] = ""
 	mon["disable_turns"] = 0
 	mon["analytic_active"] = false
+	mon["choice_lock"] = ""
+	mon["air_balloon_active"] = mon["item"] == "Air Balloon"
+	mon["illusion_active"] = false
+	mon["transformed"] = false
 	if mon["ability"] == "slow-start":
 		mon["slow_start_turns"] = 5
 	else:
 		mon["slow_start_turns"] = 0
 	mon["truant_loafing"] = false
 
-func _clear_switch_out_state(mon: Dictionary):
+func _clear_switch_out_state(mon: Dictionary, is_yours: bool):
 	if mon["ability"] == "natural-cure" and mon["status"] != "":
 		mon["status"] = ""
 		mon["sleep_turns"] = 0
@@ -698,25 +1055,36 @@ func _clear_switch_out_state(mon: Dictionary):
 	mon["perish_count"] = -1
 	mon["destiny_bond"] = false
 	mon["is_flinched"] = false
+	mon["is_confused"] = false
+	mon["confusion_turns"] = 0
+	mon["infatuated_with"] = ""
 	mon["leech_seed_source"] = ""
 	mon["flash_fire_active"] = false
 	mon["truant_loafing"] = false
 	mon["disabled_move"] = ""
 	mon["disable_turns"] = 0
 	mon["analytic_active"] = false
+	mon["choice_lock"] = ""
+	mon["air_balloon_active"] = mon["item"] == "Air Balloon"
+	mon["unburden_active"] = false
+	mon["illusion_active"] = false
+	mon["transformed"] = false
 	if mon["status"] == "toxic":
 		mon["toxic_counter"] = 0
+	var foe = _get_active_mon(not is_yours)
+	if foe.get("infatuated_with", "") == _side_key(is_yours):
+		foe["infatuated_with"] = ""
 
 func _switch_in_pokemon(is_yours: bool, index: int, apply_hazards: bool = true):
 	var team = your_team if is_yours else opponent_team
-	var mon = team[index]
-	_reset_switch_in_state(mon)
+	_reset_switch_in_state(team[index])
 	if is_yours:
 		your_active = index
 	else:
 		opponent_active = index
-	pokemon_sent_out.emit(is_yours, mon["current_hp"], mon["max_hp"],
-		mon["display_name"], mon["level"], mon["name"])
+	_apply_illusion(is_yours)
+	var mon = _get_active_mon(is_yours)
+	_emit_active_identity(is_yours)
 	battle_message.emit(mon["display_name"] + " was sent out!")
 	if apply_hazards:
 		apply_entry_hazards(mon, is_yours)
@@ -794,7 +1162,7 @@ func _move_targets_opponent(move_name: String, move: Dictionary) -> bool:
 func _can_switch_out(is_yours: bool) -> bool:
 	var active = _get_active_mon(is_yours)
 	var foe = _get_active_mon(not is_yours)
-	if active["item"] == "Shed Shell" or "ghost" in active["types"]:
+	if (_can_use_held_item(active) and active["item"] == "Shed Shell") or "ghost" in active["types"]:
 		return true
 	if _has_ability(foe, "shadow-tag"):
 		return false
@@ -824,6 +1192,7 @@ func _handle_contact_abilities(attacker: Dictionary, defender: Dictionary, move_
 				status_changed.emit(is_yours, contact_status)
 				battle_message.emit(attacker["display_name"] + " was " + ("burned" if contact_status == "burn" else ("paralyzed" if contact_status == "paralyze" else "poisoned")) + "!")
 				_try_synchronize(attacker, defender, contact_status, is_yours)
+				_try_trigger_status_cure_item(attacker, is_yours)
 		elif _has_ability(defender, "effect-spore") and randi() % 100 < 30:
 			var roll = randi() % 3
 			var spore_status = ["sleep", "poison", "paralyze"][roll]
@@ -840,6 +1209,9 @@ func _handle_contact_abilities(attacker: Dictionary, defender: Dictionary, move_
 					"paralyze":
 						battle_message.emit(attacker["display_name"] + " was paralyzed!")
 				_try_synchronize(attacker, defender, spore_status, is_yours)
+				_try_trigger_status_cure_item(attacker, is_yours)
+	if _has_ability(defender, "cute-charm") and randi() % 100 < 30:
+		_apply_infatuation(defender, attacker, is_yours)
 
 	if _has_ability(defender, "mummy") and attacker["ability"] not in ["multitype", "illusion", "trace", "mummy"]:
 		attacker["ability"] = "mummy"
@@ -857,11 +1229,14 @@ func _handle_on_hit_abilities(attacker: Dictionary, defender: Dictionary, move: 
 		return
 	if move["category"] == "physical" and _has_ability(defender, "weak-armor"):
 		apply_stages(defender, {"def_stage": -1, "spe_stage": 1}, not is_yours, true)
+	if hp_damage > 0 and _has_ability(defender, "rattled") and move["type"] in ["dark", "ghost", "bug"]:
+		apply_stages(defender, {"spe_stage": 1}, not is_yours)
 	if _has_ability(attacker, "poison-touch") and _is_contact_move(move["name"], move) and defender["status"] == "" and _can_receive_status(defender, "poison") and randi() % 100 < 30:
 		defender["status"] = "poison"
 		status_changed.emit(not is_yours, "poison")
 		battle_message.emit(defender["display_name"] + " was poisoned by Poison Touch!")
 		_try_synchronize(defender, attacker, "poison", not is_yours)
+		_try_trigger_status_cure_item(defender, not is_yours)
 	if _has_ability(defender, "cursed-body") and move.get("current_pp", 1) > 0 and randi() % 100 < 30:
 		_apply_disable(attacker, move["name"])
 
@@ -870,12 +1245,13 @@ func _apply_sturdy(defender: Dictionary, attacker: Dictionary, damage: int) -> i
 		return damage
 	if defender["current_hp"] != defender["max_hp"]:
 		return damage
-	if not _has_ability(defender, "sturdy"):
-		return damage
-	if _is_mold_breaker_attack(attacker):
-		return damage
-	battle_message.emit(defender["display_name"] + " endured the hit with Sturdy!")
-	return max(defender["current_hp"] - 1, 0)
+	if _has_ability(defender, "sturdy") and not _is_mold_breaker_attack(attacker):
+		battle_message.emit(defender["display_name"] + " endured the hit with Sturdy!")
+		return max(defender["current_hp"] - 1, 0)
+	if _can_use_held_item(defender) and defender.get("item", "") == "Focus Sash":
+		_consume_item(defender, false, defender["display_name"] + " hung on using its Focus Sash!")
+		return max(defender["current_hp"] - 1, 0)
+	return damage
 
 func _try_synchronize(holder: Dictionary, inflictor: Dictionary, status_name: String, holder_is_yours: bool):
 	if holder["ability"] != "synchronize":
@@ -899,6 +1275,7 @@ func _try_synchronize(holder: Dictionary, inflictor: Dictionary, status_name: St
 			battle_message.emit(inflictor["display_name"] + " was badly poisoned by Synchronize!")
 		"paralyze":
 			battle_message.emit(inflictor["display_name"] + " was paralyzed by Synchronize!")
+	_try_trigger_status_cure_item(inflictor, not holder_is_yours)
 
 func get_stat_multiplier(stage: int) -> float:
 	if stage >= 0:
@@ -942,6 +1319,8 @@ func get_effective_stat(mon: Dictionary, stat_name: String) -> int:
 		"sp_atk":
 			if _has_ability(mon, "solar-power") and active_weather == "sun":
 				effective *= 1.5
+			if _has_ability(mon, "flare-boost") and mon["status"] == "burn":
+				effective *= 1.5
 			if _has_ability(mon, "defeatist") and mon["current_hp"] <= int(mon["max_hp"] / 2):
 				effective *= 0.5
 		"sp_def":
@@ -956,6 +1335,8 @@ func get_effective_stat(mon: Dictionary, stat_name: String) -> int:
 				effective *= 2.0
 			if _has_ability(mon, "quick-feet") and mon["status"] != "":
 				effective *= 1.5
+			if _has_ability(mon, "unburden") and mon.get("unburden_active", false):
+				effective *= 2.0
 			if _has_ability(mon, "slow-start") and mon.get("slow_start_turns", 0) > 0:
 				effective *= 0.5
 
@@ -964,6 +1345,7 @@ func get_effective_stat(mon: Dictionary, stat_name: String) -> int:
 # Apply stat stage changes to a Pokemon, clamped to [-6, 6], with battle messages.
 func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by_opponent: bool = false):
 	var triggered_defiant = false
+	var lowered_any_stat = false
 	for stat_key in stages:
 		var change = stages[stat_key]
 		if caused_by_opponent:
@@ -989,6 +1371,8 @@ func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by
 		if actual == 0:
 			battle_message.emit(mon["display_name"] + "'s stats won't go any further!")
 			continue
+		if actual < 0:
+			lowered_any_stat = true
 		if caused_by_opponent and actual < 0 and _has_ability(mon, "defiant"):
 			triggered_defiant = true
 		var stat_display = stat_key.replace("_stage", "").to_upper()
@@ -1000,6 +1384,8 @@ func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by
 		battle_message.emit(mon["display_name"] + "'s " + stat_display + magnitude + " " + direction + "!")
 	if triggered_defiant:
 		apply_stages(mon, {"atk_stage": 2}, is_yours)
+	elif lowered_any_stat:
+		_apply_white_herb(mon, is_yours)
 
 func is_critical_hit(attacker: Dictionary, move: Dictionary) -> bool:
 	var crit_stage = 0
@@ -1176,28 +1562,35 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 		ability_mod *= 0.75
 	if _has_ability(defender, "thick-fat") and move["type"] in ["fire", "ice"] and not attacker_breaks:
 		ability_mod *= 0.5
+	if _has_ability(defender, "heatproof") and move["type"] == "fire" and not attacker_breaks:
+		ability_mod *= 0.5
 	if _has_ability(defender, "dry-skin") and move["type"] == "fire" and not attacker_breaks:
 		ability_mod *= 1.25
 	if _has_ability(defender, "multiscale") and defender["current_hp"] == defender["max_hp"] and not attacker_breaks:
 		ability_mod *= 0.5
 	if _has_ability(attacker, "analytic") and attacker.get("analytic_active", false):
 		ability_mod *= 1.3
+	if _has_ability(attacker, "rivalry") and attacker["gender"] != "" and defender["gender"] != "":
+		ability_mod *= 1.25 if attacker["gender"] == defender["gender"] else 0.75
 	var random_roll = randf_range(0.85, 1.0)
 	var crit_mod = 3.0 if crit and _has_ability(attacker, "sniper") else (2.0 if crit else 1.0)
 
 	var item_mod = 1.0
-	match attacker["item"]:
-		"Life Orb":
-			item_mod = 1.3
-		"Expert Belt":
-			if effectiveness > 1.0:
-				item_mod = 1.2
-		"Choice Band":
-			if move["category"] == "physical":
-				item_mod = 1.5
-		"Choice Specs":
-			if move["category"] == "special":
-				item_mod = 1.5
+	if _can_use_held_item(attacker):
+		match attacker["item"]:
+			"Life Orb":
+				item_mod = 1.3
+			"Expert Belt":
+				if effectiveness > 1.0:
+					item_mod = 1.2
+			"Choice Band":
+				if move["category"] == "physical":
+					item_mod = 1.5
+			"Choice Specs":
+				if move["category"] == "special":
+					item_mod = 1.5
+		if move.get("gem_boost", false):
+			item_mod *= 1.5
 
 	var final_damage = int(base_damage * stab * effectiveness * random_roll * crit_mod * item_mod * ability_mod)
 	return {"damage": max(final_damage, 1), "crit": crit}
@@ -1225,6 +1618,8 @@ func accuracy_check(attacker: Dictionary, defender: Dictionary, move: Dictionary
 		accuracy *= 1.1
 	if _has_ability(attacker, "hustle") and move["category"] == "physical":
 		accuracy *= 0.8
+	if defender.get("is_confused", false) and _has_ability(defender, "tangled-feet"):
+		accuracy *= 0.5
 	if _effective_weather() == "sand" and _has_ability(defender, "sand-veil"):
 		accuracy *= 0.8
 	if _has_ability(defender, "wonder-skin") and move["category"] == "status":
@@ -1250,8 +1645,8 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	if opp_mon["last_move_used"] not in PROTECT_MOVES:
 		opp_mon["protect_consecutive"] = 0
 
-	var your_move = your_mon["moveset"][your_move_index]
-	var opp_move = opp_mon["moveset"][opponent_move_index]
+	var your_move = _resolve_choice_locked_move(your_mon, your_mon["moveset"][your_move_index])
+	var opp_move = _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opponent_move_index])
 
 	var your_priority = your_move["priority"]
 	var opp_priority = opp_move["priority"]
@@ -1268,14 +1663,16 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	if opp_mon["status"] == "paralyze" and not _has_ability(opp_mon, "quick-feet"):
 		opp_speed = int(opp_speed * 0.25)
 
-	if your_mon["item"] == "Choice Scarf":
+	if _can_use_held_item(your_mon) and your_mon["item"] == "Choice Scarf":
 		your_speed = int(your_speed * 1.5)
-	if opp_mon["item"] == "Choice Scarf":
+	if _can_use_held_item(opp_mon) and opp_mon["item"] == "Choice Scarf":
 		opp_speed = int(opp_speed * 1.5)
 
 	var you_go_first: bool
 	if your_priority != opp_priority:
 		you_go_first = your_priority > opp_priority
+	elif _has_ability(your_mon, "stall") != _has_ability(opp_mon, "stall"):
+		you_go_first = not _has_ability(your_mon, "stall")
 	elif your_speed != opp_speed:
 		you_go_first = your_speed > opp_speed
 	else:
@@ -1328,6 +1725,9 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 
 	# Status immobilization checks — clear last_move_used so protect resets
 	var move_name = move["name"]
+	if _can_use_held_item(attacker) and _is_choice_item(attacker.get("item", "")) and attacker.get("choice_lock", "") != "" and attacker["choice_lock"] != move_name:
+		move = _resolve_choice_locked_move(attacker, move)
+		move_name = move["name"]
 	if attacker.get("disable_turns", 0) > 0 and attacker.get("disabled_move", "") == move_name:
 		attacker["last_move_used"] = ""
 		battle_message.emit(attacker["display_name"] + "'s " + _format_name(move_name) + " is disabled!")
@@ -1367,6 +1767,28 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			battle_message.emit(attacker["display_name"] + " is frozen solid!")
 			return
 
+	if attacker.get("infatuated_with", "") != "":
+		battle_message.emit(attacker["display_name"] + " is in love!")
+		if randi() % 2 == 0:
+			attacker["last_move_used"] = ""
+			battle_message.emit(attacker["display_name"] + " is immobilized by love!")
+			return
+
+	if attacker.get("is_confused", false):
+		if attacker.get("confusion_turns", 0) <= 0:
+			attacker["is_confused"] = false
+			battle_message.emit(attacker["display_name"] + " snapped out of its confusion!")
+		else:
+			attacker["confusion_turns"] -= 1
+			battle_message.emit(attacker["display_name"] + " is confused!")
+			if randi() % 3 == 0:
+				attacker["last_move_used"] = ""
+				_apply_confusion_self_hit(attacker, is_yours)
+				return
+			if attacker["confusion_turns"] <= 0:
+				attacker["is_confused"] = false
+				battle_message.emit(attacker["display_name"] + " snapped out of its confusion!")
+
 	# Destiny Bond resets when the user moves again (unless using Destiny Bond itself)
 	if move["name"] != "destiny-bond":
 		attacker["destiny_bond"] = false
@@ -1378,6 +1800,8 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			pp_cost += 1
 		move["current_pp"] = max(0, move["current_pp"] - pp_cost)
 	battle_message.emit(attacker["display_name"] + " used " + _format_name(move_name) + "!")
+	var prepared_move = _prepare_move_for_use(attacker, move)
+	move = prepared_move
 
 	# --- Sucker Punch: fails if the defender did not choose a damaging move this turn ---
 	if move_name == "sucker-punch":
@@ -1395,6 +1819,9 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if _is_move_blocked_by_ability(attacker, defender, move, is_yours):
 		return
 
+	if _can_use_held_item(attacker) and _is_choice_item(attacker.get("item", "")) and attacker.get("choice_lock", "") == "":
+		attacker["choice_lock"] = move_name
+
 	# --- Status / effect-only moves ---
 	if move["category"] == "status":
 		_apply_status_move(attacker, defender, move, is_yours)
@@ -1404,6 +1831,10 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if defender["is_protected"]:
 		battle_message.emit(defender["display_name"] + " protected itself!")
 		return
+
+	if _can_use_held_item(attacker) and move.get("gem_boost", false):
+		var gem_name = attacker.get("item", "")
+		_consume_item(attacker, is_yours, attacker["display_name"] + " strengthened " + _format_name(move_name) + " with its " + gem_name + "!")
 
 	# --- OHKO moves ---
 	if move_name in OHKO_MOVES:
@@ -1533,9 +1964,14 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		defender["current_hp"] = max(defender["current_hp"] - damage, 0)
 		hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
 		hp_damage = damage
+		if hp_damage > 0:
+			_break_illusion(defender, not is_yours)
 
 		if result["crit"]:
 			battle_message.emit("A critical hit!")
+			if _has_ability(defender, "anger-point"):
+				defender["atk_stage"] = 6
+				battle_message.emit(defender["display_name"] + "'s Anger Point maxed its Attack!")
 		if effectiveness > 1.0:
 			battle_message.emit("It's super effective!")
 		elif effectiveness < 1.0:
@@ -1554,12 +1990,17 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if DRAINING_MOVES.has(move_name):
 		_apply_drain_heal(attacker, defender, move_name, hp_damage, is_yours)
 	_handle_on_hit_abilities(attacker, defender, move, is_yours, hp_damage, hit_substitute)
+	_handle_on_hit_items(attacker, defender, move, is_yours, hp_damage, hit_substitute)
 
 	# --- Secondary effects ---
 	if SECONDARY_EFFECTS.has(move_name) and not defender["is_fainted"] and effectiveness > 0.0 and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
 		_apply_secondary(attacker, defender, SECONDARY_EFFECTS[move_name], is_yours, hit_substitute)
 	elif _has_ability(attacker, "stench") and not defender["is_fainted"] and not hit_substitute and randi() % 100 < 10 and not _has_ability(defender, "inner-focus"):
 		defender["is_flinched"] = true
+		if _has_ability(defender, "steadfast"):
+			apply_stages(defender, {"spe_stage": 1}, not is_yours)
+	if CONFUSION_SECONDARY_MOVES.has(move_name) and not defender["is_fainted"] and not hit_substitute and hp_damage > 0 and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
+		_apply_secondary(attacker, defender, {"chance": CONFUSION_SECONDARY_MOVES[move_name], "confuse": true}, is_yours, false)
 
 	# --- Phazing damage moves (Dragon Tail, Circle Throw) ---
 	if move_name in PHAZING_DAMAGE_MOVES and not defender["is_fainted"]:
@@ -1581,13 +2022,15 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		attacker["current_hp"] = max(attacker["current_hp"] - recoil, 0)
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " was hurt by recoil!")
+		_try_trigger_hp_item(attacker, is_yours)
 
 	# --- Life Orb recoil ---
-	if attacker["item"] == "Life Orb" and attacker["ability"] != "magic-guard" and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
+	if _can_use_held_item(attacker) and attacker["item"] == "Life Orb" and attacker["ability"] != "magic-guard" and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
 		var lo_recoil = max(int(attacker["max_hp"] / 10), 1)
 		attacker["current_hp"] = max(attacker["current_hp"] - lo_recoil, 0)
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " lost HP to Life Orb!")
+		_try_trigger_hp_item(attacker, is_yours)
 
 	# --- Post-hit self stat drops ---
 	if USER_STAGE_AFTER.has(move_name):
@@ -1742,6 +2185,7 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		status_changed.emit(is_yours, "sleep")
 		battle_message.emit(attacker["display_name"] + " went to sleep and restored HP!")
+		_try_trigger_status_cure_item(attacker, is_yours)
 		return
 
 	# --- Wish: delayed 50% heal, applied next end-of-turn ---
@@ -1804,6 +2248,45 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 			"sleep":
 				defender["sleep_turns"] = randi_range(2, 5)
 				battle_message.emit(defender["display_name"] + " fell asleep!")
+		_try_trigger_status_cure_item(defender, not is_yours)
+		return
+
+	if move_name in ["confuse-ray", "supersonic", "teeter-dance"]:
+		if defender["substitute_hp"] > 0:
+			battle_message.emit("But it failed!")
+			return
+		if defender.get("is_confused", false):
+			battle_message.emit("But it failed!")
+			return
+		_apply_confusion(defender, not is_yours)
+		return
+
+	if move_name == "swagger":
+		if defender["substitute_hp"] > 0:
+			battle_message.emit("But it failed!")
+			return
+		if defender.get("is_confused", false):
+			battle_message.emit("But it failed!")
+			return
+		apply_stages(defender, {"atk_stage": 2}, not is_yours)
+		_apply_confusion(defender, not is_yours)
+		return
+
+	if move_name == "attract":
+		if defender["substitute_hp"] > 0:
+			battle_message.emit("But it failed!")
+			return
+		if defender.get("infatuated_with", "") != "":
+			battle_message.emit("But it failed!")
+			return
+		_apply_infatuation(attacker, defender, not is_yours)
+		return
+
+	if move_name == "transform":
+		if attacker.get("transformed", false):
+			battle_message.emit("But it failed!")
+			return
+		_apply_transform(attacker, defender, is_yours)
 		return
 
 	# --- Self-boosting moves ---
@@ -1869,8 +2352,11 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 			wish["amount"] = 0
 		wish_pending[wish_key] = wish
 
+	_try_activate_orb(mon, is_yours)
+	_try_trigger_status_cure_item(mon, is_yours)
+
 	if mon["status"] == "burn":
-		var burn_dmg = max(int(mon["max_hp"] / 8), 1)
+		var burn_dmg = max(int(mon["max_hp"] / (16 if _has_ability(mon, "heatproof") else 8)), 1)
 		mon["current_hp"] = max(mon["current_hp"] - burn_dmg, 0)
 		hp_changed.emit(is_yours, mon["current_hp"], mon["max_hp"])
 		battle_message.emit(mon["display_name"] + " was hurt by its burn!")
@@ -1947,6 +2433,22 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 	if _has_ability(mon, "speed-boost"):
 		apply_stages(mon, {"spe_stage": 1}, is_yours)
 
+	if _has_ability(mon, "moody"):
+		var raiseable: Array = []
+		var lowerable: Array = []
+		for stat_name in ["atk_stage", "def_stage", "spa_stage", "spd_stage", "spe_stage", "accuracy_stage", "evasion_stage"]:
+			if mon[stat_name] < 6:
+				raiseable.append(stat_name)
+			if mon[stat_name] > -6:
+				lowerable.append(stat_name)
+		if not raiseable.is_empty():
+			var raise_stat = raiseable[randi() % raiseable.size()]
+			apply_stages(mon, {raise_stat: 2}, is_yours)
+			lowerable.erase(raise_stat)
+			if not lowerable.is_empty():
+				var lower_stat = lowerable[randi() % lowerable.size()]
+				apply_stages(mon, {lower_stat: -1}, is_yours)
+
 	var sleeping_foe = _get_active_mon(not is_yours)
 	if _has_ability(mon, "bad-dreams") and not sleeping_foe["is_fainted"] and sleeping_foe["status"] == "sleep":
 		_damage_mon(sleeping_foe, max(int(sleeping_foe["max_hp"] / 8), 1), not is_yours, sleeping_foe["display_name"] + " is tormented by Bad Dreams!")
@@ -1975,7 +2477,7 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 		if _resolve_faint_from_residual(mon, is_yours):
 			return
 
-	if mon["item"] == "Leftovers" or mon["item"] == "Black Sludge":
+	if _can_use_held_item(mon) and (mon["item"] == "Leftovers" or mon["item"] == "Black Sludge"):
 		if mon["item"] == "Black Sludge" and "poison" not in mon["types"]:
 			var sludge_dmg = max(int(mon["max_hp"] / 8), 1)
 			mon["current_hp"] = max(mon["current_hp"] - sludge_dmg, 0)
@@ -1988,6 +2490,12 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 			mon["current_hp"] = min(mon["current_hp"] + heal, mon["max_hp"])
 			hp_changed.emit(is_yours, mon["current_hp"], mon["max_hp"])
 			battle_message.emit(mon["display_name"] + " restored HP with " + mon["item"] + "!")
+
+	if _has_ability(mon, "harvest") and mon["item"] == "" and _is_berry_item(mon.get("last_consumed_item", "")):
+		var harvest_roll = 100 if _effective_weather() == "sun" else 50
+		if randi() % 100 < harvest_roll:
+			mon["item"] = mon["last_consumed_item"]
+			battle_message.emit(mon["display_name"] + " harvested a " + mon["item"] + "!")
 
 	# Perish Song countdown
 	if mon["perish_count"] > 0:
@@ -2009,6 +2517,9 @@ func check_faint(is_yours: bool):
 
 	if not team[active]["is_fainted"]:
 		return
+	var foe = _get_active_mon(not is_yours)
+	if foe.get("infatuated_with", "") == _side_key(is_yours):
+		foe["infatuated_with"] = ""
 
 	var next = find_next_alive(team)
 	if next == -1:
@@ -2049,7 +2560,7 @@ func switch_pokemon(is_yours: bool, index: int):
 		return
 	if team[index]["is_fainted"]:
 		return
-	_clear_switch_out_state(_get_active_mon(is_yours))
+	_clear_switch_out_state(_get_active_mon(is_yours), is_yours)
 	_switch_in_pokemon(is_yours, index)
 
 # ─── Fixed-damage helper ──────────────────────────────────────────────────────
@@ -2059,6 +2570,10 @@ func _deal_damage(defender: Dictionary, dmg: int, attacker: Dictionary, is_yours
 	dmg = _apply_sturdy(defender, attacker, dmg)
 	defender["current_hp"] = max(defender["current_hp"] - dmg, 0)
 	hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+	if dmg > 0:
+		_break_illusion(defender, not is_yours)
+	_handle_on_hit_abilities(attacker, defender, _move, is_yours, dmg, false)
+	_handle_on_hit_items(attacker, defender, _move, is_yours, dmg, false)
 	if defender["current_hp"] <= 0 and not defender["is_fainted"]:
 		defender["is_fainted"] = true
 		battle_message.emit(defender["display_name"] + " fainted!")
@@ -2071,6 +2586,7 @@ func _deal_damage(defender: Dictionary, dmg: int, attacker: Dictionary, is_yours
 			hp_changed.emit(is_yours, 0, attacker["max_hp"])
 			battle_message.emit(attacker["display_name"] + " was taken down by Destiny Bond!")
 			pokemon_fainted.emit(is_yours, attacker["name"])
+	_handle_contact_abilities(attacker, defender, _move["name"], is_yours)
 
 # ─── Multi-hit move execution ────────────────────────────────────────────────
 # Handles all multi-hit, Triple Kick, and Beat Up logic.
@@ -2097,6 +2613,8 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 				res["damage"] = _apply_sturdy(defender, attacker, res["damage"])
 				defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
 				hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+				if res["damage"] > 0:
+					_break_illusion(defender, not is_yours)
 				hp_damage += res["damage"]
 			battle_message.emit(contributor["display_name"] + "'s attack!")
 			hit_count += 1
@@ -2145,6 +2663,8 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 				res["damage"] = _apply_sturdy(defender, attacker, res["damage"])
 				defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
 				hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
+				if res["damage"] > 0:
+					_break_illusion(defender, not is_yours)
 				hp_damage += res["damage"]
 			hit_count += 1
 			continue
@@ -2179,11 +2699,13 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 # Shared post-hit cleanup for multi-hit moves (Life Orb + faint checks).
 func _multihit_finish(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, hp_damage: int):
 	_handle_on_hit_abilities(attacker, defender, move, is_yours, hp_damage, false)
-	if hp_damage > 0 and attacker["item"] == "Life Orb" and attacker["ability"] != "magic-guard":
+	_handle_on_hit_items(attacker, defender, move, is_yours, hp_damage, false)
+	if hp_damage > 0 and _can_use_held_item(attacker) and attacker["item"] == "Life Orb" and attacker["ability"] != "magic-guard":
 		var lo = max(int(attacker["max_hp"] / 10), 1)
 		attacker["current_hp"] = max(attacker["current_hp"] - lo, 0)
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " lost HP to Life Orb!")
+		_try_trigger_hp_item(attacker, is_yours)
 	if defender["current_hp"] <= 0 and not defender["is_fainted"]:
 		defender["is_fainted"] = true
 		battle_message.emit(defender["display_name"] + " fainted!")
@@ -2223,10 +2745,12 @@ func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 				mon["toxic_counter"] = 0
 				status_changed.emit(is_yours, "toxic")
 				battle_message.emit(mon["display_name"] + " was badly poisoned by the spikes!")
+				_try_trigger_status_cure_item(mon, is_yours)
 			else:
 				mon["status"] = "poison"
 				status_changed.emit(is_yours, "poison")
 				battle_message.emit(mon["display_name"] + " was poisoned by the spikes!")
+				_try_trigger_status_cure_item(mon, is_yours)
 
 	# Spikes: 1/8, 1/6, 1/4 HP based on layers
 	if hazards["spikes"] > 0 and is_grounded and not avoids_hazard_damage:
@@ -2265,7 +2789,7 @@ func _do_uturn_switch(is_yours: bool):
 	if idx == -1:
 		return
 	var old_mon = _get_active_mon(is_yours)
-	_clear_switch_out_state(old_mon)
+	_clear_switch_out_state(old_mon, is_yours)
 	var old_name = old_mon["display_name"]
 	battle_message.emit(old_name + " came back!")
 	if is_yours:
@@ -2304,7 +2828,7 @@ func _finish_turn():
 	check_faint(false)
 
 func _force_switch(is_yours: bool, index: int):
-	_clear_switch_out_state(_get_active_mon(is_yours))
+	_clear_switch_out_state(_get_active_mon(is_yours), is_yours)
 	_switch_in_pokemon(is_yours, index)
 
 # ─── Secondary effect application ─────────────────────────────────────────────
@@ -2346,6 +2870,15 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 			battle_message.emit(defender["display_name"] + " was burned!")
 		elif new_status == "paralyze":
 			battle_message.emit(defender["display_name"] + " was paralyzed!")
+		_try_trigger_status_cure_item(defender, not is_yours)
+		return
+
+	if effect.get("confuse", false):
+		if blocked_by_substitute:
+			return
+		if _has_ability(defender, "shield-dust"):
+			return
+		_apply_confusion(defender, not is_yours)
 		return
 
 	# Stat drop on defender
@@ -2377,6 +2910,8 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 		if _has_ability(defender, "inner-focus") or _has_ability(defender, "shield-dust"):
 			return
 		defender["is_flinched"] = true
+		if _has_ability(defender, "steadfast"):
+			apply_stages(defender, {"spe_stage": 1}, not is_yours)
 
 func _format_name(mon_name: String) -> String:
 	return mon_name.replace("-", " ").capitalize()
