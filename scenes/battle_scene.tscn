@@ -1807,6 +1807,24 @@ scale = Vector2(1.6482435, 1.6928104)
 sprite_frames = ExtResource("33_vnhh6")
 animation = &"back"
 
+[node name="HBoxContainer" type="HBoxContainer" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves" unique_id=717938485]
+layout_direction = 2
+layout_mode = 0
+offset_left = 348.0
+offset_top = 72.0
+offset_right = 416.0
+offset_bottom = 84.0
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="Type1" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/HBoxContainer" unique_id=1479460192]
+texture_filter = 1
+layout_mode = 2
+
+[node name="Type2" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu/SummaryMoves/HBoxContainer" unique_id=1364429238]
+texture_filter = 1
+layout_mode = 2
+
 [node name="PokeballIcon" type="TextureRect" parent="BattleSim/Control/PartyMenu/Background/SummaryMenu" unique_id=1240046179]
 layout_mode = 0
 offset_left = 296.0
@@ -1820,7 +1838,7 @@ expand_mode = 1
 layout_mode = 0
 offset_left = 316.0
 offset_top = 282.0
-offset_right = 412.0
+offset_right = 350.0
 offset_bottom = 303.0
 theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
 theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
@@ -1828,7 +1846,7 @@ theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 28
-text = "50"
+text = "100"
 autowrap_mode = 2
 
 [node name="HoverTween" type="Button" parent="BattleSim/Control/PartyMenu/Background" unique_id=1583918471]

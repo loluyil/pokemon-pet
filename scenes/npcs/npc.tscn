@@ -185,6 +185,7 @@ _data = {
 
 [node name="NPCWindow" type="Window" unique_id=1750111375]
 oversampling_override = 1.0
+position = Vector2i(0, 36)
 size = Vector2i(92, 86)
 always_on_top = true
 script = ExtResource("1_5ejjj")
