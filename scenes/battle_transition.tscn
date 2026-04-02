@@ -9,17 +9,17 @@ shader_parameter/progress = 0.0
 shader_parameter/flash_intensity = 0.0
 shader_parameter/bar_count = 8
 
-[node name="BattleTransition" type="Window"]
+[node name="BattleTransition" type="Window" unique_id=1425623324]
 transparent_bg = true
-transparent = true
+oversampling_override = 1.0
+size = Vector2i(1920, 1080)
 borderless = true
 always_on_top = true
+transparent = true
 unfocusable = true
-position = Vector2i(-9999, -9999)
-size = Vector2i(1920, 1080)
 script = ExtResource("1_script")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=209898951]
 material = SubResource("ShaderMaterial_trans")
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,5 +28,5 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0)
 
-[node name="Master" type="AudioStreamPlayer" parent="."]
+[node name="Master" type="AudioStreamPlayer" parent="." unique_id=1020466097]
 volume_db = -20.0

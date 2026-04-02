@@ -58,6 +58,106 @@ const NFE_POKEMON = [
 	"pikachu", "porygon2", "rhydon", "scyther",
 ]
 
+# Pokemon weights in kg — used for Low Kick, Grass Knot, Heavy Slam, Heat Crash
+const POKEMON_WEIGHTS: Dictionary = {
+	"abomasnow": 135.5, "absol": 47.0, "accelgor": 25.3, "aerodactyl": 59.0,
+	"aggron": 360.0, "alakazam": 48.0, "alomomola": 31.6, "altaria": 20.6,
+	"ambipom": 20.3, "amoonguss": 10.5, "ampharos": 61.5, "arbok": 65.0,
+	"arcanine": 155.0, "arceus": 320.0, "archeops": 32.0, "ariados": 3.3,
+	"armaldo": 68.2, "articuno": 55.4, "audino": 31.0, "azelf": 0.3,
+	"azumarill": 28.5, "banette": 12.5, "basculin-red-striped": 18.0,
+	"bastiodon": 149.5, "beartic": 260.0, "beautifly": 2.8, "beedrill": 29.5,
+	"beheeyem": 34.5, "bellossom": 5.8, "bibarel": 31.5, "bisharp": 70.0,
+	"blastoise": 85.5, "blaziken": 52.0, "blissey": 46.8, "bouffalant": 94.6,
+	"braviary": 41.0, "breloom": 39.2, "bronzong": 187.0, "butterfree": 32.0,
+	"cacturne": 77.4, "camerupt": 220.0, "carnivine": 27.0, "carracosta": 81.0,
+	"castform": 0.8, "celebi": 5.0, "chandelure": 34.3, "chansey": 34.6,
+	"charizard": 90.5, "chatot": 1.9, "cherrim": 9.3, "chimecho": 1.0,
+	"cinccino": 7.5, "claydol": 108.0, "clefable": 40.0, "cloyster": 132.5,
+	"cobalion": 250.0, "cofagrigus": 76.5, "conkeldurr": 87.0, "corsola": 5.0,
+	"cradily": 60.4, "crawdaunt": 32.8, "cresselia": 85.6, "crobat": 75.0,
+	"crustle": 200.0, "cryogonal": 148.0, "darkrai": 50.5,
+	"darmanitan-standard": 92.9, "delcatty": 32.6, "delibird": 16.0,
+	"deoxys-attack": 60.8, "deoxys-defense": 60.8, "deoxys-normal": 60.8,
+	"deoxys-speed": 60.8, "dewgong": 120.0, "dialga": 683.0, "ditto": 4.0,
+	"dodrio": 85.2, "donphan": 120.0, "dragonair": 16.5, "dragonite": 210.0,
+	"drapion": 61.5, "drifblim": 15.0, "druddigon": 139.0, "dugtrio": 33.3,
+	"dunsparce": 14.0, "durant": 33.0, "dusclops": 30.6, "dusknoir": 106.6,
+	"dustox": 31.6, "eelektross": 80.5, "electivire": 138.6, "electrode": 66.6,
+	"emboar": 150.0, "emolga": 5.0, "empoleon": 84.5, "entei": 198.0,
+	"escavalier": 33.0, "espeon": 26.5, "excadrill": 40.4, "exeggutor": 120.0,
+	"exploud": 84.0, "farfetchd": 15.0, "fearow": 38.0, "feraligatr": 88.8,
+	"ferrothorn": 110.0, "flareon": 25.0, "floatzel": 33.5, "flygon": 82.0,
+	"forretress": 125.8, "froslass": 26.6, "furret": 32.5, "gallade": 52.0,
+	"galvantula": 14.3, "garbodor": 107.3, "garchomp": 95.0, "gardevoir": 48.4,
+	"gastrodon": 29.9, "genesect": 82.5, "gengar": 40.5, "gigalith": 573.0,
+	"girafarig": 41.5, "giratina-altered": 750.0, "giratina-origin": 650.0,
+	"glaceon": 25.9, "glalie": 256.5, "gligar": 64.8, "gliscor": 42.5,
+	"golduck": 76.6, "golem": 300.0, "golurk": 330.0, "gorebyss": 22.6,
+	"gothitelle": 44.0, "granbull": 48.7, "groudon": 950.0, "grumpig": 71.5,
+	"gyarados": 235.0, "hariyama": 253.8, "haxorus": 105.5, "heatmor": 58.0,
+	"heatran": 430.0, "heracross": 54.0, "hippowdon": 300.0, "hitmonchan": 50.2,
+	"hitmonlee": 49.8, "hitmontop": 48.0, "ho-oh": 199.0, "honchkrow": 27.3,
+	"houndoom": 35.0, "huntail": 27.0, "hydreigon": 160.0, "hypno": 75.6,
+	"illumise": 17.7, "infernape": 55.0, "jellicent-male": 135.0, "jirachi": 1.1,
+	"jolteon": 24.5, "jumpluff": 3.0, "jynx": 40.6, "kabutops": 40.5,
+	"kangaskhan": 80.0, "kecleon": 22.0, "keldeo-ordinary": 48.5,
+	"kingdra": 152.0, "kingler": 60.0, "klinklang": 81.0, "kricketune": 25.5,
+	"krookodile": 96.3, "kyogre": 352.0, "kyurem": 325.0, "kyurem-black": 325.0,
+	"kyurem-white": 325.0, "landorus-incarnate": 68.0, "landorus-therian": 68.0,
+	"lanturn": 22.5, "lapras": 220.0, "latias": 37.5, "latios": 60.0,
+	"leafeon": 25.5, "leavanny": 20.5, "ledian": 35.6, "lickilicky": 140.0,
+	"liepard": 37.5, "lilligant": 16.3, "linoone": 32.5, "lopunny": 33.3,
+	"lucario": 54.0, "ludicolo": 55.0, "lugia": 216.0, "lumineon": 24.0,
+	"lunatone": 168.0, "luvdisc": 8.7, "luxray": 42.0, "machamp": 130.0,
+	"magcargo": 55.0, "magmortar": 68.0, "magnezone": 180.0, "mamoswine": 291.0,
+	"manaphy": 1.4, "mandibuzz": 39.5, "manectric": 40.2, "mantine": 220.0,
+	"maractus": 28.0, "marowak": 45.0, "masquerain": 3.6, "mawile": 11.5,
+	"medicham": 31.5, "meganium": 100.5, "meloetta-aria": 6.3, "mesprit": 0.3,
+	"metagross": 550.0, "mew": 4.0, "mewtwo": 122.0, "mienshao": 35.5,
+	"mightyena": 37.0, "milotic": 162.0, "miltank": 75.5, "minun": 9.0,
+	"mismagius": 4.4, "moltres": 60.0, "mothim": 2.3, "mr-mime": 54.5,
+	"muk": 30.0, "murkrow": 2.1, "musharna": 60.5, "nidoking": 62.0,
+	"nidoqueen": 60.0, "ninetales": 19.9, "ninjask": 12.0, "noctowl": 40.8,
+	"octillery": 28.5, "omastar": 35.0, "pachirisu": 3.9, "palkia": 336.0,
+	"parasect": 29.5, "pelipper": 28.0, "persian": 32.0, "phione": 3.1,
+	"pidgeot": 39.5, "pikachu": 6.0, "pinsir": 55.0, "plusle": 4.2,
+	"politoed": 33.9, "poliwrath": 54.0, "porygon-z": 34.0, "porygon2": 32.5,
+	"primeape": 32.0, "probopass": 340.0, "purugly": 43.8, "quagsire": 75.0,
+	"qwilfish": 3.9, "raichu": 30.0, "raikou": 178.0, "rampardos": 102.5,
+	"rapidash": 95.0, "raticate": 18.5, "rayquaza": 206.5, "regice": 175.0,
+	"regigigas": 420.0, "regirock": 230.0, "registeel": 205.0, "relicanth": 23.4,
+	"reshiram": 330.0, "reuniclus": 20.1, "rhydon": 120.0, "rhyperior": 282.8,
+	"roserade": 14.5, "rotom": 0.3, "rotom-fan": 0.3, "rotom-frost": 0.3,
+	"rotom-heat": 0.3, "rotom-mow": 0.3, "rotom-wash": 0.3, "sableye": 11.0,
+	"salamence": 102.6, "samurott": 94.6, "sandslash": 29.5, "sawk": 51.0,
+	"sawsbuck": 92.5, "sceptile": 52.2, "scizor": 118.0, "scolipede": 200.5,
+	"scrafty": 30.0, "scyther": 56.0, "seaking": 39.0, "seismitoad": 62.0,
+	"serperior": 63.0, "seviper": 52.5, "sharpedo": 88.8, "shaymin-land": 2.1,
+	"shaymin-sky": 5.2, "shedinja": 1.2, "shiftry": 59.6, "shuckle": 20.5,
+	"sigilyph": 14.0, "simipour": 29.0, "simisage": 30.5, "simisear": 28.0,
+	"skarmory": 50.5, "skuntank": 38.0, "slaking": 130.5, "slowbro": 78.5,
+	"slowking": 79.5, "smeargle": 58.0, "snorlax": 460.0, "solrock": 154.0,
+	"spinda": 5.0, "spiritomb": 108.0, "stantler": 71.2, "staraptor": 24.9,
+	"starmie": 80.0, "steelix": 400.0, "stoutland": 61.0, "stunfisk": 11.0,
+	"sudowoodo": 38.0, "suicune": 187.0, "sunflora": 8.5, "swalot": 80.0,
+	"swampert": 81.9, "swanna": 24.2, "swellow": 19.8, "swoobat": 10.5,
+	"tangrowth": 128.6, "tauros": 88.4, "tentacruel": 55.0, "terrakion": 260.0,
+	"throh": 55.5, "thundurus-incarnate": 61.0, "thundurus-therian": 61.0,
+	"togekiss": 38.0, "torkoal": 80.4, "tornadus-incarnate": 63.0,
+	"tornadus-therian": 63.0, "torterra": 310.0, "toxicroak": 44.4,
+	"tropius": 100.0, "typhlosion": 79.5, "tyranitar": 202.0, "umbreon": 27.0,
+	"unfezant": 29.0, "unown": 5.0, "ursaring": 125.8, "uxie": 0.3,
+	"vanilluxe": 41.4, "vaporeon": 29.0, "venomoth": 12.5, "venusaur": 100.0,
+	"vespiquen": 38.5, "victini": 4.0, "victreebel": 15.5, "vigoroth": 46.5,
+	"vileplume": 18.6, "virizion": 200.0, "volbeat": 17.7, "volcarona": 46.0,
+	"wailord": 398.0, "walrein": 150.6, "watchog": 27.0, "weavile": 34.0,
+	"weezing": 9.5, "whimsicott": 6.6, "whiscash": 74.0, "wigglytuff": 12.0,
+	"wobbuffet": 28.5, "wormadam-plant": 6.5, "wormadam-sandy": 6.5,
+	"wormadam-trash": 6.5, "xatu": 15.0, "yanmega": 51.5, "zangoose": 40.3,
+	"zapdos": 52.6, "zebstrika": 79.5, "zekrom": 345.0, "zoroark": 81.1,
+}
+
 var status_moves: Array = []
 
 func _ready():
@@ -1018,3 +1118,17 @@ func optimize_hp_ev(base_hp: int, iv: int, ev: int, level: int,
 		hp_ev -= 4
 	
 	return hp_ev
+
+# Returns the weight (kg) of a species, defaulting to 50 kg if unknown.
+func get_pokemon_weight(species_name: String) -> float:
+	return POKEMON_WEIGHTS.get(species_name, 50.0)
+
+# Returns the Low Kick / Grass Knot base power for a given defender weight.
+func get_weight_power(species_name: String) -> int:
+	var w = get_pokemon_weight(species_name)
+	if   w <= 10.0:  return 20
+	elif w <= 25.0:  return 40
+	elif w <= 50.0:  return 60
+	elif w <= 100.0: return 80
+	elif w <= 200.0: return 100
+	else:            return 120

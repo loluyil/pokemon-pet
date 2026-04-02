@@ -80,6 +80,7 @@ const HP_ANIM_SECS: float      = 0.42   # slightly longer than hpbar tween (0.35
 
 # ─── Ready ───────────────────────────────────────────────────────────────────────
 func _ready():
+	
 	battle_sim.hp_changed.connect(_on_hp_changed)
 	battle_sim.pokemon_sent_out.connect(_on_pokemon_sent_out)
 	battle_sim.battle_message.connect(_on_battle_message)
