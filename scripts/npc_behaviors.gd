@@ -19,8 +19,17 @@ var current_state = IDLE
 enum {
 	IDLE,
 	NEW_DIR,
-	MOVE
+	MOVE,
+	WALK_TO_FILE,
+	KIDNAPPING,
+	COOLDOWN
 }
+
+# ─── Kidnapping State ────────────────────────────────────────────────────────────
+var _kidnap_enabled := true
+var _kidnap_target_screen_pos := Vector2.ZERO
+const KIDNAP_ARRIVE_DIST := 30.0
+const KIDNAP_COOLDOWN_SEC := 15.0
 
 func _ready():
 	# Window position
@@ -28,15 +37,16 @@ func _ready():
 	var random_x = randi_range(screen_size.x / 1.5, screen_size.y / 3)
 	var random_y = randi_range(screen_size.y / 1.5, screen_size.y / 3)
 	position = Vector2i(random_x, random_y)
-	print(position)
 	borderless = false
 	borderless = true
 	transparent = true
-	
-	#file_kidnap()
+
 	randomize()
-	
 	_float_position = Vector2(position)
+
+	# Start the kidnap cycle after a short initial delay
+	if _kidnap_enabled:
+		get_tree().create_timer(3.0).timeout.connect(_begin_kidnap, CONNECT_ONE_SHOT)
 
 func _process(delta):
 	_update_window_position(delta)
@@ -57,16 +67,33 @@ func _update_window_position(delta):
 				return
 			_float_position = next_float
 			position        = next_pos
+		WALK_TO_FILE:
+			_walk_toward_target(delta)
+		KIDNAPPING, COOLDOWN:
+			_current_direction = Vector2.ZERO
+
+func _walk_toward_target(delta: float):
+	var dir := (_kidnap_target_screen_pos - _float_position).normalized()
+	_update_last_direction(dir)
+	var next_float = _float_position + dir * _speed * 1.5 * delta
+	var next_pos = Vector2i(next_float)
+	# Skip building collision when walking to file — NPC is determined
+	var screen := DisplayServer.screen_get_usable_rect()
+	var npc_rect := Rect2i(next_pos, size)
+	if not screen.encloses(npc_rect):
+		# Target is offscreen, abort and pick a new one
+		_begin_kidnap()
+		return
+	_float_position = next_float
+	position = next_pos
+	if _float_position.distance_to(_kidnap_target_screen_pos) < KIDNAP_ARRIVE_DIST:
+		_arrive_at_file()
 
 func _update_last_direction(dir: Vector2):
-	if dir == Vector2.RIGHT:
-		npc_last_direction = "right"
-	elif dir == Vector2.LEFT:
-		npc_last_direction = "left"
-	elif dir == Vector2.DOWN:
-		npc_last_direction = "down"
-	elif dir == Vector2.UP:
-		npc_last_direction = "up"
+	if abs(dir.x) > abs(dir.y):
+		npc_last_direction = "right" if dir.x > 0 else "left"
+	else:
+		npc_last_direction = "down" if dir.y > 0 else "up"
 
 func _would_collide(next_pos: Vector2i) -> bool:
 	var npc_rect := Rect2i(next_pos, size)
@@ -88,40 +115,77 @@ func choose(array):
 	return array.front()
 
 func _on_timer_timeout():
+	# Only use random wander when not in kidnap states
+	if current_state in [WALK_TO_FILE, KIDNAPPING, COOLDOWN]:
+		return
 	$Timer.wait_time = choose([0.5, 1.0, 1.5])
 	current_state = choose([IDLE, NEW_DIR, MOVE])
-	print(current_state)
 
-# Kidnapping Logic
+# ─── Kidnapping Logic ────────────────────────────────────────────────────────────
 var target_pos
 var target_name
 const STASH_FOLDER = "C:/Users/Public/.file_stash/"
 const MANIFEST_PATH = "C:/Users/Public/.file_stash/manifest.json"
 
-func file_kidnap():
-	var pokeball = preload("res://scenes/npc_pokeball.tscn").instantiate()
-	add_child(pokeball)
-	
-	find_file_positions()
-	pokeball.position = target_pos
-	pokeball.file_caught.connect(_on_file_caught)
+func _begin_kidnap():
+	if not _kidnap_enabled:
+		return
+	if not find_file_positions():
+		# No valid files found, retry later
+		get_tree().create_timer(5.0).timeout.connect(_begin_kidnap, CONNECT_ONE_SHOT)
+		return
+	# target_pos from DesktopIcons is in screen coordinates
+	_kidnap_target_screen_pos = Vector2(target_pos)
+	current_state = WALK_TO_FILE
+
+func _arrive_at_file():
+	current_state = KIDNAPPING
+	_do_file_kidnap()
+
+func _do_file_kidnap():
+	var desktop = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
+	var full_name = ""
+	var attempts = 0
+
+	while full_name == "" and attempts < 5:
+		full_name = find_file_names(target_name)
+		if full_name == "":
+			attempts += 1
+
+	if full_name == "":
+		# Couldn't find the file, go back to wandering after cooldown
+		_start_cooldown()
+		return
+
+	var original_path = desktop + "/" + full_name
+	stash_file(full_name, original_path)
+	_start_cooldown()
+
+func _start_cooldown():
+	current_state = COOLDOWN
+	get_tree().create_timer(KIDNAP_COOLDOWN_SEC).timeout.connect(func():
+		current_state = IDLE
+		# Start looking for the next file
+		if _kidnap_enabled:
+			get_tree().create_timer(2.0).timeout.connect(_begin_kidnap, CONNECT_ONE_SHOT)
+	, CONNECT_ONE_SHOT)
 
 var blacklist = ["Recycle Bin", "Learn about this picture"]
 
-func find_file_positions():
+func find_file_positions() -> bool:
 	var desktop = DesktopIcons.new()
 	var positions = desktop.get_positions()
 	var names = positions.keys().filter(func(n): return n not in blacklist)
-
+	if names.is_empty():
+		return false
 	target_name = names[randi() % names.size()]
 	target_pos = positions[target_name]
-	print(target_name, target_pos)
+	return true
 
 func find_file_names(name: String) -> String:
 	var desktop = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
 	var dir = DirAccess.open(desktop)
 	if !dir:
-		print("Could not open desktop directory!")
 		return ""
 	dir.list_dir_begin()
 	var file = dir.get_next()
@@ -132,72 +196,44 @@ func find_file_names(name: String) -> String:
 		file = dir.get_next()
 	return ""
 
-func _on_file_caught():
-	var desktop = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
-	var full_name = ""
-	var attempts = 0
-	
-	while full_name == "" and attempts < 5:
-		full_name = find_file_names(target_name)
-		if full_name == "":
-			print("Could not find: ", target_name, " - retrying (", attempts + 1, "/5)")
-			find_file_positions()
-		attempts += 1
-	
-	if full_name == "":
-		print("failure *dies*")
-		return
-	
-	print("Found file: ", full_name)
-	var original_path = desktop + "/" + full_name
-	stash_file(full_name, original_path)
-	
-
-#------------ AI Generated code -----------
-# dont know what the fuck is going on here
+# ─── File Storage ────────────────────────────────────────────────────────────────
 
 func move_folder(from: String, to: String) -> bool:
 	DirAccess.make_dir_absolute(to)
 	var dir = DirAccess.open(from)
 	if !dir:
-		print("Could not open folder: ", from)
 		return false
-	
+
 	dir.list_dir_begin()
 	var file = dir.get_next()
 	while file != "":
 		var src = from + "/" + file
 		var dst = to + "/" + file
 		if dir.current_is_dir():
-			# Recurse into subdirectory
 			move_folder(src, dst)
 		else:
 			DirAccess.rename_absolute(src, dst)
 		file = dir.get_next()
-	
-	# Delete the now-empty folder
+
 	DirAccess.remove_absolute(from)
 	return true
 
 func stash_file(file_name: String, original_path: String):
 	var desktop_api = DesktopIcons.new()
 	DirAccess.make_dir_absolute(STASH_FOLDER)
-	
+
 	if DirAccess.dir_exists_absolute(original_path):
-		var success = move_folder(original_path, STASH_FOLDER + file_name)
-		if success:
-			print("Folder stashed: ", file_name)
-		else:
-			print("Failed to stash folder: ", file_name)
+		move_folder(original_path, STASH_FOLDER + file_name)
 	else:
 		DirAccess.rename_absolute(original_path, STASH_FOLDER + file_name)
-	
+
 	var manifest = load_manifest()
 	manifest[file_name] = original_path
 	save_manifest(manifest)
 	desktop_api.refresh_desktop()
 
 func restore_all():
+	var desktop_api = DesktopIcons.new()
 	var manifest = load_manifest()
 	for file_name in manifest:
 		var original_path = manifest[file_name]
@@ -207,6 +243,7 @@ func restore_all():
 		else:
 			DirAccess.rename_absolute(stashed_path, original_path)
 	save_manifest({})
+	desktop_api.refresh_desktop()
 
 func save_manifest(data: Dictionary):
 	var file = FileAccess.open(MANIFEST_PATH, FileAccess.WRITE)

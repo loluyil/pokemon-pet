@@ -35,6 +35,8 @@ func populate_moves():
 	var mon     = battle_sim.your_team[battle_sim.your_active]
 	var moveset = mon["moveset"]
 	var btns    = [move1, move2, move3, move4]
+	var choice_locked = mon.get("choice_lock", "")
+	var has_choice = choice_locked != "" and battle_sim._is_choice_item(mon.get("item", "")) and battle_sim._can_use_held_item(mon)
 
 	for i in 4:
 		var btn: TextureButton = btns[i]
@@ -43,6 +45,13 @@ func populate_moves():
 			btn.visible      = true
 			btn.scale        = Vector2.ZERO
 			btn.pivot_offset = btn.size / 2.0
+			# Grey out moves that are locked out by choice item
+			if has_choice and moveset[i]["name"] != choice_locked:
+				btn.modulate = Color(0.4, 0.4, 0.4, 0.7)
+				btn.disabled = true
+			else:
+				btn.modulate = Color(1, 1, 1, 1)
+				btn.disabled = false
 		else:
 			btn.visible = false
 

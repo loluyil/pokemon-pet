@@ -41,6 +41,8 @@ func _ready() -> void:
 	await get_tree().create_timer(.75).timeout
 	_sfx_player.stream = _sfx_pkball_release
 	_sfx_player.play()
+	var BattleUI = preload("res://scripts/battle_ui.gd")
+	BattleUI.spawn_pokeball_burst(self, oppo_pkmn.global_position)
 	oppo_pokeball.visible = false
 	oppo_pkmn.visible = true
 	await get_tree().create_timer(.2).timeout
@@ -65,6 +67,7 @@ func _ready() -> void:
 
 	_sfx_player.stream = _sfx_pkball_release
 	_sfx_player.play()
+	BattleUI.spawn_pokeball_burst(self, trainer_pkmn.global_position)
 	trainer_pokeball.visible = false
 	trainer_pkmn.visible = true
 	await get_tree().create_timer(.2).timeout

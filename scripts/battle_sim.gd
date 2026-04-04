@@ -949,14 +949,17 @@ func _is_move_blocked_by_ability(attacker: Dictionary, defender: Dictionary, mov
 	var attacker_breaks = _is_mold_breaker_attack(attacker)
 
 	if _is_sound_move(move_name) and SOUND_IMMUNE_ABILITIES.has(defender["ability"]) and not attacker_breaks:
+		_emit_ability(not is_yours, defender["ability"])
 		battle_message.emit(defender["display_name"] + " is immune to sound-based moves!")
 		return true
 
 	if _is_powder_move(move_name) and POWDER_IMMUNE_ABILITIES.has(defender["ability"]) and not attacker_breaks:
+		_emit_ability(not is_yours, defender["ability"])
 		battle_message.emit(defender["display_name"] + " is immune!")
 		return true
 
 	if move_type == "ground" and _has_ability(defender, "levitate") and not attacker_breaks:
+		_emit_ability(not is_yours, "levitate")
 		battle_message.emit(defender["display_name"] + " is immune thanks to Levitate!")
 		return true
 	if move_type == "ground" and _can_use_held_item(defender) and defender.get("air_balloon_active", false):
@@ -965,32 +968,40 @@ func _is_move_blocked_by_ability(attacker: Dictionary, defender: Dictionary, mov
 
 	if move_type == "electric":
 		if _has_ability(defender, "volt-absorb") and not attacker_breaks:
+			_emit_ability(not is_yours, "volt-absorb")
 			_heal_mon(defender, max(int(defender["max_hp"] / 4), 1), not is_yours, defender["display_name"] + " restored HP with Volt Absorb!")
 			return true
 		if _has_ability(defender, "motor-drive") and not attacker_breaks:
+			_emit_ability(not is_yours, "motor-drive")
 			apply_stages(defender, {"spe_stage": 1}, not is_yours)
 			return true
 		if _has_ability(defender, "lightning-rod") and not attacker_breaks:
+			_emit_ability(not is_yours, "lightning-rod")
 			apply_stages(defender, {"spa_stage": 1}, not is_yours)
 			return true
 
 	if move_type == "water":
 		if _has_ability(defender, "water-absorb") and not attacker_breaks:
+			_emit_ability(not is_yours, "water-absorb")
 			_heal_mon(defender, max(int(defender["max_hp"] / 4), 1), not is_yours, defender["display_name"] + " restored HP with Water Absorb!")
 			return true
 		if _has_ability(defender, "dry-skin") and not attacker_breaks:
+			_emit_ability(not is_yours, "dry-skin")
 			_heal_mon(defender, max(int(defender["max_hp"] / 4), 1), not is_yours, defender["display_name"] + " restored HP with Dry Skin!")
 			return true
 		if _has_ability(defender, "storm-drain") and not attacker_breaks:
+			_emit_ability(not is_yours, "storm-drain")
 			apply_stages(defender, {"spa_stage": 1}, not is_yours)
 			return true
 
 	if move_type == "fire" and _has_ability(defender, "flash-fire") and not attacker_breaks:
+		_emit_ability(not is_yours, "flash-fire")
 		defender["flash_fire_active"] = true
 		battle_message.emit(defender["display_name"] + " powered up with Flash Fire!")
 		return true
 
 	if move_type == "grass" and _has_ability(defender, "sap-sipper") and not attacker_breaks:
+		_emit_ability(not is_yours, "sap-sipper")
 		apply_stages(defender, {"atk_stage": 1}, not is_yours)
 		return true
 
@@ -1263,6 +1274,7 @@ func _handle_contact_abilities(attacker: Dictionary, defender: Dictionary, move_
 				_try_synchronize(attacker, defender, contact_status, is_yours)
 				_try_trigger_status_cure_item(attacker, is_yours)
 		elif _has_ability(defender, "effect-spore") and randi() % 100 < 30:
+			_emit_ability(not is_yours, "effect-spore")
 			var roll = randi() % 3
 			var spore_status = ["sleep", "poison", "paralyze"][roll]
 			if _can_receive_status(attacker, spore_status):
@@ -1280,9 +1292,11 @@ func _handle_contact_abilities(attacker: Dictionary, defender: Dictionary, move_
 				_try_synchronize(attacker, defender, spore_status, is_yours)
 				_try_trigger_status_cure_item(attacker, is_yours)
 	if _has_ability(defender, "cute-charm") and randi() % 100 < 30:
+		_emit_ability(not is_yours, "cute-charm")
 		_apply_infatuation(defender, attacker, is_yours)
 
 	if _has_ability(defender, "mummy") and attacker["ability"] not in ["multitype", "illusion", "trace", "mummy"]:
+		_emit_ability(not is_yours, "mummy")
 		attacker["ability"] = "mummy"
 		battle_message.emit(attacker["display_name"] + " was made into Mummy!")
 
@@ -1297,24 +1311,29 @@ func _handle_on_hit_abilities(attacker: Dictionary, defender: Dictionary, move: 
 	if hit_substitute or hp_damage <= 0:
 		return
 	if move["category"] == "physical" and _has_ability(defender, "weak-armor"):
+		_emit_ability(not is_yours, "weak-armor")
 		apply_stages(defender, {"def_stage": -1, "spe_stage": 1}, not is_yours, true)
 	if hp_damage > 0 and _has_ability(defender, "rattled") and move["type"] in ["dark", "ghost", "bug"]:
+		_emit_ability(not is_yours, "rattled")
 		apply_stages(defender, {"spe_stage": 1}, not is_yours)
 	if _has_ability(attacker, "poison-touch") and _is_contact_move(move["name"], move) and defender["status"] == "" and _can_receive_status(defender, "poison") and randi() % 100 < 30:
+		_emit_ability(is_yours, "poison-touch")
 		defender["status"] = "poison"
 		status_changed.emit(not is_yours, "poison")
 		battle_message.emit(defender["display_name"] + " was poisoned by Poison Touch!")
 		_try_synchronize(defender, attacker, "poison", not is_yours)
 		_try_trigger_status_cure_item(defender, not is_yours)
 	if _has_ability(defender, "cursed-body") and move.get("current_pp", 1) > 0 and randi() % 100 < 30:
+		_emit_ability(not is_yours, "cursed-body")
 		_apply_disable(attacker, move["name"])
 
-func _apply_sturdy(defender: Dictionary, attacker: Dictionary, damage: int) -> int:
+func _apply_sturdy(defender: Dictionary, attacker: Dictionary, damage: int, is_yours: bool = true) -> int:
 	if damage < defender["current_hp"]:
 		return damage
 	if defender["current_hp"] != defender["max_hp"]:
 		return damage
 	if _has_ability(defender, "sturdy") and not _is_mold_breaker_attack(attacker):
+		_emit_ability(is_yours, "sturdy")
 		battle_message.emit(defender["display_name"] + " endured the hit with Sturdy!")
 		return max(defender["current_hp"] - 1, 0)
 	if _can_use_held_item(defender) and defender.get("item", "") == "Focus Sash":
@@ -1429,6 +1448,7 @@ func get_effective_stat(mon: Dictionary, stat_name: String) -> int:
 func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by_opponent: bool = false):
 	var triggered_defiant = false
 	var lowered_any_stat = false
+	var any_stat_changed = false
 	for stat_key in stages:
 		var change = stages[stat_key]
 		if caused_by_opponent:
@@ -1452,8 +1472,9 @@ func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by
 		mon[stat_key] = clampi(mon[stat_key] + change, -6, 6)
 		var actual = mon[stat_key] - old_stage
 		if actual == 0:
-			battle_message.emit(mon["display_name"] + "'s stats won't go any further!")
+			# Stat already at max/min — skip message and shader
 			continue
+		any_stat_changed = true
 		if actual < 0:
 			lowered_any_stat = true
 		if caused_by_opponent and actual < 0 and _has_ability(mon, "defiant"):
@@ -1469,7 +1490,8 @@ func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by
 		apply_stages(mon, {"atk_stage": 2}, is_yours)
 	elif lowered_any_stat:
 		_apply_white_herb(mon, is_yours)
-	_emit_stat_stages(is_yours)
+	if any_stat_changed:
+		_emit_stat_stages(is_yours)
 
 func is_critical_hit(attacker: Dictionary, move: Dictionary) -> bool:
 	var crit_stage = 0
@@ -1810,6 +1832,7 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	# Status immobilization checks — clear last_move_used so protect resets
 	var move_name = move["name"]
 	if _can_use_held_item(attacker) and _is_choice_item(attacker.get("item", "")) and attacker.get("choice_lock", "") != "" and attacker["choice_lock"] != move_name:
+		battle_message.emit(attacker["display_name"] + "'s " + attacker["item"] + " locks it into " + _format_name(attacker["choice_lock"]) + "!")
 		move = _resolve_choice_locked_move(attacker, move)
 		move_name = move["name"]
 	if attacker.get("disable_turns", 0) > 0 and attacker.get("disabled_move", "") == move_name:
@@ -2013,6 +2036,8 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 
 	var result = calculate_damage(attacker, defender, move)
 	var damage = result["damage"]
+	if damage == 0 and move["category"] != "status" and _has_ability(defender, "wonder-guard"):
+		_emit_ability(not is_yours, "wonder-guard")
 	var hit_substitute = defender["substitute_hp"] > 0
 	var hp_damage = 0
 
@@ -2045,7 +2070,7 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			battle_message.emit("The substitute took the hit!")
 	else:
 		# Normal HP damage
-		damage = _apply_sturdy(defender, attacker, damage)
+		damage = _apply_sturdy(defender, attacker, damage, not is_yours)
 		defender["current_hp"] = max(defender["current_hp"] - damage, 0)
 		hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
 		hp_damage = damage
@@ -2678,7 +2703,7 @@ func switch_pokemon(is_yours: bool, index: int):
 # Applies a flat damage amount to `defender`, handles faint + Destiny Bond.
 # Used by OHKO moves, Counter, Mirror Coat, Seismic Toss, etc.
 func _deal_damage(defender: Dictionary, dmg: int, attacker: Dictionary, is_yours: bool, _move: Dictionary):
-	dmg = _apply_sturdy(defender, attacker, dmg)
+	dmg = _apply_sturdy(defender, attacker, dmg, not is_yours)
 	defender["current_hp"] = max(defender["current_hp"] - dmg, 0)
 	hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
 	if dmg > 0:
@@ -2722,7 +2747,7 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 					substitute_changed.emit(not is_yours, false)
 					battle_message.emit(defender["display_name"] + "'s substitute broke!")
 			else:
-				res["damage"] = _apply_sturdy(defender, attacker, res["damage"])
+				res["damage"] = _apply_sturdy(defender, attacker, res["damage"], not is_yours)
 				defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
 				hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
 				if res["damage"] > 0:
@@ -2773,7 +2798,7 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 					substitute_changed.emit(not is_yours, false)
 					battle_message.emit(defender["display_name"] + "'s substitute broke!")
 			else:
-				res["damage"] = _apply_sturdy(defender, attacker, res["damage"])
+				res["damage"] = _apply_sturdy(defender, attacker, res["damage"], not is_yours)
 				defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
 				hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
 				if res["damage"] > 0:
@@ -2793,7 +2818,7 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 				substitute_changed.emit(not is_yours, false)
 				battle_message.emit(defender["display_name"] + "'s substitute broke!")
 		else:
-			res["damage"] = _apply_sturdy(defender, attacker, res["damage"])
+			res["damage"] = _apply_sturdy(defender, attacker, res["damage"], not is_yours)
 			defender["current_hp"] = max(defender["current_hp"] - res["damage"], 0)
 			hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
 			hp_damage += res["damage"]
