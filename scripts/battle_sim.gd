@@ -7,8 +7,35 @@ signal pokemon_fainted(is_yours: bool, mon_name: String)
 signal battle_ended(you_won: bool)
 signal attack_effectiveness(effectiveness: float)
 signal status_changed(is_yours: bool, status: String)
+signal ability_activated(is_yours: bool, ability_name: String)
+signal stat_stages_changed(is_yours: bool, stages: Dictionary)
+signal substitute_changed(is_yours: bool, has_substitute: bool)
+signal pokemon_transformed(is_yours: bool)
 signal uturn_switch_request
 signal faint_switch_request
+
+const NATURE_MODIFIERS := {
+	"Adamant": {"up": "atk", "down": "spa"},
+	"Bold": {"up": "def", "down": "atk"},
+	"Brave": {"up": "atk", "down": "spe"},
+	"Calm": {"up": "spd", "down": "atk"},
+	"Careful": {"up": "spd", "down": "spa"},
+	"Gentle": {"up": "spd", "down": "def"},
+	"Hasty": {"up": "spe", "down": "def"},
+	"Impish": {"up": "def", "down": "spa"},
+	"Jolly": {"up": "spe", "down": "spa"},
+	"Lax": {"up": "def", "down": "spd"},
+	"Lonely": {"up": "atk", "down": "def"},
+	"Mild": {"up": "spa", "down": "def"},
+	"Modest": {"up": "spa", "down": "atk"},
+	"Naive": {"up": "spe", "down": "spd"},
+	"Naughty": {"up": "atk", "down": "spd"},
+	"Quiet": {"up": "spa", "down": "spe"},
+	"Rash": {"up": "spa", "down": "spd"},
+	"Relaxed": {"up": "def", "down": "spe"},
+	"Sassy": {"up": "spd", "down": "spe"},
+	"Timid": {"up": "spe", "down": "atk"},
+}
 
 @export var team_gen_path: NodePath
 var team_gen: Node
@@ -435,23 +462,32 @@ func start_battle():
 func calc_hp(base: int, iv: int, ev: int, level: int) -> int:
 	return int(floor((2.0 * base + iv + floor(ev / 4.0)) * level / 100.0) + level + 10)
 
-func calc_stat(base: int, iv: int, ev: int, level: int) -> int:
-	return int(floor((floor((2.0 * base + iv + floor(ev / 4.0)) * level / 100.0) + 5) * 1.0))
+func _nature_modifier(nature: String, stat_key: String) -> float:
+	var effect = NATURE_MODIFIERS.get(nature, {})
+	if effect.get("up", "") == stat_key:
+		return 1.1
+	if effect.get("down", "") == stat_key:
+		return 0.9
+	return 1.0
+
+func calc_stat(base: int, iv: int, ev: int, level: int, nature_mod: float = 1.0) -> int:
+	return int(floor((floor((2.0 * base + iv + floor(ev / 4.0)) * level / 100.0) + 5) * nature_mod))
 
 func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 	var ivs = raw["ivs"]
 	var evs = raw["evs"]
 	var level = raw["level"]
+	var nature = raw.get("nature", "Serious")
 
 	var hp = calc_hp(raw["base_hp"], ivs["hp"], evs["hp"], level)
 	if raw["name"] == "shedinja":
 		hp = 1
 
-	var attack_stat = calc_stat(raw["base_attack"], ivs["atk"], evs["atk"], level)
-	var defense_stat = calc_stat(raw["base_defense"], ivs["def"], evs["def"], level)
-	var sp_atk_stat = calc_stat(raw["base_sp_atk"], ivs["spa"], evs["spa"], level)
-	var sp_def_stat = calc_stat(raw["base_sp_def"], ivs["spd"], evs["spd"], level)
-	var speed_stat = calc_stat(raw["base_speed"], ivs["spe"], evs["spe"], level)
+	var attack_stat = calc_stat(raw["base_attack"], ivs["atk"], evs["atk"], level, _nature_modifier(nature, "atk"))
+	var defense_stat = calc_stat(raw["base_defense"], ivs["def"], evs["def"], level, _nature_modifier(nature, "def"))
+	var sp_atk_stat = calc_stat(raw["base_sp_atk"], ivs["spa"], evs["spa"], level, _nature_modifier(nature, "spa"))
+	var sp_def_stat = calc_stat(raw["base_sp_def"], ivs["spd"], evs["spd"], level, _nature_modifier(nature, "spd"))
+	var speed_stat = calc_stat(raw["base_speed"], ivs["spe"], evs["spe"], level, _nature_modifier(nature, "spe"))
 	return {
 		"name": raw["name"],
 		"true_display_name": _format_name(raw["name"]),
@@ -464,6 +500,7 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"base_ability": raw["ability"],
 		"item": raw["item"],
 		"base_item": raw["item"],
+		"nature": nature,
 		"last_consumed_item": "",
 		"role": raw["role"],
 		"ivs": raw.get("ivs", {}).duplicate(true),
@@ -519,6 +556,7 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"unburden_active": false,
 		"illusion_active": false,
 		"transformed": false,
+		"yawn_turns": 0,
 	}
 
 func _get_base_species_name(mon_name: String) -> String:
@@ -666,6 +704,7 @@ func _apply_transform(attacker: Dictionary, defender: Dictionary, is_yours: bool
 	_update_mon_appearance(attacker, defender.get("appearance_name", defender["name"]), defender["display_name"])
 	if not attacker["is_fainted"]:
 		_emit_active_identity(is_yours)
+	pokemon_transformed.emit(is_yours)
 	battle_message.emit(attacker["true_display_name"] + " transformed into " + defender["display_name"] + "!")
 
 func _side_key(is_yours: bool) -> String:
@@ -679,6 +718,18 @@ func _get_active_mon(is_yours: bool) -> Dictionary:
 
 func _has_ability(mon: Dictionary, ability_name: String) -> bool:
 	return mon.get("ability", "") == ability_name
+
+func _emit_ability(is_yours: bool, ability_name: String):
+	var display = team_gen.ability_data.get(ability_name, {}).get("display_name", _format_name(ability_name))
+	ability_activated.emit(is_yours, display)
+
+func _emit_stat_stages(is_yours: bool):
+	var mon = _get_active_mon(is_yours)
+	var stages: Dictionary = {}
+	for key in ["atk_stage", "def_stage", "spa_stage", "spd_stage", "spe_stage"]:
+		if mon[key] != 0:
+			stages[key] = mon[key]
+	stat_stages_changed.emit(is_yours, stages)
 
 func _is_mold_breaker_attack(attacker: Dictionary) -> bool:
 	return MOLD_BREAKER_ABILITIES.has(attacker.get("ability", ""))
@@ -949,18 +1000,24 @@ func _handle_on_switch_in_ability(is_yours: bool):
 	var mon = _get_active_mon(is_yours)
 	match mon["ability"]:
 		"drizzle":
+			_emit_ability(is_yours, "drizzle")
 			_set_weather("rain", mon["display_name"])
 		"drought":
+			_emit_ability(is_yours, "drought")
 			_set_weather("sun", mon["display_name"])
 		"sand-stream":
+			_emit_ability(is_yours, "sand-stream")
 			_set_weather("sand", mon["display_name"])
 		"snow-warning":
+			_emit_ability(is_yours, "snow-warning")
 			_set_weather("hail", mon["display_name"])
 		"intimidate":
 			var foe = _get_active_mon(not is_yours)
 			if not foe["is_fainted"]:
+				_emit_ability(is_yours, "intimidate")
 				apply_stages(foe, {"atk_stage": -1}, not is_yours, true)
 		"download":
+			_emit_ability(is_yours, "download")
 			var foe = _get_active_mon(not is_yours)
 			if foe["defense"] <= foe["sp_def"]:
 				apply_stages(mon, {"atk_stage": 1}, is_yours)
@@ -971,11 +1028,13 @@ func _handle_on_switch_in_ability(is_yours: bool):
 			for foe_move in foe["moveset"]:
 				if foe_move["name"] in OHKO_MOVES or foe_move["name"] in ["explosion", "self-destruct"] \
 						or (foe_move["category"] != "status" and get_move_effectiveness(foe, foe_move["type"], mon["types"]) > 1.0):
+					_emit_ability(is_yours, "anticipation")
 					battle_message.emit(mon["display_name"] + " shuddered with Anticipation!")
 					break
 		"frisk":
 			var foe = _get_active_mon(not is_yours)
 			if foe["item"] != "":
+				_emit_ability(is_yours, "frisk")
 				battle_message.emit(mon["display_name"] + " frisked " + foe["display_name"] + " and found its " + foe["item"] + "!")
 		"forewarn":
 			var foe = _get_active_mon(not is_yours)
@@ -991,16 +1050,19 @@ func _handle_on_switch_in_ability(is_yours: bool):
 					best_power = candidate_power
 					best_move_name = foe_move["name"]
 			if best_move_name != "":
+				_emit_ability(is_yours, "forewarn")
 				battle_message.emit(mon["display_name"] + "'s Forewarn alerted it to " + _format_name(best_move_name) + "!")
 		"trace":
 			var foe = _get_active_mon(not is_yours)
 			var traced = foe["ability"]
 			if traced not in ["trace", "multitype", "illusion", "imposter"]:
+				_emit_ability(is_yours, "trace")
 				mon["ability"] = traced
 				battle_message.emit(mon["display_name"] + " traced " + foe["display_name"] + "'s " + team_gen.ability_data.get(traced, {}).get("display_name", _format_name(traced)) + "!")
 				if traced in ["drizzle", "drought", "sand-stream", "snow-warning", "intimidate", "download"]:
 					_handle_on_switch_in_ability(is_yours)
 		"imposter":
+			_emit_ability(is_yours, "imposter")
 			var foe = _get_active_mon(not is_yours)
 			_apply_transform(mon, foe, is_yours)
 
@@ -1024,6 +1086,7 @@ func _reset_switch_in_state(mon: Dictionary):
 	mon["confusion_turns"] = 0
 	mon["infatuated_with"] = ""
 	mon["substitute_hp"] = 0
+	mon["yawn_turns"] = 0
 	mon["is_protected"] = false
 	mon["protect_consecutive"] = 0
 	mon["perish_count"] = -1
@@ -1049,6 +1112,8 @@ func _clear_switch_out_state(mon: Dictionary, is_yours: bool):
 		mon["toxic_counter"] = 0
 	if mon["ability"] == "regenerator" and not mon["is_fainted"]:
 		mon["current_hp"] = min(mon["current_hp"] + max(int(mon["max_hp"] / 3), 1), mon["max_hp"])
+	if mon["substitute_hp"] > 0:
+		substitute_changed.emit(is_yours, false)
 	mon["substitute_hp"] = 0
 	mon["is_protected"] = false
 	mon["protect_consecutive"] = 0
@@ -1069,6 +1134,7 @@ func _clear_switch_out_state(mon: Dictionary, is_yours: bool):
 	mon["unburden_active"] = false
 	mon["illusion_active"] = false
 	mon["transformed"] = false
+	mon["yawn_turns"] = 0
 	if mon["status"] == "toxic":
 		mon["toxic_counter"] = 0
 	var foe = _get_active_mon(not is_yours)
@@ -1176,16 +1242,19 @@ func _handle_contact_abilities(attacker: Dictionary, defender: Dictionary, move_
 	if not _is_contact_move(move_name, {}) or attacker["is_fainted"]:
 		return
 	if defender["is_fainted"] and _has_ability(defender, "aftermath"):
+		_emit_ability(not is_yours, "aftermath")
 		_damage_mon(attacker, max(int(attacker["max_hp"] / 4), 1), is_yours, attacker["display_name"] + " was hurt by Aftermath!")
 		return
 
 	if _has_ability(defender, "rough-skin") or _has_ability(defender, "iron-barbs"):
+		_emit_ability(not is_yours, defender["ability"])
 		_damage_mon(attacker, max(int(attacker["max_hp"] / 8), 1), is_yours, attacker["display_name"] + " was hurt by " + team_gen.ability_data.get(defender["ability"], {}).get("display_name", _format_name(defender["ability"])) + "!")
 
 	if attacker["status"] == "":
 		if (_has_ability(defender, "static") or _has_ability(defender, "flame-body") or _has_ability(defender, "poison-point")) and randi() % 100 < 30:
 			var contact_status = "paralyze" if _has_ability(defender, "static") else ("burn" if _has_ability(defender, "flame-body") else "poison")
 			if _can_receive_status(attacker, contact_status):
+				_emit_ability(not is_yours, defender["ability"])
 				attacker["status"] = contact_status
 				if contact_status == "toxic":
 					attacker["toxic_counter"] = 0
@@ -1282,6 +1351,20 @@ func get_stat_multiplier(stage: int) -> float:
 		return (2.0 + stage) / 2.0
 	else:
 		return 2.0 / (2.0 - stage)
+
+func get_effective_stat_without_stages(mon: Dictionary, stat_name: String) -> float:
+	var stage_key = ""
+	match stat_name:
+		"attack":  stage_key = "atk_stage"
+		"defense": stage_key = "def_stage"
+		"sp_atk":  stage_key = "spa_stage"
+		"sp_def":  stage_key = "spd_stage"
+		"speed":   stage_key = "spe_stage"
+
+	var effective = float(get_effective_stat(mon, stat_name))
+	if stage_key == "":
+		return effective
+	return effective / get_stat_multiplier(mon[stage_key])
 
 func get_effective_stat(mon: Dictionary, stat_name: String) -> int:
 	var base_val = float(mon[stat_name])
@@ -1386,6 +1469,7 @@ func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by
 		apply_stages(mon, {"atk_stage": 2}, is_yours)
 	elif lowered_any_stat:
 		_apply_white_herb(mon, is_yours)
+	_emit_stat_stages(is_yours)
 
 func is_critical_hit(attacker: Dictionary, move: Dictionary) -> bool:
 	var crit_stage = 0
@@ -1505,11 +1589,11 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 			def_stat = float(defender["sp_def"])
 	if _has_ability(defender, "unaware"):
 		if move["category"] == "physical":
-			atk = float(attacker["attack"])
+			atk = get_effective_stat_without_stages(attacker, "attack")
 			if attacker["status"] == "burn" and attacker["ability"] != "guts":
 				atk *= 0.5
 		else:
-			atk = float(attacker["sp_atk"])
+			atk = get_effective_stat_without_stages(attacker, "sp_atk")
 
 	var base_damage = ((2.0 * level / 5.0 + 2.0) * power * atk / def_stat) / 50.0 + 2.0
 
@@ -1955,6 +2039,7 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		if result["crit"]:
 			battle_message.emit("A critical hit!")
 		if defender["substitute_hp"] <= 0:
+			substitute_changed.emit(not is_yours, false)
 			battle_message.emit(defender["display_name"] + "'s substitute broke!")
 		else:
 			battle_message.emit("The substitute took the hit!")
@@ -2144,6 +2229,7 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		attacker["current_hp"] -= cost
 		attacker["substitute_hp"] = cost
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
+		substitute_changed.emit(is_yours, true)
 		battle_message.emit(attacker["display_name"] + " made a substitute!")
 		return
 
@@ -2323,6 +2409,21 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 			pokemon_fainted.emit(is_yours, attacker["name"])
 			return
 		apply_stages(defender, OPP_STAGE_MOVES[move_name], not is_yours, true)
+		return
+
+	# --- Yawn: makes the target drowsy; they fall asleep next end-of-turn ---
+	if move_name == "yawn":
+		if defender["status"] != "":
+			battle_message.emit("But it failed!")
+			return
+		if defender.get("yawn_turns", 0) > 0:
+			battle_message.emit("But it failed!")
+			return
+		if defender["substitute_hp"] > 0:
+			battle_message.emit("But it failed!")
+			return
+		defender["yawn_turns"] = 2
+		battle_message.emit(defender["display_name"] + " became drowsy!")
 		return
 
 	# Fallback for unimplemented status moves
@@ -2509,6 +2610,16 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 		pokemon_fainted.emit(is_yours, mon["name"])
 		return
 
+	# Yawn: countdown, then inflict sleep
+	if mon.get("yawn_turns", 0) > 0:
+		mon["yawn_turns"] -= 1
+		if mon["yawn_turns"] == 0 and mon["status"] == "" and _can_receive_status(mon, "sleep"):
+			mon["status"] = "sleep"
+			mon["sleep_turns"] = randi_range(2, 5)
+			status_changed.emit(is_yours, "sleep")
+			battle_message.emit(mon["display_name"] + " fell asleep from drowsiness!")
+			_try_trigger_status_cure_item(mon, is_yours)
+
 	_resolve_faint_from_residual(mon, is_yours)
 
 func check_faint(is_yours: bool):
@@ -2608,6 +2719,7 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 			if defender["substitute_hp"] > 0:
 				defender["substitute_hp"] = max(defender["substitute_hp"] - res["damage"], 0)
 				if defender["substitute_hp"] <= 0:
+					substitute_changed.emit(not is_yours, false)
 					battle_message.emit(defender["display_name"] + "'s substitute broke!")
 			else:
 				res["damage"] = _apply_sturdy(defender, attacker, res["damage"])
@@ -2658,6 +2770,7 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 			if defender["substitute_hp"] > 0:
 				defender["substitute_hp"] = max(defender["substitute_hp"] - res["damage"], 0)
 				if defender["substitute_hp"] <= 0:
+					substitute_changed.emit(not is_yours, false)
 					battle_message.emit(defender["display_name"] + "'s substitute broke!")
 			else:
 				res["damage"] = _apply_sturdy(defender, attacker, res["damage"])
@@ -2677,6 +2790,7 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 		if hit_substitute:
 			defender["substitute_hp"] = max(defender["substitute_hp"] - res["damage"], 0)
 			if defender["substitute_hp"] <= 0:
+				substitute_changed.emit(not is_yours, false)
 				battle_message.emit(defender["display_name"] + "'s substitute broke!")
 		else:
 			res["damage"] = _apply_sturdy(defender, attacker, res["damage"])

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b36cfj7sunij3"
-path="res://.godot/imported/dark.png-ea1192dfafacd8a2504a736f460a1f60.ctex"
+uid="uid://d2sveeb0bqrkg"
+path="res://.godot/imported/substitute_back.png-ed0416afcc70e03e72cc775020eac207.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://dark.png"
-dest_files=["res://.godot/imported/dark.png-ea1192dfafacd8a2504a736f460a1f60.ctex"]
+source_file="res://sprites/pokemon/substitute/substitute_back.png"
+dest_files=["res://.godot/imported/substitute_back.png-ed0416afcc70e03e72cc775020eac207.ctex"]
 
 [params]
 
