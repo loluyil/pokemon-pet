@@ -40,6 +40,10 @@ const NO_STAB = [
 
 const HAZARDS = ["spikes", "stealth-rock", "toxic-spikes"]
 const PIVOT_MOVES = ["u-turn", "volt-switch"]
+const UNSUPPORTED_STATUS_MOVES = [
+	"aromatherapy", "encore", "haze", "heal-bell", "healing-wish",
+	"pain-split", "switcheroo", "taunt", "trick", "trick-room",
+]
 
 const MOVE_PAIRS = [
 	["light-screen", "reflect"],
@@ -165,11 +169,78 @@ func _ready():
 	build_status_move_cache()
 
 func load_data():
-	gen5_sets = load_json("res://data/gen5sets.json")
+	var raw_sets = load_json("res://data/gen5sets.json")
+	gen5_sets = _transform_gen5_sets(raw_sets)
 	gen5_pokemon = load_json("res://data/gen5pokemon.json")
 	move_data = load_json("res://data/moves.json")
 	ability_data = load_json("res://data/abilities.json")
 	type_chart = load_json("res://data/type_chart.json")
+
+# Convert Title Case name to kebab-case: "Ice Shard" → "ice-shard", "Mr. Mime" → "mr-mime"
+func _to_kebab(display_name: String) -> String:
+	return display_name.strip_edges().to_lower().replace(" ", "-").replace(".", "").replace("'", "")
+
+# Transform new gen5sets.json format (roles dict) to internal format (sets array)
+func _transform_gen5_sets(raw: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for species_name in raw:
+		var entry = raw[species_name]
+		var transformed: Dictionary = {
+			"level": entry.get("level", 100),
+		}
+		# Type override for Arceus forms etc.
+		if entry.has("type_override"):
+			transformed["type_override"] = entry["type_override"]
+
+		# Species-level EVs/IVs defaults
+		var species_evs = entry.get("evs", {})
+		var species_ivs = entry.get("ivs", {})
+
+		var sets: Array = []
+		var roles = entry.get("roles", {})
+		for role_name in roles:
+			var role_data = roles[role_name]
+			var set_dict: Dictionary = {"role": role_name}
+
+			# Abilities → kebab-case
+			var abilities: Array = []
+			for a in role_data.get("abilities", entry.get("abilities", [])):
+				abilities.append(_to_kebab(a))
+			set_dict["abilities"] = abilities
+
+			# Moves → kebab-case movepool
+			var movepool: Array = []
+			for m in role_data.get("moves", []):
+				movepool.append(_to_kebab(m))
+			set_dict["movepool"] = movepool
+
+			# Items (keep original case — items are stored as-is in the codebase)
+			set_dict["items"] = role_data.get("items", entry.get("items", []))
+
+			# Preferred types
+			if role_data.has("preferredTypes"):
+				set_dict["preferredTypes"] = role_data["preferredTypes"]
+
+			# Per-role EVs/IVs (merge species-level defaults with role overrides)
+			var role_evs = role_data.get("evs", {})
+			var role_ivs = role_data.get("ivs", {})
+			if not species_evs.is_empty() or not role_evs.is_empty():
+				var merged_evs = species_evs.duplicate()
+				merged_evs.merge(role_evs, true)
+				set_dict["evs"] = merged_evs
+			if not species_ivs.is_empty() or not role_ivs.is_empty():
+				var merged_ivs = species_ivs.duplicate()
+				merged_ivs.merge(role_ivs, true)
+				set_dict["ivs"] = merged_ivs
+
+			sets.append(set_dict)
+
+		transformed["sets"] = sets
+
+		# Store under the kebab-case species name for gen5_pokemon lookup compatibility
+		var kebab_name = _to_kebab(species_name)
+		result[kebab_name] = transformed
+	return result
 
 func load_json(path: String) -> Dictionary:
 	var file = FileAccess.open(path, FileAccess.READ)
@@ -382,15 +453,23 @@ func random_set(species_name: String, team_details: Dictionary, is_lead: bool) -
 	if item == "Leftovers" and "poison" in types:
 		item = "Black Sludge"
 	
-	# --- Determine EVs/IVs
+	# --- Determine EVs/IVs (start with defaults, apply set overrides)
 	var ivs = {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31}
 	var evs = {"hp": 85, "atk": 85, "def": 85, "spa": 85, "spd": 85, "spe": 85}
-	
+
+	# Apply per-role EV/IV overrides from the set data
+	if chosen_set.has("evs"):
+		for k in chosen_set["evs"]:
+			evs[k] = chosen_set["evs"][k]
+	if chosen_set.has("ivs"):
+		for k in chosen_set["ivs"]:
+			ivs[k] = chosen_set["ivs"][k]
+
 	# Minimize attack for special attackers
 	if counter["physical"] == 0 or (counter["physical"] <= 1 and has_move(moves, "foul-play")):
 		evs["atk"] = 0
 		ivs["atk"] = 0
-	
+
 	# Minimize speed for Trick Room / Gyro Ball
 	if has_move(moves, "gyro-ball") or has_move(moves, "metal-burst") or has_move(moves, "trick-room"):
 		evs["spe"] = 0
@@ -576,6 +655,8 @@ func random_moveset(types: Array, abilities: Array, team_details: Dictionary,
 func cull_move_pool(types: Array, moves: Array, abilities: Array,
 	counter: Dictionary, move_pool: Array, team_details: Dictionary,
 	species_name: String, is_lead: bool, preferred_type: String, role: String):
+	for move_name in UNSUPPORTED_STATUS_MOVES:
+		move_pool.erase(move_name)
 	
 	# Remove duplicate Hidden Powers
 	var has_hp = false

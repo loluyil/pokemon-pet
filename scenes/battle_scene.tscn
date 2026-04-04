@@ -46,7 +46,11 @@
 [ext_resource type="SpriteFrames" uid="uid://sbshelel11xf" path="res://sprites/pokemon/sprites/abomasnow/abomasnow_anim.tres" id="33_vnhh6"]
 [ext_resource type="Texture2D" uid="uid://c6wfwygblrj2d" path="res://images/battle/party/bg_hidden_B2W2.png" id="35_fpcek"]
 [ext_resource type="AudioStream" uid="uid://d3demv7lj7ssu" path="res://sounds/effective.wav" id="35_j86qt"]
-[ext_resource type="SpriteFrames" uid="uid://dvlo0j08whwei" path="res://sprites/pokemon/sprites/spiritomb/spiritomb_anim.tres" id="45_qg24k"]
+[ext_resource type="Texture2D" uid="uid://c4fwynsflalj0" path="res://images/battle/party/ability.png" id="45_36ivb"]
+[ext_resource type="Texture2D" uid="uid://b6ksqxb6lwfb5" path="res://sprites/pokemon/substitute/substitute.png" id="46_f8m0e"]
+[ext_resource type="Texture2D" uid="uid://d2sveeb0bqrkg" path="res://sprites/pokemon/substitute/substitute_back.png" id="47_preqo"]
+[ext_resource type="Texture2D" uid="uid://c4qvkg2pidbhx" path="res://images/battle/stat.png" id="48_4r5jg"]
+[ext_resource type="SpriteFrames" uid="uid://c0m56s3k8i56i" path="res://sprites/pokemon/sprites/kyurem-white/kyurem-white_anim.tres" id="51_36ivb"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("12_dm2tv")
@@ -461,6 +465,46 @@ tracks/0/keys = {
 "update": 0,
 "values": [Vector3(3.634, 0.423, -3.122)]
 }
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_dth3c"]
+resource_name = "faint"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(3.634, -0.312, -3.122), Vector3(3.634, -0.312, -3.122), Vector3(3.634, -1.002, -3.122)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
 
 [sub_resource type="Animation" id="Animation_dm2tv"]
 resource_name = "pkmn_entry"
@@ -472,15 +516,28 @@ tracks/0/path = NodePath(".:position")
 tracks/0/interp = 2
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.43333334),
-"transitions": PackedFloat32Array(1, 1),
+"times": PackedFloat32Array(0, 0.25500616, 0.43333334),
+"transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
-"values": [Vector3(3.634, 0.423, -3.122), Vector3(3.634, -0.312, -3.122)]
+"values": [Vector3(3.634, 0.423, -3.122), Vector3(3.634, 0.423, -3.122), Vector3(3.634, -0.312, -3.122)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_16mmc"]
 _data = {
 &"RESET": SubResource("Animation_c6fjk"),
+&"faint": SubResource("Animation_dth3c"),
 &"pkmn_entry": SubResource("Animation_dm2tv")
 }
 
@@ -498,6 +555,46 @@ tracks/0/keys = {
 "update": 0,
 "values": [Vector3(1.662, 0.357, -1.741)]
 }
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_36ivb"]
+resource_name = "faint"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1936158, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(1.662, -0.448, -1.741), Vector3(1.662, -0.448, -1.741), Vector3(1.662, -1.233, -1.741)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.16666667, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
 
 [sub_resource type="Animation" id="Animation_165gl"]
 resource_name = "pkmn_entry"
@@ -506,18 +603,31 @@ tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/path = NodePath(".:position")
-tracks/0/interp = 1
+tracks/0/interp = 2
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.4),
-"transitions": PackedFloat32Array(1, 1),
+"times": PackedFloat32Array(0, 0.23333332, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
-"values": [Vector3(1.662, 0.35699996, -1.741), Vector3(1.662, -0.448, -1.741)]
+"values": [Vector3(1.662, 0.35699996, -1.741), Vector3(1.662, 0.35699996, -1.741), Vector3(1.662, -0.448, -1.741)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_arw3n"]
 _data = {
 &"RESET": SubResource("Animation_arw3n"),
+&"faint": SubResource("Animation_36ivb"),
 &"pkmn_entry": SubResource("Animation_165gl")
 }
 
@@ -554,7 +664,7 @@ tracks/0/keys = {
 
 [sub_resource type="Animation" id="Animation_rum4d"]
 resource_name = "battle_exit"
-length = 0.5
+length = 0.56666666
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -2416,7 +2526,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.99999756, 0, -0.0017453268, 0, 1, 0, 0.0017453268, 0, 0.99999756, 4.396, 0.037, -3.68)
+transform = Transform3D(0.9999975, 0, -0.0017453267, 0, 1, 0, 0.0017453267, 0, 0.9999975, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -2459,6 +2569,7 @@ mesh = SubResource("CylinderMesh_1i8jf")
 transform = Transform3D(0.74511975, -0.20696765, -0.6340038, 0.018368375, 0.95663726, -0.29070216, 0.66667765, 0.20496233, 0.71661097, 3.634, 0.423, -3.122)
 visible = false
 texture_filter = 0
+animation = &"back"
 speed_scale = 2.0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon" unique_id=1279385364]
@@ -2469,6 +2580,7 @@ speed_scale = 0.753
 transform = Transform3D(0.99830663, 0.01995214, 0.054641858, -0.03074697, 0.9783844, 0.20449607, -0.0493806, -0.20582981, 0.97734123, 1.662, 0.357, -1.741)
 visible = false
 texture_filter = 0
+animation = &"back"
 speed_scale = 2.0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon" unique_id=800908672]
@@ -2564,6 +2676,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 27
+text = "Tepig"
 text_overrun_behavior = 1
 
 [node name="TrainerHPContainer" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=43815748]
@@ -2603,6 +2716,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 27
+text = "Tepig"
 text_overrun_behavior = 1
 
 [node name="Level" type="Label" parent="BattleSim/VBoxContainer/TrainerHPContainer" unique_id=2130359110]
@@ -2695,6 +2809,320 @@ theme_override_fonts/font = ExtResource("13_16mmc")
 theme_override_font_sizes/font_size = 36
 autowrap_mode = 2
 
+[node name="TrainerAbilityContainer" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=2127143922]
+clip_contents = true
+layout_mode = 0
+offset_left = 638.0
+offset_top = 216.0
+offset_right = 1054.0
+offset_bottom = 310.0
+texture = ExtResource("45_36ivb")
+expand_mode = 1
+
+[node name="AbilityName" type="Label" parent="BattleSim/VBoxContainer/TrainerAbilityContainer" unique_id=1695352180]
+layout_mode = 0
+offset_left = 111.0
+offset_top = 45.0
+offset_right = 410.0
+offset_bottom = 93.0
+theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 34
+text = "Overgrown"
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Header" type="Label" parent="BattleSim/VBoxContainer/TrainerAbilityContainer" unique_id=1462010562]
+layout_mode = 0
+offset_left = 81.0
+offset_top = 24.0
+offset_right = 237.0
+offset_bottom = 45.0
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 30
+text = "Ability"
+
+[node name="OpponentSubstitute" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=1179080313]
+visible = false
+texture_filter = 1
+layout_mode = 0
+offset_left = 670.0
+offset_top = 163.0
+offset_right = 926.0
+offset_bottom = 364.0
+mouse_filter = 2
+texture = ExtResource("46_f8m0e")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="YourSubstitute" type="TextureRect" parent="BattleSim/VBoxContainer" unique_id=329969613]
+visible = false
+texture_filter = 1
+layout_mode = 0
+offset_left = 150.0
+offset_top = 215.0
+offset_right = 553.0
+offset_bottom = 602.0
+mouse_filter = 2
+texture = ExtResource("47_preqo")
+
+[node name="OpponentStatContainer" type="GridContainer" parent="BattleSim/VBoxContainer" unique_id=1874385712]
+layout_mode = 0
+offset_left = 9.0
+offset_top = 98.0
+offset_right = 288.0
+offset_bottom = 127.0
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 6
+columns = 4
+
+[node name="Stat1" type="TextureRect" parent="BattleSim/VBoxContainer/OpponentStatContainer" unique_id=1139761336]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/OpponentStatContainer/Stat1" unique_id=634717568]
+texture_filter = 1
+layout_mode = 0
+offset_left = 5.0
+offset_top = 8.0
+offset_right = 61.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Stat2" type="TextureRect" parent="BattleSim/VBoxContainer/OpponentStatContainer" unique_id=1613839447]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/OpponentStatContainer/Stat2" unique_id=607337710]
+texture_filter = 1
+layout_mode = 0
+offset_left = 4.0
+offset_top = 8.0
+offset_right = 60.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Stat3" type="TextureRect" parent="BattleSim/VBoxContainer/OpponentStatContainer" unique_id=1092814169]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/OpponentStatContainer/Stat3" unique_id=2125109904]
+texture_filter = 1
+layout_mode = 0
+offset_left = 4.0
+offset_top = 8.0
+offset_right = 60.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Stat4" type="TextureRect" parent="BattleSim/VBoxContainer/OpponentStatContainer" unique_id=1732252503]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/OpponentStatContainer/Stat4" unique_id=1255163035]
+texture_filter = 1
+layout_mode = 0
+offset_left = 3.0
+offset_top = 8.0
+offset_right = 59.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BattleSim/VBoxContainer" unique_id=6958561]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 23.0
+
+[node name="TrainerStatContainer" type="GridContainer" parent="BattleSim/VBoxContainer" unique_id=109186297]
+layout_mode = 0
+offset_left = 771.0
+offset_top = 393.0
+offset_right = 1050.0
+offset_bottom = 422.0
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 6
+columns = 4
+
+[node name="Stat1" type="TextureRect" parent="BattleSim/VBoxContainer/TrainerStatContainer" unique_id=1565787090]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/TrainerStatContainer/Stat1" unique_id=731638227]
+texture_filter = 1
+layout_mode = 0
+offset_left = 5.0
+offset_top = 8.0
+offset_right = 61.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Stat2" type="TextureRect" parent="BattleSim/VBoxContainer/TrainerStatContainer" unique_id=1755102836]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/TrainerStatContainer/Stat2" unique_id=1405044386]
+texture_filter = 1
+layout_mode = 0
+offset_left = 4.0
+offset_top = 8.0
+offset_right = 60.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Stat3" type="TextureRect" parent="BattleSim/VBoxContainer/TrainerStatContainer" unique_id=1235552857]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/TrainerStatContainer/Stat3" unique_id=1434387699]
+texture_filter = 1
+layout_mode = 0
+offset_left = 4.0
+offset_top = 8.0
+offset_right = 60.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Stat4" type="TextureRect" parent="BattleSim/VBoxContainer/TrainerStatContainer" unique_id=160638733]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("48_4r5jg")
+
+[node name="StatText" type="Label" parent="BattleSim/VBoxContainer/TrainerStatContainer/Stat4" unique_id=455983736]
+texture_filter = 1
+layout_mode = 0
+offset_left = 3.0
+offset_top = 8.0
+offset_right = 59.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9882353)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 20
+text = "x4 Atk"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="OpponentAbilityContainer" type="TextureRect" parent="BattleSim" unique_id=301442585]
+clip_contents = true
+offset_top = 115.0
+offset_right = 416.0
+offset_bottom = 209.0
+texture = ExtResource("45_36ivb")
+expand_mode = 1
+flip_h = true
+
+[node name="AbilityName" type="Label" parent="BattleSim/OpponentAbilityContainer" unique_id=381389318]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 46.0
+offset_right = 313.0
+offset_bottom = 94.0
+theme_override_colors/font_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 34
+text = "Overgrown"
+horizontal_alignment = 2
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Header" type="Label" parent="BattleSim/OpponentAbilityContainer" unique_id=1246249381]
+layout_mode = 0
+offset_left = 179.0
+offset_top = 24.0
+offset_right = 335.0
+offset_bottom = 45.0
+theme_override_colors/font_shadow_color = Color(0.5176471, 0.5176471, 0.5176471, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 5
+theme_override_fonts/font = ExtResource("13_16mmc")
+theme_override_font_sizes/font_size = 30
+text = "Ability"
+horizontal_alignment = 2
+
 [node name="PokemonData" parent="BattleSim" unique_id=1085841451 instance=ExtResource("16_05s0e")]
 team_gen_path = NodePath("TeamGeneration")
 
@@ -2707,7 +3135,5 @@ volume_db = -50.0
 [node name="pokemon test" type="AnimatedSprite3D" parent="BattleSim" unique_id=800428327]
 visible = false
 texture_filter = 1
-sprite_frames = ExtResource("45_qg24k")
-animation = &"front"
-frame = 105
-frame_progress = 0.112956524
+sprite_frames = ExtResource("51_36ivb")
+animation = &"back"

@@ -30,6 +30,7 @@ func _ready() -> void:
 
 	oppo_sprite.play("battle_entry")
 	await oppo_sprite.animation_finished
+	await get_tree().create_timer(.25).timeout
 	oppo_sprite.play("battle_exit")
 
 	# Throws out pokemon

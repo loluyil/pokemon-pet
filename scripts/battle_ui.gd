@@ -24,6 +24,7 @@ const STATUS_ICON_PATH := "res://images/battle/status/"
 # ─── Sprite References ───────────────────────────────────────────────────────────
 @onready var your_pokemon_sprite: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon
 @onready var opp_pokemon_sprite: AnimatedSprite3D  = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon
+@onready var _viewport_container: SubViewportContainer = $VBoxContainer/SubViewportContainer
 
 # ─── Pokeball & Entry Animation References ──────────────────────────────────────
 @onready var _your_pkmn_anim: AnimationPlayer = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon/AnimationPlayer
@@ -63,6 +64,25 @@ var _opp_hp_original_x: float
 const HP_SLIDE_OFFSET := 400.0
 const HP_SLIDE_DURATION := 0.15
 
+# ─── Ability Container References ───────────────────────────────────────────────
+@onready var _your_ability_container: TextureRect = $VBoxContainer/TrainerAbilityContainer
+@onready var _your_ability_label: Label = $VBoxContainer/TrainerAbilityContainer/AbilityName
+@onready var _opp_ability_container: TextureRect = $OpponentAbilityContainer
+@onready var _opp_ability_label: Label = $OpponentAbilityContainer/AbilityName
+var _your_ability_original_x: float
+var _opp_ability_original_x: float
+const ABILITY_SLIDE_OFFSET := 500.0
+const ABILITY_SLIDE_DURATION := 0.3
+const ABILITY_DISPLAY_SECS := 1.8
+
+# ─── Substitute Sprite References ───────────────────────────────────────────────
+@onready var _your_substitute: TextureRect = $VBoxContainer/YourSubstitute
+@onready var _opp_substitute: TextureRect  = $VBoxContainer/OpponentSubstitute
+
+# ─── Stat Container References ──────────────────────────────────────────────────
+@onready var _your_stat_container: GridContainer = $VBoxContainer/TrainerStatContainer
+@onready var _opp_stat_container: GridContainer  = $VBoxContainer/OpponentStatContainer
+
 # ─── Unified Event Queue ─────────────────────────────────────────────────────────
 # Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
 var _event_queue: Array        = []
@@ -88,6 +108,10 @@ func _ready():
 	battle_sim.battle_ended.connect(_on_battle_ended)
 	battle_sim.attack_effectiveness.connect(_on_attack_effectiveness)
 	battle_sim.status_changed.connect(_on_status_changed)
+	battle_sim.ability_activated.connect(_on_ability_activated)
+	battle_sim.stat_stages_changed.connect(_on_stat_stages_changed)
+	battle_sim.substitute_changed.connect(_on_substitute_changed)
+	battle_sim.pokemon_transformed.connect(_on_pokemon_transformed)
 
 	_text_panel.visible = false
 	battle_sim.uturn_switch_request.connect(_on_uturn_switch_request)
@@ -111,6 +135,18 @@ func _ready():
 	_opp_hp_original_x = _opp_hp_container.position.x
 	_your_hp_container.position.x = _your_hp_original_x + HP_SLIDE_OFFSET
 	_opp_hp_container.position.x = _opp_hp_original_x - HP_SLIDE_OFFSET
+
+	# Hide ability containers offscreen (yours slides right, opponent slides left)
+	_your_ability_original_x = _your_ability_container.position.x
+	_opp_ability_original_x = _opp_ability_container.position.x
+	_your_ability_container.position.x = _your_ability_original_x + ABILITY_SLIDE_OFFSET
+	_opp_ability_container.position.x = _opp_ability_original_x - ABILITY_SLIDE_OFFSET
+
+	# Hide substitute sprites and stat containers
+	_your_substitute.visible = false
+	_opp_substitute.visible = false
+	_hide_all_stat_slots(true)
+	_hide_all_stat_slots(false)
 
 	# Defer init so AnimatedSprite3D nodes are fully ready before loading sprite frames
 	call_deferred("_init_display")
@@ -268,14 +304,18 @@ func _process_next():
 
 	var ev: Dictionary = _event_queue.pop_front()
 	match ev["type"]:
-		"msg":        _do_message(ev["text"])
-		"hp":         _do_hp(ev)
-		"sent_out":   _do_sent_out(ev)
-		"sfx":        _do_sfx(ev)
-		"status":     _do_status(ev)
-		"uturn_pick": _do_uturn_pick()
-		"faint_pick": _do_faint_pick()
-		"faint_sfx":  _do_faint_sfx(ev)
+		"msg":          _do_message(ev["text"])
+		"hp":           _do_hp(ev)
+		"sent_out":     _do_sent_out(ev)
+		"sfx":          _do_sfx(ev)
+		"status":       _do_status(ev)
+		"ability":      _do_ability(ev)
+		"substitute":   _do_substitute(ev)
+		"stat_change":  _do_stat_change(ev)
+		"transform":    _do_transform(ev)
+		"uturn_pick":   _do_uturn_pick()
+		"faint_pick":   _do_faint_pick()
+		"faint_sfx":    _do_faint_sfx(ev)
 
 func _end_display():
 	_displaying     = false
@@ -348,6 +388,12 @@ func _do_sent_out(ev: Dictionary):
 		# Clear status icon — the status event in the queue will set it at the right time
 		var icon: TextureRect = your_status_icon if is_yours else opp_status_icon
 		icon.visible = false
+		# Reset substitute and stat displays for the new pokemon
+		var sub_sprite: TextureRect = _your_substitute if is_yours else _opp_substitute
+		sub_sprite.visible = false
+		var pkmn_spr: AnimatedSprite3D = your_pokemon_sprite if is_yours else opp_pokemon_sprite
+		pkmn_spr.transparency = 0.0
+		_hide_all_stat_slots(is_yours)
 		# After pokemon lands: slide HP container in, check danger music, advance
 		get_tree().create_timer(0.9).timeout.connect(func():
 			_tween_hp_container_in(is_yours)
@@ -382,6 +428,7 @@ func _play_switch_anim(is_yours: bool):
 		_sfx_player.play()
 		pokeball.visible = true
 		pokeball.play("throw")
+		await get_tree().create_timer(.25).timeout
 
 	get_tree().create_timer(0.4).timeout.connect(func():
 		_sfx_player.stream = _sfx_pkball_release
@@ -442,8 +489,10 @@ func _do_faint_sfx(ev: Dictionary):
 	_tween_hp_container_out(ev["is_yours"])
 	if ev["is_yours"]:
 		_stop_danger_music()
-	# Wait for slide-out to finish before advancing
-	get_tree().create_timer(HP_SLIDE_DURATION).timeout.connect(func():
+	# Play faint animation on the pokemon sprite
+	var pkmn_anim: AnimationPlayer = _your_pkmn_anim if ev["is_yours"] else _opp_pkmn_anim
+	pkmn_anim.play("faint")
+	pkmn_anim.animation_finished.connect(func(_anim_name: StringName):
 		_process_next()
 	, CONNECT_ONE_SHOT)
 
@@ -508,6 +557,213 @@ func _tween_hp_container_out(is_yours: bool):
 	var tween := create_tween()
 	tween.tween_property(container, "position:x", original_x + offset_x, HP_SLIDE_DURATION) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+# ─── Ability Container Tweens ────────────────────────────────────────────────────
+
+func _on_ability_activated(is_yours: bool, ability_display_name: String):
+	_event_queue.append({"type": "ability", "is_yours": is_yours, "name": ability_display_name})
+	if not _displaying:
+		_start_display()
+
+func _do_ability(ev: Dictionary):
+	var container: TextureRect
+	var label: Label
+	var original_x: float
+	var offset_x: float
+	if ev["is_yours"]:
+		container = _your_ability_container
+		label = _your_ability_label
+		original_x = _your_ability_original_x
+		offset_x = ABILITY_SLIDE_OFFSET
+	else:
+		container = _opp_ability_container
+		label = _opp_ability_label
+		original_x = _opp_ability_original_x
+		offset_x = -ABILITY_SLIDE_OFFSET
+
+	label.text = ev["name"]
+	container.position.x = original_x + offset_x
+	container.visible = true
+
+	# Slide in
+	var tween := create_tween()
+	tween.tween_property(container, "position:x", original_x, ABILITY_SLIDE_DURATION) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Hold, then slide out
+	tween.tween_interval(ABILITY_DISPLAY_SECS)
+	tween.tween_property(container, "position:x", original_x + offset_x, ABILITY_SLIDE_DURATION) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	# Advance after animation
+	var total_time := ABILITY_SLIDE_DURATION + ABILITY_DISPLAY_SECS + ABILITY_SLIDE_DURATION
+	get_tree().create_timer(total_time).timeout.connect(func():
+		_process_next()
+	, CONNECT_ONE_SHOT)
+
+# ─── Substitute Changed ─────────────────────────────────────────────────────────
+
+func _on_substitute_changed(is_yours: bool, has_substitute: bool):
+	_event_queue.append({"type": "substitute", "is_yours": is_yours, "active": has_substitute})
+	if not _displaying:
+		_start_display()
+
+func _do_substitute(ev: Dictionary):
+	var sub_sprite: TextureRect = _your_substitute if ev["is_yours"] else _opp_substitute
+	var pokemon_sprite: AnimatedSprite3D = your_pokemon_sprite if ev["is_yours"] else opp_pokemon_sprite
+
+	if ev["active"]:
+		# Pokemon tweens back and becomes transparent
+		var tween := create_tween()
+		tween.tween_property(pokemon_sprite, "transparency", 0.7, 0.3)
+		tween.tween_callback(func():
+			sub_sprite.visible = true
+			sub_sprite.modulate.a = 0.0
+			var fade_in := create_tween()
+			fade_in.tween_property(sub_sprite, "modulate:a", 1.0, 0.3)
+			fade_in.tween_callback(_process_next)
+		)
+	else:
+		# Substitute breaks — hide sub, restore pokemon opacity
+		var tween := create_tween()
+		tween.tween_property(sub_sprite, "modulate:a", 0.0, 0.2)
+		tween.tween_callback(func():
+			sub_sprite.visible = false
+		)
+		tween.tween_property(pokemon_sprite, "transparency", 0.0, 0.3)
+		tween.tween_callback(_process_next)
+
+# ─── Transform Event ────────────────────────────────────────────────────────────
+
+const TRANSFORM_DURATION := 1.5
+
+func _on_pokemon_transformed(is_yours: bool):
+	_event_queue.append({"type": "transform", "is_yours": is_yours})
+	if not _displaying:
+		_start_display()
+
+func _do_transform(ev: Dictionary):
+	# Apply pixelate shader to the viewport container (2D canvas_item wrapping 3D scene)
+	var shader_res := preload("res://shaders/pixelate_transform.gdshader")
+	var mat := ShaderMaterial.new()
+	mat.shader = shader_res
+	mat.set_shader_parameter("progress", 0.0)
+	mat.set_shader_parameter("flash_intensity", 0.0)
+	_viewport_container.material = mat
+
+	var tween := create_tween()
+	# Pixelate up with flash
+	tween.tween_method(func(val: float):
+		mat.set_shader_parameter("progress", val)
+		mat.set_shader_parameter("flash_intensity", val * 0.6)
+	, 0.0, 1.0, TRANSFORM_DURATION * 0.4)
+	# Hold pixelated
+	tween.tween_interval(TRANSFORM_DURATION * 0.2)
+	# De-pixelate
+	tween.tween_method(func(val: float):
+		mat.set_shader_parameter("progress", val)
+		mat.set_shader_parameter("flash_intensity", val * 0.6)
+	, 1.0, 0.0, TRANSFORM_DURATION * 0.4)
+	tween.tween_callback(func():
+		_viewport_container.material = null
+		_process_next()
+	)
+
+# ─── Stat Change Event ──────────────────────────────────────────────────────────
+
+const STAT_SHADER_DURATION := 1.2
+
+var _stat_positive_shader: ShaderMaterial
+var _stat_negative_shader: ShaderMaterial
+
+func _do_stat_change(ev: Dictionary):
+	var is_yours: bool = ev["is_yours"]
+	var stages: Dictionary = ev["stages"]
+	_update_stat_display(is_yours, stages)
+
+	# Determine if net change is positive or negative for shader selection
+	var net := 0
+	for key in stages:
+		net += stages[key]
+	var container: GridContainer = _your_stat_container if is_yours else _opp_stat_container
+
+	# Apply shader to visible stat slots
+	var shader_res: Shader
+	if net >= 0:
+		shader_res = preload("res://shaders/stat_boost_positive.gdshader")
+	else:
+		shader_res = preload("res://shaders/stat_boost_negative.gdshader")
+
+	var slots_with_shader: Array = []
+	for i in range(container.get_child_count()):
+		var slot: TextureRect = container.get_child(i)
+		if slot.visible:
+			var mat := ShaderMaterial.new()
+			mat.shader = shader_res
+			mat.set_shader_parameter("intensity", 0.0)
+			slot.material = mat
+			slots_with_shader.append(slot)
+
+	# Tween shader intensity up then down
+	var tween := create_tween()
+	tween.tween_method(func(val: float):
+		for slot in slots_with_shader:
+			if slot.material:
+				slot.material.set_shader_parameter("intensity", val)
+	, 0.0, 0.8, STAT_SHADER_DURATION * 0.4)
+	tween.tween_interval(STAT_SHADER_DURATION * 0.2)
+	tween.tween_method(func(val: float):
+		for slot in slots_with_shader:
+			if slot.material:
+				slot.material.set_shader_parameter("intensity", val)
+	, 0.8, 0.0, STAT_SHADER_DURATION * 0.4)
+	tween.tween_callback(func():
+		# Clear shader materials
+		for slot in slots_with_shader:
+			slot.material = null
+		_process_next()
+	)
+
+# ─── Stat Stage Labels ──────────────────────────────────────────────────────────
+
+const STAT_DISPLAY_NAMES := {
+	"atk_stage": "Atk", "def_stage": "Def",
+	"spa_stage": "SpA", "spd_stage": "SpD", "spe_stage": "Spe",
+}
+
+func _on_stat_stages_changed(is_yours: bool, stages: Dictionary):
+	_event_queue.append({"type": "stat_change", "is_yours": is_yours, "stages": stages})
+	if not _displaying:
+		_start_display()
+
+func _update_stat_display(is_yours: bool, stages: Dictionary):
+	var container: GridContainer = _your_stat_container if is_yours else _opp_stat_container
+	var slot_idx := 0
+	var stat_order := ["atk_stage", "def_stage", "spa_stage", "spd_stage", "spe_stage"]
+	for key in stat_order:
+		if not stages.has(key):
+			continue
+		if slot_idx >= 4:
+			break
+		var val: int = stages[key]
+		var slot: TextureRect = container.get_child(slot_idx)
+		var label: Label = slot.get_node("StatText")
+		var prefix = "x" if val > 0 else ""
+		label.text = prefix + str(val) + " " + STAT_DISPLAY_NAMES[key]
+		# Color: red for negative, green/blue for positive
+		if val > 0:
+			label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+		else:
+			label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.3))
+		slot.visible = true
+		slot_idx += 1
+	# Hide unused slots
+	while slot_idx < 4:
+		container.get_child(slot_idx).visible = false
+		slot_idx += 1
+
+func _hide_all_stat_slots(is_yours: bool):
+	var container: GridContainer = _your_stat_container if is_yours else _opp_stat_container
+	for i in range(container.get_child_count()):
+		container.get_child(i).visible = false
 
 # ─── Advance Logic ────────────────────────────────────────────────────────────────
 
