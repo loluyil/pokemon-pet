@@ -14,6 +14,29 @@ signal pokemon_transformed(is_yours: bool)
 signal uturn_switch_request
 signal faint_switch_request
 
+const NATURE_MODIFIERS := {
+	"Adamant": {"up": "atk", "down": "spa"},
+	"Bold": {"up": "def", "down": "atk"},
+	"Brave": {"up": "atk", "down": "spe"},
+	"Calm": {"up": "spd", "down": "atk"},
+	"Careful": {"up": "spd", "down": "spa"},
+	"Gentle": {"up": "spd", "down": "def"},
+	"Hasty": {"up": "spe", "down": "def"},
+	"Impish": {"up": "def", "down": "spa"},
+	"Jolly": {"up": "spe", "down": "spa"},
+	"Lax": {"up": "def", "down": "spd"},
+	"Lonely": {"up": "atk", "down": "def"},
+	"Mild": {"up": "spa", "down": "def"},
+	"Modest": {"up": "spa", "down": "atk"},
+	"Naive": {"up": "spe", "down": "spd"},
+	"Naughty": {"up": "atk", "down": "spd"},
+	"Quiet": {"up": "spa", "down": "spe"},
+	"Rash": {"up": "spa", "down": "spd"},
+	"Relaxed": {"up": "def", "down": "spe"},
+	"Sassy": {"up": "spd", "down": "spe"},
+	"Timid": {"up": "spe", "down": "atk"},
+}
+
 @export var team_gen_path: NodePath
 var team_gen: Node
 
@@ -439,23 +462,32 @@ func start_battle():
 func calc_hp(base: int, iv: int, ev: int, level: int) -> int:
 	return int(floor((2.0 * base + iv + floor(ev / 4.0)) * level / 100.0) + level + 10)
 
-func calc_stat(base: int, iv: int, ev: int, level: int) -> int:
-	return int(floor((floor((2.0 * base + iv + floor(ev / 4.0)) * level / 100.0) + 5) * 1.0))
+func _nature_modifier(nature: String, stat_key: String) -> float:
+	var effect = NATURE_MODIFIERS.get(nature, {})
+	if effect.get("up", "") == stat_key:
+		return 1.1
+	if effect.get("down", "") == stat_key:
+		return 0.9
+	return 1.0
+
+func calc_stat(base: int, iv: int, ev: int, level: int, nature_mod: float = 1.0) -> int:
+	return int(floor((floor((2.0 * base + iv + floor(ev / 4.0)) * level / 100.0) + 5) * nature_mod))
 
 func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 	var ivs = raw["ivs"]
 	var evs = raw["evs"]
 	var level = raw["level"]
+	var nature = raw.get("nature", "Serious")
 
 	var hp = calc_hp(raw["base_hp"], ivs["hp"], evs["hp"], level)
 	if raw["name"] == "shedinja":
 		hp = 1
 
-	var attack_stat = calc_stat(raw["base_attack"], ivs["atk"], evs["atk"], level)
-	var defense_stat = calc_stat(raw["base_defense"], ivs["def"], evs["def"], level)
-	var sp_atk_stat = calc_stat(raw["base_sp_atk"], ivs["spa"], evs["spa"], level)
-	var sp_def_stat = calc_stat(raw["base_sp_def"], ivs["spd"], evs["spd"], level)
-	var speed_stat = calc_stat(raw["base_speed"], ivs["spe"], evs["spe"], level)
+	var attack_stat = calc_stat(raw["base_attack"], ivs["atk"], evs["atk"], level, _nature_modifier(nature, "atk"))
+	var defense_stat = calc_stat(raw["base_defense"], ivs["def"], evs["def"], level, _nature_modifier(nature, "def"))
+	var sp_atk_stat = calc_stat(raw["base_sp_atk"], ivs["spa"], evs["spa"], level, _nature_modifier(nature, "spa"))
+	var sp_def_stat = calc_stat(raw["base_sp_def"], ivs["spd"], evs["spd"], level, _nature_modifier(nature, "spd"))
+	var speed_stat = calc_stat(raw["base_speed"], ivs["spe"], evs["spe"], level, _nature_modifier(nature, "spe"))
 	return {
 		"name": raw["name"],
 		"true_display_name": _format_name(raw["name"]),
@@ -468,6 +500,7 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"base_ability": raw["ability"],
 		"item": raw["item"],
 		"base_item": raw["item"],
+		"nature": nature,
 		"last_consumed_item": "",
 		"role": raw["role"],
 		"ivs": raw.get("ivs", {}).duplicate(true),

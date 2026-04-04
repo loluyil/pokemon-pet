@@ -195,6 +195,7 @@ func _transform_gen5_sets(raw: Dictionary) -> Dictionary:
 		# Species-level EVs/IVs defaults
 		var species_evs = entry.get("evs", {})
 		var species_ivs = entry.get("ivs", {})
+		var species_nature = entry.get("nature", "")
 
 		var sets: Array = []
 		var roles = entry.get("roles", {})
@@ -232,6 +233,9 @@ func _transform_gen5_sets(raw: Dictionary) -> Dictionary:
 				var merged_ivs = species_ivs.duplicate()
 				merged_ivs.merge(role_ivs, true)
 				set_dict["ivs"] = merged_ivs
+			var role_nature = role_data.get("nature", species_nature)
+			if role_nature != "":
+				set_dict["nature"] = role_nature
 
 			sets.append(set_dict)
 
@@ -456,6 +460,7 @@ func random_set(species_name: String, team_details: Dictionary, is_lead: bool) -
 	# --- Determine EVs/IVs (start with defaults, apply set overrides)
 	var ivs = {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31}
 	var evs = {"hp": 85, "atk": 85, "def": 85, "spa": 85, "spd": 85, "spe": 85}
+	var nature = chosen_set.get("nature", "Serious")
 
 	# Apply per-role EV/IV overrides from the set data
 	if chosen_set.has("evs"):
@@ -495,6 +500,7 @@ func random_set(species_name: String, team_details: Dictionary, is_lead: bool) -
 		"types": types,
 		"ability": ability,
 		"item": item,
+		"nature": nature,
 		"role": role,
 		"base_hp": species_data["hp"],
 		"base_attack": species_data["attack"],
