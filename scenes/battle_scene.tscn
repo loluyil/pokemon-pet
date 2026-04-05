@@ -50,7 +50,7 @@
 [ext_resource type="Texture2D" uid="uid://b6ksqxb6lwfb5" path="res://sprites/pokemon/substitute/substitute.png" id="46_f8m0e"]
 [ext_resource type="Texture2D" uid="uid://d2sveeb0bqrkg" path="res://sprites/pokemon/substitute/substitute_back.png" id="47_preqo"]
 [ext_resource type="Texture2D" uid="uid://c4qvkg2pidbhx" path="res://images/battle/stat.png" id="48_4r5jg"]
-[ext_resource type="SpriteFrames" uid="uid://c0m56s3k8i56i" path="res://sprites/pokemon/sprites/kyurem-white/kyurem-white_anim.tres" id="51_36ivb"]
+[ext_resource type="SpriteFrames" uid="uid://wa210v548yo" path="res://sprites/pokemon/sprites/victreebel/victreebel_anim.tres" id="51_36ivb"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3xrod"]
 shader = ExtResource("12_dm2tv")
@@ -477,6 +477,18 @@ tracks/1/keys = {
 "update": 0,
 "values": [Color(1, 1, 1, 1)]
 }
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.99999994, 1, 0.99999994)]
+}
 
 [sub_resource type="Animation" id="Animation_dth3c"]
 resource_name = "faint"
@@ -508,7 +520,7 @@ tracks/1/keys = {
 
 [sub_resource type="Animation" id="Animation_dm2tv"]
 resource_name = "pkmn_entry"
-length = 0.43333334
+length = 1.0666667
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -533,12 +545,53 @@ tracks/1/keys = {
 "update": 0,
 "values": [Color(1, 1, 1, 1)]
 }
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.99999994, 1, 0.99999994)]
+}
+
+[sub_resource type="Animation" id="Animation_f8m0e"]
+resource_name = "return"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0.99999994, 1, 0.99999994), Vector3(0.02, 0.02, 0.02)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(3.634, -0.312, -3.122), Vector3(3.634, -0.522, -3.122)]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_16mmc"]
 _data = {
 &"RESET": SubResource("Animation_c6fjk"),
 &"faint": SubResource("Animation_dth3c"),
-&"pkmn_entry": SubResource("Animation_dm2tv")
+&"pkmn_entry": SubResource("Animation_dm2tv"),
+&"return": SubResource("Animation_f8m0e")
 }
 
 [sub_resource type="Animation" id="Animation_arw3n"]
@@ -566,6 +619,18 @@ tracks/1/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 0,
 "values": [Color(1, 1, 1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(1, 1, 1)]
 }
 
 [sub_resource type="Animation" id="Animation_36ivb"]
@@ -595,6 +660,18 @@ tracks/1/keys = {
 "update": 0,
 "values": [Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
 }
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(1, 1, 1)]
+}
 
 [sub_resource type="Animation" id="Animation_165gl"]
 resource_name = "pkmn_entry"
@@ -623,12 +700,53 @@ tracks/1/keys = {
 "update": 0,
 "values": [Color(1, 1, 1, 1)]
 }
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_preqo"]
+resource_name = "return"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.20000002),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0.99999994, 1, 0.99999994), Vector3(0.02, 0.02, 0.02)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(1.662, -0.448, -1.741), Vector3(1.662, -0.788, -1.741)]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_arw3n"]
 _data = {
 &"RESET": SubResource("Animation_arw3n"),
 &"faint": SubResource("Animation_36ivb"),
-&"pkmn_entry": SubResource("Animation_165gl")
+&"pkmn_entry": SubResource("Animation_165gl"),
+&"return": SubResource("Animation_preqo")
 }
 
 [sub_resource type="Animation" id="Animation_1i8jf"]
@@ -2526,7 +2644,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.9999975, 0, -0.0017453267, 0, 1, 0, 0.0017453267, 0, 0.9999975, 4.396, 0.037, -3.68)
+transform = Transform3D(0.9999974, 0, -0.0017453264, 0, 1, 0, 0.0017453264, 0, 0.9999974, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -2566,9 +2684,10 @@ transform = Transform3D(2, 0, 0, 0, 0.005, 0, 0, 0, 2, 3.977, -0.594, -3.693)
 mesh = SubResource("CylinderMesh_1i8jf")
 
 [node name="OpponentPokemon" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=1886612431]
-transform = Transform3D(0.74511975, -0.20696765, -0.6340038, 0.018368375, 0.95663726, -0.29070216, 0.66667765, 0.20496233, 0.71661097, 3.634, 0.423, -3.122)
+transform = Transform3D(0.74511963, -0.20696767, -0.6340039, 0.018368375, 0.95663726, -0.29070216, 0.66667765, 0.20496231, 0.7166109, 3.634, 0.423, -3.122)
 visible = false
 texture_filter = 0
+sprite_frames = ExtResource("33_vnhh6")
 animation = &"back"
 speed_scale = 2.0
 
@@ -2577,9 +2696,10 @@ libraries/ = SubResource("AnimationLibrary_16mmc")
 speed_scale = 0.753
 
 [node name="YourPokemon" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=305551957]
-transform = Transform3D(0.99830663, 0.01995214, 0.054641858, -0.03074697, 0.9783844, 0.20449607, -0.0493806, -0.20582981, 0.97734123, 1.662, 0.357, -1.741)
+transform = Transform3D(0.99830663, 0.019952148, 0.054641858, -0.030746978, 0.9783844, 0.204496, -0.049380608, -0.20582977, 0.9773411, 1.662, 0.357, -1.741)
 visible = false
 texture_filter = 0
+sprite_frames = ExtResource("33_vnhh6")
 animation = &"back"
 speed_scale = 2.0
 

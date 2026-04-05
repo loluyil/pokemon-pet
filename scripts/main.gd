@@ -7,6 +7,9 @@ extends Node3D
 # Prevent error when trying to move before sprites are initialized
 var game_ready = false
 var _battle_triggered: bool = false
+var current_gender: String = ""
+
+const GENDER_SAVE_PATH = "user://gender.cfg"
 
 func _ready() -> void:
 	var window = get_window()
@@ -16,7 +19,7 @@ func _ready() -> void:
 	window.borderless = true
 	window.always_on_top = true
 	window.unresizable = false
-	
+
 	choose_gender()
 
 func _process(delta):
@@ -28,10 +31,20 @@ func _process(delta):
 # Function is also in charge of loading the trainers, npcs, and buildings
 func choose_gender():
 	var window = get_window()
-	var choice_scene = $GenderReveal
-	await choice_scene.choice_complete
-	choice_scene.queue_free()
-	
+	var saved_gender = load_gender()
+
+	if saved_gender != "":
+		# Gender already saved, skip choice screen
+		current_gender = saved_gender
+		gender_window.gender_choice = saved_gender
+		$GenderReveal.queue_free()
+	else:
+		var choice_scene = $GenderReveal
+		await choice_scene.choice_complete
+		current_gender = choice_scene.gender_choice
+		save_gender(current_gender)
+		choice_scene.queue_free()
+
 	var town_music = preload("res://sounds/1-06. Kanoko Town.mp3")
 	$BGmusic.stream = town_music
 	$BGmusic.play()
@@ -41,7 +54,7 @@ func choose_gender():
 
 	# Brings trainer window to the front
 	window.grab_focus()
-	
+
 	# Process delta will move now
 	game_ready = true
 
@@ -93,20 +106,39 @@ func _update_window_position(delta: float) -> void:
 		window.position = next_position
 
 func load_trainer():
-	# Preloads the male/female trainers
-	# Grabs gender variable from mouse event in another script and sets the sprite to appropriate gender
-	
 	var trainer = preload("res://scenes/trainer/trainer.tscn").instantiate()
+	add_child(trainer)
+	apply_gender_sprite()
+
+func apply_gender_sprite():
 	var trainer_male = preload("res://sprites/spritesheet_male.png")
 	var trainer_female = preload("res://sprites/spritesheet_female.png")
-	
-	add_child(trainer)
-	
 	var trainer_sprite = $Trainer/TrainerSprite
-	if gender_window.gender_choice == "male":
+	if current_gender == "male":
 		trainer_sprite.texture = trainer_male
-	elif gender_window.gender_choice == "female":
+	elif current_gender == "female":
 		trainer_sprite.texture = trainer_female
+
+func toggle_gender():
+	current_gender = "female" if current_gender == "male" else "male"
+	save_gender(current_gender)
+	apply_gender_sprite()
+
+func set_gender(gender: String):
+	current_gender = gender
+	save_gender(current_gender)
+	apply_gender_sprite()
+
+func save_gender(gender: String):
+	var config = ConfigFile.new()
+	config.set_value("player", "gender", gender)
+	config.save(GENDER_SAVE_PATH)
+
+func load_gender() -> String:
+	var config = ConfigFile.new()
+	if config.load(GENDER_SAVE_PATH) == OK:
+		return config.get_value("player", "gender", "")
+	return ""
 
 # Window Spawn
 func load_building():

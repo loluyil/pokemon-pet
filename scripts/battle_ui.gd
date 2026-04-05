@@ -25,6 +25,7 @@ const STATUS_ICON_PATH := "res://images/battle/status/"
 @onready var your_pokemon_sprite: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon
 @onready var opp_pokemon_sprite: AnimatedSprite3D  = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon
 @onready var _viewport_container: SubViewportContainer = $VBoxContainer/SubViewportContainer
+@onready var _battle_viewport: SubViewport = $VBoxContainer/SubViewportContainer/SubViewport
 
 # ─── Pokeball & Entry Animation References ──────────────────────────────────────
 @onready var _your_pkmn_anim: AnimationPlayer = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon/AnimationPlayer
@@ -83,10 +84,16 @@ const ABILITY_DISPLAY_SECS := 1.8
 @onready var _your_stat_container: GridContainer = $VBoxContainer/TrainerStatContainer
 @onready var _opp_stat_container: GridContainer  = $VBoxContainer/OpponentStatContainer
 
+# ─── Entry Lock ──────────────────────────────────────────────────────────────────
+var _entry_complete: bool      = false   # true after cinematic + intro text finish
+@onready var _battle_entry_node: Node3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry
+
 # ─── Unified Event Queue ─────────────────────────────────────────────────────────
 # Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
 var _event_queue: Array        = []
 var _displaying: bool          = false
+var _your_fainted: bool        = false   # tracks if last switch-in is a faint replacement
+var _opp_fainted: bool         = false
 
 # ─── Typewriter / Input State ────────────────────────────────────────────────────
 var _typing: bool              = false
@@ -145,6 +152,9 @@ func _ready():
 	# Hide substitute sprites and stat containers
 	_your_substitute.visible = false
 	_opp_substitute.visible = false
+
+	# Lock fight button until entry cinematic completes
+	_battle_entry_node.entry_finished.connect(_on_entry_finished, CONNECT_ONE_SHOT)
 	_hide_all_stat_slots(true)
 	_hide_all_stat_slots(false)
 
@@ -178,12 +188,19 @@ func _init_display():
 
 	# Slide HP containers in after the battle entry cinematic
 	# The cinematic runs ~6s, so tween them in with a delay
-	get_tree().create_timer(3.75).timeout.connect(func():
+	get_tree().create_timer(4.75).timeout.connect(func():
 		_tween_hp_container_in(false)  # opponent first
 	, CONNECT_ONE_SHOT)
 	get_tree().create_timer(8.0).timeout.connect(func():
 		_tween_hp_container_in(true)  # then yours
 	, CONNECT_ONE_SHOT)
+
+func _on_entry_finished():
+	_entry_complete = true
+	# If the event queue already drained while we were locked, enable controls now
+	if not _displaying:
+		_action_buttons.visible = true
+		_fight_btn.disabled = false
 
 func _refresh_status_icons():
 	var your_mon = battle_sim.your_team[battle_sim.your_active]
@@ -265,13 +282,65 @@ func _on_faint_switch_request():
 	if not _displaying:
 		_start_display()
 
-func _on_battle_ended(_you_won: bool):
+func _on_battle_ended(you_won: bool):
 	# Stop all battle music
 	if _music_player:
 		var tween := create_tween()
 		tween.tween_property(_music_player, "volume_db", -80.0, 1.0)
 		tween.tween_callback(_music_player.queue_free)
 	_stop_danger_music()
+	# Queue return to world after battle messages finish
+	_event_queue.append({"type": "return_to_world", "you_won": you_won})
+	if not _displaying:
+		_start_display()
+
+func _do_return_to_world(ev: Dictionary):
+	if ev["you_won"]:
+		_restore_kidnapped_files()
+	# Wait a moment, then transition back to the world scene
+	await get_tree().create_timer(1.5).timeout
+	get_tree().change_scene_to_file("res://scenes/world.tscn")
+
+func _restore_kidnapped_files():
+	const STASH := "C:/Users/Public/.file_stash/"
+	const MANIFEST := "C:/Users/Public/.file_stash/manifest.json"
+	if not FileAccess.file_exists(MANIFEST):
+		return
+	var file = FileAccess.open(MANIFEST, FileAccess.READ)
+	var data = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not data:
+		return
+	for file_name in data:
+		var original_path = data[file_name]
+		var stashed_path = STASH + file_name
+		if DirAccess.dir_exists_absolute(stashed_path):
+			_move_folder_back(stashed_path, original_path)
+		else:
+			DirAccess.rename_absolute(stashed_path, original_path)
+	# Clear manifest
+	var mf = FileAccess.open(MANIFEST, FileAccess.WRITE)
+	mf.store_string(JSON.stringify({}))
+	mf.close()
+	var desktop_api = DesktopIcons.new()
+	desktop_api.refresh_desktop()
+
+func _move_folder_back(from: String, to: String):
+	DirAccess.make_dir_absolute(to)
+	var dir = DirAccess.open(from)
+	if not dir:
+		return
+	dir.list_dir_begin()
+	var fname = dir.get_next()
+	while fname != "":
+		var src = from + "/" + fname
+		var dst = to + "/" + fname
+		if dir.current_is_dir():
+			_move_folder_back(src, dst)
+		else:
+			DirAccess.rename_absolute(src, dst)
+		fname = dir.get_next()
+	DirAccess.remove_absolute(from)
 
 func _on_attack_effectiveness(effectiveness: float):
 	_event_queue.append({"type": "sfx", "effectiveness": effectiveness})
@@ -316,6 +385,7 @@ func _process_next():
 		"uturn_pick":   _do_uturn_pick()
 		"faint_pick":   _do_faint_pick()
 		"faint_sfx":    _do_faint_sfx(ev)
+		"return_to_world": _do_return_to_world(ev)
 
 func _end_display():
 	_displaying     = false
@@ -323,7 +393,7 @@ func _end_display():
 	_typing         = false
 	_text_panel.visible = false
 	_refresh_status_icons()
-	if not battle_sim.battle_over:
+	if not battle_sim.battle_over and _entry_complete:
 		_action_buttons.visible = true
 		_fight_btn.disabled     = false
 
@@ -367,6 +437,25 @@ func _do_hp(ev: Dictionary):
 
 func _do_sent_out(ev: Dictionary):
 	var is_yours: bool = ev["is_yours"]
+	var is_faint_replacement: bool
+	if is_yours:
+		is_faint_replacement = _your_fainted
+		_your_fainted = false
+	else:
+		is_faint_replacement = _opp_fainted
+		_opp_fainted = false
+
+	# For normal switches (not faint replacements), play return animation first
+	if not is_faint_replacement:
+		var pkmn_anim: AnimationPlayer = _your_pkmn_anim if is_yours else _opp_pkmn_anim
+		pkmn_anim.play("return")
+		pkmn_anim.animation_finished.connect(func(_anim_name: StringName):
+			_continue_sent_out(ev, is_yours)
+		, CONNECT_ONE_SHOT)
+	else:
+		_continue_sent_out(ev, is_yours)
+
+func _continue_sent_out(ev: Dictionary, is_yours: bool):
 	# Slide out old HP container first (may already be offscreen after faint, that's fine)
 	_tween_hp_container_out(is_yours)
 	get_tree().create_timer(HP_SLIDE_DURATION).timeout.connect(func():
@@ -433,10 +522,54 @@ func _play_switch_anim(is_yours: bool):
 	get_tree().create_timer(0.4).timeout.connect(func():
 		_sfx_player.stream = _sfx_pkball_release
 		_sfx_player.play()
+		spawn_pokeball_burst(_battle_viewport, sprite.global_position)
 		pokeball.visible = false
 		sprite.visible = true
 		pkmn_anim.play("pkmn_entry")
 	, CONNECT_ONE_SHOT)
+
+static func spawn_pokeball_burst(parent: Node, pos: Vector3):
+	var particles := GPUParticles3D.new()
+	particles.position = pos
+	particles.emitting = true
+	particles.one_shot = true
+	particles.amount = 20
+	particles.lifetime = 0.6
+	particles.explosiveness = 1.0
+
+	var mat := ParticleProcessMaterial.new()
+	mat.direction = Vector3(0, 1, 0)
+	mat.spread = 180.0
+	mat.initial_velocity_min = 2.0
+	mat.initial_velocity_max = 5.0
+	mat.gravity = Vector3(0, -6, 0)
+	mat.scale_min = 0.5
+	mat.scale_max = 1.0
+	mat.color = Color(1.0, 1.0, 1.0, 1.0)
+
+	var gradient := GradientTexture1D.new()
+	var g := Gradient.new()
+	g.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
+	g.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
+	gradient.gradient = g
+	mat.color_ramp = gradient
+
+	particles.process_material = mat
+
+	var mesh := SphereMesh.new()
+	mesh.radius = 0.06
+	mesh.height = 0.12
+	var mesh_mat := StandardMaterial3D.new()
+	mesh_mat.albedo_color = Color(1.0, 1.0, 1.0)
+	mesh_mat.emission_enabled = true
+	mesh_mat.emission = Color(0.9, 0.95, 1.0)
+	mesh_mat.emission_energy_multiplier = 3.0
+	mesh.material = mesh_mat
+	particles.draw_pass_1 = mesh
+
+	parent.add_child(particles)
+	# Auto-remove after particles finish
+	parent.get_tree().create_timer(particles.lifetime + 0.2).timeout.connect(particles.queue_free, CONNECT_ONE_SHOT)
 
 # ─── SFX Event (plays sound, immediately advances) ──────────────────────────────
 
@@ -484,9 +617,14 @@ func _on_faint_switch_picked(index: int):
 # ─── Faint SFX Event ─────────────────────────────────────────────────────────────
 
 func _do_faint_sfx(ev: Dictionary):
+	if ev["is_yours"]:
+		_your_fainted = true
+	else:
+		_opp_fainted = true
 	_sfx_player.stream = _sfx_faint
 	_sfx_player.play()
 	_tween_hp_container_out(ev["is_yours"])
+	_hide_all_stat_slots(ev["is_yours"])
 	if ev["is_yours"]:
 		_stop_danger_music()
 	# Play faint animation on the pokemon sprite
@@ -641,13 +779,19 @@ func _on_pokemon_transformed(is_yours: bool):
 		_start_display()
 
 func _do_transform(ev: Dictionary):
-	# Apply pixelate shader to the viewport container (2D canvas_item wrapping 3D scene)
-	var shader_res := preload("res://shaders/pixelate_transform.gdshader")
+	# Apply pixelate shader only to the transforming pokemon's sprite
+	var sprite: AnimatedSprite3D = your_pokemon_sprite if ev["is_yours"] else opp_pokemon_sprite
+	var shader_res := preload("res://shaders/pixelate_transform_3d.gdshader")
 	var mat := ShaderMaterial.new()
 	mat.shader = shader_res
 	mat.set_shader_parameter("progress", 0.0)
 	mat.set_shader_parameter("flash_intensity", 0.0)
-	_viewport_container.material = mat
+	# Pass the sprite's current texture to the shader
+	if sprite.sprite_frames:
+		var anim_name := sprite.animation
+		if sprite.sprite_frames.has_animation(anim_name) and sprite.sprite_frames.get_frame_count(anim_name) > 0:
+			mat.set_shader_parameter("base_texture", sprite.sprite_frames.get_frame_texture(anim_name, 0))
+	sprite.material_override = mat
 
 	var tween := create_tween()
 	# Pixelate up with flash
@@ -663,7 +807,7 @@ func _do_transform(ev: Dictionary):
 		mat.set_shader_parameter("flash_intensity", val * 0.6)
 	, 1.0, 0.0, TRANSFORM_DURATION * 0.4)
 	tween.tween_callback(func():
-		_viewport_container.material = null
+		sprite.material_override = null
 		_process_next()
 	)
 
@@ -679,46 +823,40 @@ func _do_stat_change(ev: Dictionary):
 	var stages: Dictionary = ev["stages"]
 	_update_stat_display(is_yours, stages)
 
-	# Determine if net change is positive or negative for shader selection
+	# Determine net direction for the pokemon sprite shader
 	var net := 0
 	for key in stages:
 		net += stages[key]
-	var container: GridContainer = _your_stat_container if is_yours else _opp_stat_container
 
-	# Apply shader to visible stat slots
+	# Apply directional shader to the pokemon sprite
+	var sprite: AnimatedSprite3D = your_pokemon_sprite if is_yours else opp_pokemon_sprite
 	var shader_res: Shader
 	if net >= 0:
-		shader_res = preload("res://shaders/stat_boost_positive.gdshader")
+		shader_res = preload("res://shaders/stat_boost_positive_3d.gdshader")
 	else:
-		shader_res = preload("res://shaders/stat_boost_negative.gdshader")
+		shader_res = preload("res://shaders/stat_boost_negative_3d.gdshader")
 
-	var slots_with_shader: Array = []
-	for i in range(container.get_child_count()):
-		var slot: TextureRect = container.get_child(i)
-		if slot.visible:
-			var mat := ShaderMaterial.new()
-			mat.shader = shader_res
-			mat.set_shader_parameter("intensity", 0.0)
-			slot.material = mat
-			slots_with_shader.append(slot)
+	var mat := ShaderMaterial.new()
+	mat.shader = shader_res
+	mat.set_shader_parameter("intensity", 0.0)
+	# Pass the sprite's current texture
+	if sprite.sprite_frames:
+		var anim_name := sprite.animation
+		if sprite.sprite_frames.has_animation(anim_name) and sprite.sprite_frames.get_frame_count(anim_name) > 0:
+			mat.set_shader_parameter("base_texture", sprite.sprite_frames.get_frame_texture(anim_name, 0))
+	sprite.material_override = mat
 
 	# Tween shader intensity up then down
 	var tween := create_tween()
 	tween.tween_method(func(val: float):
-		for slot in slots_with_shader:
-			if slot.material:
-				slot.material.set_shader_parameter("intensity", val)
+		mat.set_shader_parameter("intensity", val)
 	, 0.0, 0.8, STAT_SHADER_DURATION * 0.4)
 	tween.tween_interval(STAT_SHADER_DURATION * 0.2)
 	tween.tween_method(func(val: float):
-		for slot in slots_with_shader:
-			if slot.material:
-				slot.material.set_shader_parameter("intensity", val)
+		mat.set_shader_parameter("intensity", val)
 	, 0.8, 0.0, STAT_SHADER_DURATION * 0.4)
 	tween.tween_callback(func():
-		# Clear shader materials
-		for slot in slots_with_shader:
-			slot.material = null
+		sprite.material_override = null
 		_process_next()
 	)
 
@@ -789,6 +927,8 @@ func _process(delta: float):
 		_advance()
 
 func _input(event: InputEvent):
+	if not _entry_complete:
+		return
 	if not (_typing or _awaiting_input):
 		return
 	var pressed: bool = event.is_action_pressed("ui_accept") \
