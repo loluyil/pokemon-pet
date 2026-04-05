@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://c6qb4hinqlg14"]
 
 [ext_resource type="Texture2D" uid="uid://cr1vpojthtidu" path="res://models/meshes/pokemon_center.png" id="2_bfpxa"]
+[ext_resource type="Script" path="res://scripts/pokebuilding_window.gd" id="3_bldng"]
 
 [node name="Window" type="Window" unique_id=1853256890]
+script = ExtResource("3_bldng")
 transparent_bg = true
 oversampling_override = 1.0
 size = Vector2i(326, 329)

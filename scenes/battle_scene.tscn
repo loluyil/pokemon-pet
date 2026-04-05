@@ -2644,7 +2644,7 @@ render_target_update_mode = 4
 script = ExtResource("13_dm2tv")
 
 [node name="Camera3D" type="Camera3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=80455354]
-transform = Transform3D(0.99999744, 0, -0.0017453266, 0, 1, 0, 0.0017453266, 0, 0.99999744, 4.396, 0.037, -3.68)
+transform = Transform3D(0.9999974, 0, -0.0017453264, 0, 1, 0, 0.0017453264, 0, 0.9999974, 4.396, 0.037, -3.68)
 keep_aspect = 0
 fov = 78.0
 
@@ -2696,7 +2696,7 @@ libraries/ = SubResource("AnimationLibrary_16mmc")
 speed_scale = 0.753
 
 [node name="YourPokemon" type="AnimatedSprite3D" parent="BattleSim/VBoxContainer/SubViewportContainer/SubViewport/BattleEntry" unique_id=305551957]
-transform = Transform3D(0.99830663, 0.019952144, 0.054641854, -0.030746974, 0.9783844, 0.20449601, -0.049380604, -0.20582978, 0.9773411, 1.662, 0.357, -1.741)
+transform = Transform3D(0.99830663, 0.019952148, 0.054641858, -0.030746978, 0.9783844, 0.204496, -0.049380608, -0.20582977, 0.9773411, 1.662, 0.357, -1.741)
 visible = false
 texture_filter = 0
 sprite_frames = ExtResource("33_vnhh6")

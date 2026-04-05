@@ -2,6 +2,8 @@ extends Node3D
 
 # Battle Cinematic Scene
 
+signal entry_finished
+
 @onready var trainer_pokeball = $Trainer/Pokeball
 @onready var trainer_sprite = $Trainer/AnimationPlayer
 @onready var trainer_pkmn = $YourPokemon
@@ -74,3 +76,4 @@ func _ready() -> void:
 	trainer_pkmn_drop.play("pkmn_entry")
 	await trainer_pkmn_drop.animation_finished
 	camera.play("default")
+	entry_finished.emit()

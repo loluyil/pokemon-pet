@@ -84,6 +84,10 @@ const ABILITY_DISPLAY_SECS := 1.8
 @onready var _your_stat_container: GridContainer = $VBoxContainer/TrainerStatContainer
 @onready var _opp_stat_container: GridContainer  = $VBoxContainer/OpponentStatContainer
 
+# ─── Entry Lock ──────────────────────────────────────────────────────────────────
+var _entry_complete: bool      = false   # true after cinematic + intro text finish
+@onready var _battle_entry_node: Node3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry
+
 # ─── Unified Event Queue ─────────────────────────────────────────────────────────
 # Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
 var _event_queue: Array        = []
@@ -148,6 +152,9 @@ func _ready():
 	# Hide substitute sprites and stat containers
 	_your_substitute.visible = false
 	_opp_substitute.visible = false
+
+	# Lock fight button until entry cinematic completes
+	_battle_entry_node.entry_finished.connect(_on_entry_finished, CONNECT_ONE_SHOT)
 	_hide_all_stat_slots(true)
 	_hide_all_stat_slots(false)
 
@@ -181,12 +188,19 @@ func _init_display():
 
 	# Slide HP containers in after the battle entry cinematic
 	# The cinematic runs ~6s, so tween them in with a delay
-	get_tree().create_timer(3.75).timeout.connect(func():
+	get_tree().create_timer(4.75).timeout.connect(func():
 		_tween_hp_container_in(false)  # opponent first
 	, CONNECT_ONE_SHOT)
 	get_tree().create_timer(8.0).timeout.connect(func():
 		_tween_hp_container_in(true)  # then yours
 	, CONNECT_ONE_SHOT)
+
+func _on_entry_finished():
+	_entry_complete = true
+	# If the event queue already drained while we were locked, enable controls now
+	if not _displaying:
+		_action_buttons.visible = true
+		_fight_btn.disabled = false
 
 func _refresh_status_icons():
 	var your_mon = battle_sim.your_team[battle_sim.your_active]
@@ -379,7 +393,7 @@ func _end_display():
 	_typing         = false
 	_text_panel.visible = false
 	_refresh_status_icons()
-	if not battle_sim.battle_over:
+	if not battle_sim.battle_over and _entry_complete:
 		_action_buttons.visible = true
 		_fight_btn.disabled     = false
 
@@ -913,6 +927,8 @@ func _process(delta: float):
 		_advance()
 
 func _input(event: InputEvent):
+	if not _entry_complete:
+		return
 	if not (_typing or _awaiting_input):
 		return
 	var pressed: bool = event.is_action_pressed("ui_accept") \

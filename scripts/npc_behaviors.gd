@@ -73,7 +73,17 @@ func _update_window_position(delta):
 			_current_direction = Vector2.ZERO
 
 func _walk_toward_target(delta: float):
-	var dir := (_kidnap_target_screen_pos - _float_position).normalized()
+	var diff := _kidnap_target_screen_pos - _float_position
+	# Grid movement: move along one axis at a time (horizontal first, then vertical)
+	var dir := Vector2.ZERO
+	if abs(diff.x) > KIDNAP_ARRIVE_DIST:
+		dir = Vector2(sign(diff.x), 0)
+	elif abs(diff.y) > KIDNAP_ARRIVE_DIST:
+		dir = Vector2(0, sign(diff.y))
+	else:
+		_arrive_at_file()
+		return
+	_current_direction = dir
 	_update_last_direction(dir)
 	var next_float = _float_position + dir * _speed * 1.5 * delta
 	var next_pos = Vector2i(next_float)
