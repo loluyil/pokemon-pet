@@ -137,10 +137,10 @@ const CONTACT_MOVES = {
 	"blaze-kick": true, "body-slam": true, "brick-break": true, "bullet-punch": true,
 	"close-combat": true, "crunch": true, "cross-chop": true, "double-edge": true,
 	"double-hit": true, "double-kick": true, "drain-punch": true, "dragon-claw": true,
-	"dragon-tail": true, "dual-chop": true, "extreme-speed": true, "fake-out": true,
+	"dragon-tail": true, "dual-chop": true, "extreme-speed": true, "facade": true, "fake-out": true,
 	"fire-punch": true, "flare-blitz": true, "force-palm": true, "frustration": true,
 	"giga-impact": true, "hammer-arm": true, "headbutt": true, "high-jump-kick": true,
-	"horn-leech": true, "ice-punch": true, "iron-head": true, "leaf-blade": true,
+	"horn-leech": true, "ice-punch": true, "iron-head": true, "knock-off": true, "leaf-blade": true,
 	"leech-life": true, "low-kick": true, "mach-punch": true, "mega-punch": true,
 	"megahorn": true, "night-slash": true, "outrage": true, "payback": true,
 	"poison-jab": true, "power-whip": true, "pursuit": true, "quick-attack": true,
@@ -1566,6 +1566,12 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 			elif mr < 85: power = 90
 			elif mr < 95: power = 110
 			else:         power = 150
+		"facade":
+			if attacker["status"] != "":
+				power = 140
+		"knock-off":
+			if defender.get("item", "") != "":
+				power = 97
 		"trump-card":
 			var pp_left = move.get("current_pp", 0)
 			if   pp_left <= 1: power = 200
@@ -1620,12 +1626,12 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 	var base_damage = ((2.0 * level / 5.0 + 2.0) * power * atk / def_stat) / 50.0 + 2.0
 
 	var stab = 1.0
-	if move["type"] in attacker["types"]:
+	if move["name"] != "struggle" and move["type"] in attacker["types"]:
 		stab = 1.5
 		if attacker["ability"] == "adaptability":
 			stab = 2.0
 
-	var effectiveness = get_move_effectiveness(attacker, move["type"], defender["types"])
+	var effectiveness = 1.0 if move["name"] == "struggle" else get_move_effectiveness(attacker, move["type"], defender["types"])
 	if _has_ability(defender, "wonder-guard") and effectiveness <= 1.0 and not attacker_breaks:
 		return {"damage": 0, "crit": false}
 
@@ -1753,6 +1759,8 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 
 	var your_move = _resolve_choice_locked_move(your_mon, your_mon["moveset"][your_move_index])
 	var opp_move = _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opponent_move_index])
+	if _all_moves_empty(opp_mon):
+		opp_move = _make_struggle_move()
 
 	var your_priority = your_move["priority"]
 	var opp_priority = opp_move["priority"]
@@ -2021,7 +2029,7 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 				pokemon_fainted.emit(is_yours, attacker["name"])
 		return
 
-	var effectiveness = get_move_effectiveness(attacker, move["type"], defender["types"])
+	var effectiveness = 1.0 if move_name == "struggle" else get_move_effectiveness(attacker, move["type"], defender["types"])
 
 	if effectiveness == 0.0:
 		battle_message.emit("It had no effect!")
@@ -2112,6 +2120,16 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if CONFUSION_SECONDARY_MOVES.has(move_name) and not defender["is_fainted"] and not hit_substitute and hp_damage > 0 and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
 		_apply_secondary(attacker, defender, {"chance": CONFUSION_SECONDARY_MOVES[move_name], "confuse": true}, is_yours, false)
 
+	# --- Knock Off: remove the target's held item ---
+	if move_name == "knock-off" and not hit_substitute and not defender["is_fainted"] and defender.get("item", "") != "":
+		var knocked_item = defender["item"]
+		defender["item"] = ""
+		if defender.get("air_balloon_active", false):
+			defender["air_balloon_active"] = false
+		battle_message.emit(attacker["display_name"] + " knocked off " + defender["display_name"] + "'s " + knocked_item + "!")
+		if _has_ability(defender, "unburden"):
+			defender["unburden_active"] = true
+
 	# --- Phazing damage moves (Dragon Tail, Circle Throw) ---
 	if move_name in PHAZING_DAMAGE_MOVES and not defender["is_fainted"]:
 		if _has_ability(defender, "suction-cups") and not _is_mold_breaker_attack(attacker):
@@ -2141,6 +2159,13 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " lost HP to Life Orb!")
 		_try_trigger_hp_item(attacker, is_yours)
+
+	# --- Struggle recoil (1/4 max HP, not blocked by abilities) ---
+	if move_name == "struggle" and not attacker["is_fainted"]:
+		var struggle_recoil = max(int(attacker["max_hp"] / 4), 1)
+		attacker["current_hp"] = max(attacker["current_hp"] - struggle_recoil, 0)
+		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
+		battle_message.emit(attacker["display_name"] + " is damaged by recoil!")
 
 	# --- Post-hit self stat drops ---
 	if USER_STAGE_AFTER.has(move_name):
@@ -3094,6 +3119,92 @@ func execute_switch_turn(switch_index: int):
 
 	check_faint(true)
 	check_faint(false)
+
+func _make_struggle_move() -> Dictionary:
+	return {
+		"name": "struggle",
+		"type": "normal",
+		"power": 50,
+		"category": "physical",
+		"accuracy": 0,
+		"priority": 0,
+	}
+
+func _all_moves_empty(mon: Dictionary) -> bool:
+	for m in mon["moveset"]:
+		if m.get("current_pp", 1) > 0:
+			return false
+	return true
+
+func execute_turn_struggle(opponent_move_index: int):
+	if battle_over:
+		return
+	turn_count += 1
+	var your_mon = your_team[your_active]
+	var opp_mon = opponent_team[opponent_active]
+
+	your_mon["is_protected"] = false
+	opp_mon["is_protected"]  = false
+	if your_mon["last_move_used"] not in PROTECT_MOVES:
+		your_mon["protect_consecutive"] = 0
+	if opp_mon["last_move_used"] not in PROTECT_MOVES:
+		opp_mon["protect_consecutive"] = 0
+
+	var your_move = _make_struggle_move()
+	var opp_move = _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opponent_move_index])
+	if _all_moves_empty(opp_mon):
+		opp_move = _make_struggle_move()
+
+	var your_priority = your_move["priority"]
+	var opp_priority = opp_move["priority"]
+	if opp_move["category"] == "status" and _has_ability(opp_mon, "prankster"):
+		opp_priority += 1
+
+	var your_speed = get_effective_stat(your_mon, "speed")
+	var opp_speed = get_effective_stat(opp_mon, "speed")
+	if your_mon["status"] == "paralyze" and not _has_ability(your_mon, "quick-feet"):
+		your_speed = int(your_speed * 0.25)
+	if opp_mon["status"] == "paralyze" and not _has_ability(opp_mon, "quick-feet"):
+		opp_speed = int(opp_speed * 0.25)
+	if _can_use_held_item(your_mon) and your_mon["item"] == "Choice Scarf":
+		your_speed = int(your_speed * 1.5)
+	if _can_use_held_item(opp_mon) and opp_mon["item"] == "Choice Scarf":
+		opp_speed = int(opp_speed * 1.5)
+
+	var you_go_first: bool
+	if your_priority != opp_priority:
+		you_go_first = your_priority > opp_priority
+	elif _has_ability(your_mon, "stall") != _has_ability(opp_mon, "stall"):
+		you_go_first = not _has_ability(your_mon, "stall")
+	elif your_speed != opp_speed:
+		you_go_first = your_speed > opp_speed
+	else:
+		you_go_first = randi() % 2 == 0
+
+	your_mon["is_flinched"] = false
+	opp_mon["is_flinched"]  = false
+	your_mon["analytic_active"] = false
+	opp_mon["analytic_active"] = false
+	_pending_uturn          = {"yours": false, "opp": false}
+	_current_turn_moves     = {"yours": your_move["name"], "opp": opp_move["name"]}
+	_last_hit_received      = {"yours": {"damage": 0, "category": ""}, "opp": {"damage": 0, "category": ""}}
+
+	if you_go_first:
+		execute_move(your_mon, opp_mon, your_move, true)
+		var opp_after_first = opponent_team[opponent_active]
+		if not opp_after_first["is_fainted"] and not opp_after_first["is_flinched"]:
+			opp_after_first["analytic_active"] = true
+			execute_move(opp_after_first, your_team[your_active], opp_move, false)
+			if _pending_uturn["opp"]:
+				_do_uturn_switch(false)
+	else:
+		execute_move(opp_mon, your_mon, opp_move, false)
+		if _pending_uturn["opp"]:
+			_do_uturn_switch(false)
+		if not your_mon["is_fainted"] and not your_mon["is_flinched"]:
+			your_team[your_active]["analytic_active"] = true
+			execute_move(your_team[your_active], opponent_team[opponent_active], your_move, true)
+	_finish_turn()
 
 func get_opponent_move() -> int:
 	return randi() % opponent_team[opponent_active]["moveset"].size()
