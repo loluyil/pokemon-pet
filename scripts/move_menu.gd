@@ -34,6 +34,17 @@ func _ready():
 func populate_moves():
 	var mon     = battle_sim.your_team[battle_sim.your_active]
 	var moveset = mon["moveset"]
+
+	# If all moves have 0 PP, force Struggle
+	var all_out = true
+	for m in moveset:
+		if m.get("current_pp", 1) > 0:
+			all_out = false
+			break
+	if all_out:
+		_use_struggle()
+		return
+
 	var btns    = [move1, move2, move3, move4]
 	var choice_locked = mon.get("choice_lock", "")
 	var has_choice = choice_locked != "" and battle_sim._is_choice_item(mon.get("item", "")) and battle_sim._can_use_held_item(mon)
@@ -45,8 +56,9 @@ func populate_moves():
 			btn.visible      = true
 			btn.scale        = Vector2.ZERO
 			btn.pivot_offset = btn.size / 2.0
-			# Grey out moves that are locked out by choice item
-			if has_choice and moveset[i]["name"] != choice_locked:
+			# Grey out moves that are locked out by choice item or have 0 PP
+			var no_pp = moveset[i].get("current_pp", 1) <= 0
+			if (has_choice and moveset[i]["name"] != choice_locked) or no_pp:
 				btn.modulate = Color(0.4, 0.4, 0.4, 0.7)
 				btn.disabled = true
 			else:
@@ -103,6 +115,15 @@ func _on_back():
 	action_btns.visible = true
 	bg_anim.play_backwards("open")
 	fight_btn.disabled = false
+
+func _use_struggle():
+	_sfx_player.stream = _sfx_select
+	_sfx_player.play()
+	var opp_move = battle_sim.get_opponent_move()
+	battle_sim.execute_turn_struggle(opp_move)
+	await get_tree().create_timer(0.05).timeout
+	visible = false
+	bg_anim.play_backwards("open")
 
 func _input(event):
 	if event.is_action_pressed("ui_cancel") and visible:

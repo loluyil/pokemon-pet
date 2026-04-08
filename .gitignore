@@ -11,3 +11,7 @@ bin/~*
 
 
 .claude
+export_presets.cfg
+build/windows/pokemon-pet-debug.exe
+build/windows/desktop_icons.windows.template_debug.x86_64.dll
+build.zip
