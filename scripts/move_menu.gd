@@ -1,6 +1,4 @@
 extends Control
-
-# ─── Node References ─────────────────────────────────────────────────────────
 @onready var move1: TextureButton = $GridContainer/Move1
 @onready var move2: TextureButton = $GridContainer/Move2
 @onready var move3: TextureButton = $GridContainer/Move3
@@ -17,9 +15,6 @@ const TYPE_ICON_PATH := "res://sprites/battle/types/"
 @onready var _sfx_player: AudioStreamPlayer = $"../BattleSFX"
 var _sfx_select = preload("res://sounds/select-button.wav")
 var _sfx_back   = preload("res://sounds/back-button.wav")
-
-
-# ─── Ready ────────────────────────────────────────────────────────────────────
 func _ready():
 	move1.pressed.connect(_on_move_selected.bind(0))
 	move2.pressed.connect(_on_move_selected.bind(1))
@@ -27,15 +22,9 @@ func _ready():
 	move4.pressed.connect(_on_move_selected.bind(3))
 	if back_btn:
 		back_btn.pressed.connect(_on_back)
-
-# ─── Populate & Tween In ─────────────────────────────────────────────────────
-# Called by action_menu.gd after making MoveMenu visible.
-# Order: visible=true → populate_moves() → buttons scale 0→1 (pop tween)
 func populate_moves():
 	var mon     = battle_sim.your_team[battle_sim.your_active]
 	var moveset = mon["moveset"]
-
-	# If all moves have 0 PP, force Struggle
 	var all_out = true
 	for m in moveset:
 		if m.get("current_pp", 1) > 0:
@@ -56,7 +45,6 @@ func populate_moves():
 			btn.visible      = true
 			btn.scale        = Vector2.ZERO
 			btn.pivot_offset = btn.size / 2.0
-			# Grey out moves that are locked out by choice item or have 0 PP
 			var no_pp = moveset[i].get("current_pp", 1) <= 0
 			if (has_choice and moveset[i]["name"] != choice_locked) or no_pp:
 				btn.modulate = Color(0.4, 0.4, 0.4, 0.7)
@@ -70,17 +58,12 @@ func populate_moves():
 	_tween_buttons_in(btns, moveset.size())
 
 func _setup_move_button(btn: TextureButton, move: Dictionary) -> void:
-	# Type PNG replaces the button's normal texture directly
 	var type_name: String = (move.get("type", "normal") as String).to_lower()
 	var icon_path := TYPE_ICON_PATH + type_name + ".png"
 	btn.texture_normal = load(icon_path) if ResourceLoader.exists(icon_path) else null
-
-	# "NameLabel" child Label → move name
 	var name_lbl: Label = btn.get_node_or_null("NameLabel")
 	if name_lbl:
 		name_lbl.text = move["name"].replace("-", " ").capitalize()
-
-	# "PPLabel" child Label → PP X/X
 	var pp_lbl: Label = btn.get_node_or_null("PPLabel")
 	if pp_lbl:
 		var cur: int    = move.get("current_pp", move.get("max_pp", 35))
@@ -88,14 +71,11 @@ func _setup_move_button(btn: TextureButton, move: Dictionary) -> void:
 		pp_lbl.text = "PP %d/%d" % [cur, max_pp]
 
 func _tween_buttons_in(btns: Array, count: int) -> void:
-	# All buttons pop in at the same time
 	var tween := create_tween().set_parallel(true)
 	for i in count:
 		tween.tween_property(btns[i], "scale", Vector2.ONE, 0.22) \
 			.set_trans(Tween.TRANS_BACK) \
 			.set_ease(Tween.EASE_OUT)
-
-# ─── Move Selected — instant hide, no tween ───────────────────────────────────
 func _on_move_selected(index: int):
 	_sfx_player.stream = _sfx_select
 	_sfx_player.play()
@@ -105,9 +85,6 @@ func _on_move_selected(index: int):
 	await get_tree().create_timer(0.05).timeout
 	visible = false
 	bg_anim.play_backwards("open")
-	# battle_ui.gd re-enables the action menu once the event queue drains.
-
-# ─── Back — instant hide, no tween ───────────────────────────────────────────
 func _on_back():
 	_sfx_player.stream = _sfx_back
 	_sfx_player.play()

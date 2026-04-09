@@ -1,6 +1,4 @@
 extends Node
-
-# ─── HP Bar & Label References ──────────────────────────────────────────────────
 @onready var your_hp_bar: TextureProgressBar = $VBoxContainer/TrainerHPContainer/YourHPBar
 @onready var your_name_label: Label  = $VBoxContainer/TrainerHPContainer/Name
 @onready var your_lvl_label: Label   = $VBoxContainer/TrainerHPContainer/Level
@@ -10,38 +8,26 @@ extends Node
 @onready var opp_hp_bar: TextureProgressBar = $VBoxContainer/OpponentHPContainer/OpponentHPBar
 @onready var opp_name_label: Label = $VBoxContainer/OpponentHPContainer/Name
 @onready var opp_lvl_label: Label  = $VBoxContainer/OpponentHPContainer/Level
-
-# ─── Status Icon References ──────────────────────────────────────────────────────
 @onready var your_status_icon: TextureRect = $VBoxContainer/TrainerHPContainer/Status
 @onready var opp_status_icon: TextureRect  = $VBoxContainer/OpponentHPContainer/Status
 
 const STATUS_ICON_PATH := "res://images/battle/status/"
-
-# ─── Battle Text Box ─────────────────────────────────────────────────────────────
 @onready var _text_panel: Control = $VBoxContainer/BattleText
 @onready var _msg_label: Label    = $VBoxContainer/BattleText/Label
-
-# ─── Sprite References ───────────────────────────────────────────────────────────
 @onready var your_pokemon_sprite: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon
 @onready var opp_pokemon_sprite: AnimatedSprite3D  = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon
 @onready var _viewport_container: SubViewportContainer = $VBoxContainer/SubViewportContainer
 @onready var _battle_viewport: SubViewport = $VBoxContainer/SubViewportContainer/SubViewport
-
-# ─── Pokeball & Entry Animation References ──────────────────────────────────────
 @onready var _your_pkmn_anim: AnimationPlayer = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/YourPokemon/AnimationPlayer
 @onready var _opp_pkmn_anim: AnimationPlayer  = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/OpponentPokemon/AnimationPlayer
 @onready var _trainer_sprite: Sprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer
 @onready var _trainer_pokeball: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer/Pokeball
 @onready var _trainer_pokeball_throw: AnimationPlayer = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Trainer/Pokeball/AnimationPlayer
 @onready var _opp_pokeball: AnimatedSprite3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry/Opponent/Pokeball
-
-# ─── Menu References ─────────────────────────────────────────────────────────────
 @onready var battle_sim: Node = $PokemonData
 @onready var _fight_btn       = $Control/ActionMenu/FightButton
 @onready var _action_buttons  = $Control/ActionMenu/Buttons
 @onready var _party_menu: Control = $Control/PartyMenu
-
-# ─── Sound Effects ───────────────────────────────────────────────────────────────
 @onready var _sfx_player: AudioStreamPlayer = $Control/BattleSFX
 var _sfx_effective       = preload("res://sounds/effective.wav")
 var _sfx_super_effective = preload("res://sounds/super-effective.wav")
@@ -49,23 +35,17 @@ var _sfx_not_effective   = preload("res://sounds/not-very-effective.wav")
 var _sfx_pkball_throw    = preload("res://sounds/pkball-throw.wav")
 var _sfx_pkball_release  = preload("res://sounds/pkball-release.wav")
 var _sfx_faint           = preload("res://sounds/faint.wav")
-
-# ─── Battle Music ────────────────────────────────────────────────────────────────
 var _danger_music = preload("res://sounds/battle-music/1-60. Battle Trouble!.mp3")
 var _music_player: AudioStreamPlayer
 var _danger_player: AudioStreamPlayer
 var _in_danger := false
 var _music_original_volume: float = 0.0
-
-# ─── HP Bar Container References ────────────────────────────────────────────────
 @onready var _your_hp_container: TextureRect = $VBoxContainer/TrainerHPContainer
 @onready var _opp_hp_container: TextureRect  = $VBoxContainer/OpponentHPContainer
 var _your_hp_original_x: float
 var _opp_hp_original_x: float
 const HP_SLIDE_OFFSET := 400.0
 const HP_SLIDE_DURATION := 0.15
-
-# ─── Ability Container References ───────────────────────────────────────────────
 @onready var _your_ability_container: TextureRect = $VBoxContainer/TrainerAbilityContainer
 @onready var _your_ability_label: Label = $VBoxContainer/TrainerAbilityContainer/AbilityName
 @onready var _opp_ability_container: TextureRect = $OpponentAbilityContainer
@@ -75,27 +55,16 @@ var _opp_ability_original_x: float
 const ABILITY_SLIDE_OFFSET := 500.0
 const ABILITY_SLIDE_DURATION := 0.3
 const ABILITY_DISPLAY_SECS := 1.8
-
-# ─── Substitute Sprite References ───────────────────────────────────────────────
 @onready var _your_substitute: TextureRect = $VBoxContainer/YourSubstitute
 @onready var _opp_substitute: TextureRect  = $VBoxContainer/OpponentSubstitute
-
-# ─── Stat Container References ──────────────────────────────────────────────────
 @onready var _your_stat_container: GridContainer = $VBoxContainer/TrainerStatContainer
 @onready var _opp_stat_container: GridContainer  = $VBoxContainer/OpponentStatContainer
-
-# ─── Entry Lock ──────────────────────────────────────────────────────────────────
 var _entry_complete: bool      = false   # true after cinematic + intro text finish
 @onready var _battle_entry_node: Node3D = $VBoxContainer/SubViewportContainer/SubViewport/BattleEntry
-
-# ─── Unified Event Queue ─────────────────────────────────────────────────────────
-# Events are dicts: {type:"msg", text:""} or {type:"hp", is_yours:bool, hp:int, max:int}
 var _event_queue: Array        = []
 var _displaying: bool          = false
 var _your_fainted: bool        = false   # tracks if last switch-in is a faint replacement
 var _opp_fainted: bool         = false
-
-# ─── Typewriter / Input State ────────────────────────────────────────────────────
 var _typing: bool              = false
 var _awaiting_input: bool      = false
 var _auto_timer: float         = 0.0
@@ -104,8 +73,6 @@ var _typewriter_tween: Tween   = null
 const CHARS_PER_SEC: float     = 40.0
 const AUTO_ADVANCE_SECS: float = 1.6
 const HP_ANIM_SECS: float      = 0.42   # slightly longer than hpbar tween (0.35s)
-
-# ─── Ready ───────────────────────────────────────────────────────────────────────
 func _ready():
 	
 	battle_sim.hp_changed.connect(_on_hp_changed)
@@ -123,42 +90,28 @@ func _ready():
 	_text_panel.visible = false
 	battle_sim.uturn_switch_request.connect(_on_uturn_switch_request)
 	battle_sim.faint_switch_request.connect(_on_faint_switch_request)
-
-	# Set up danger music player
 	_danger_player = AudioStreamPlayer.new()
 	_danger_player.bus = "Master"
 	add_child(_danger_player)
-
-	# Find the battle music player reparented to root by main.gd during transition
 	var battle_music_node = get_tree().root.get_node_or_null("BattleMusic")
 	if battle_music_node:
 		_music_player = battle_music_node
 		_music_original_volume = _music_player.volume_db
 	else:
 		_music_player = null
-
-	# Store HP container original positions for slide tweens, then hide offscreen
 	_your_hp_original_x = _your_hp_container.position.x
 	_opp_hp_original_x = _opp_hp_container.position.x
 	_your_hp_container.position.x = _your_hp_original_x + HP_SLIDE_OFFSET
 	_opp_hp_container.position.x = _opp_hp_original_x - HP_SLIDE_OFFSET
-
-	# Hide ability containers offscreen (yours slides right, opponent slides left)
 	_your_ability_original_x = _your_ability_container.position.x
 	_opp_ability_original_x = _opp_ability_container.position.x
 	_your_ability_container.position.x = _your_ability_original_x + ABILITY_SLIDE_OFFSET
 	_opp_ability_container.position.x = _opp_ability_original_x - ABILITY_SLIDE_OFFSET
-
-	# Hide substitute sprites and stat containers
 	_your_substitute.visible = false
 	_opp_substitute.visible = false
-
-	# Lock fight button until entry cinematic completes
 	_battle_entry_node.entry_finished.connect(_on_entry_finished, CONNECT_ONE_SHOT)
 	_hide_all_stat_slots(true)
 	_hide_all_stat_slots(false)
-
-	# Defer init so AnimatedSprite3D nodes are fully ready before loading sprite frames
 	call_deferred("_init_display")
 
 func _init_display():
@@ -179,15 +132,9 @@ func _init_display():
 	_set_pokemon_sprite(opp_pokemon_sprite,  opp_mon["name"],  false)
 
 	_refresh_status_icons()
-
-	# Intro sequence queued manually because start_battle() fires before
-	# this script connects its signals (battle_sim._ready runs first).
 	_push_message("You are challenged by Trainer!")
 	_push_message("Trainer sent out " + opp_mon["display_name"] + "!")
 	_push_message("Go! " + your_mon["display_name"] + "!")
-
-	# Slide HP containers in after the battle entry cinematic
-	# The cinematic runs ~6s, so tween them in with a delay
 	get_tree().create_timer(4.75).timeout.connect(func():
 		_tween_hp_container_in(false)  # opponent first
 	, CONNECT_ONE_SHOT)
@@ -197,7 +144,6 @@ func _init_display():
 
 func _on_entry_finished():
 	_entry_complete = true
-	# If the event queue already drained while we were locked, enable controls now
 	if not _displaying:
 		_action_buttons.visible = true
 		_fight_btn.disabled = false
@@ -243,8 +189,6 @@ func _set_pokemon_sprite(sprite: AnimatedSprite3D, mon_name: String, is_back: bo
 	sprite.sprite_frames = frames
 	sprite.play(anim_name)
 
-# ─── Signal Handlers ─────────────────────────────────────────────────────────────
-
 func _on_battle_message(text: String):
 	_push_message(text)
 
@@ -254,13 +198,9 @@ func _on_status_changed(is_yours: bool, status: String):
 		_start_display()
 
 func _on_hp_changed(is_yours: bool, current_hp: int, max_hp: int):
-	# Deferred: HP animation is sequenced through the event queue so that
-	# the first Pokemon's bar finishes before the second move plays out.
 	_push_hp(is_yours, current_hp, max_hp)
 
 func _on_pokemon_sent_out(is_yours: bool, current_hp: int, max_hp: int, mon_name: String, level: int, raw_name: String):
-	# Queued so it processes after faint messages, preventing the new pokemon's
-	# HP bar from being overwritten by the previous pokemon's pending damage events.
 	_event_queue.append({"type": "sent_out", "is_yours": is_yours,
 		"hp": current_hp, "max": max_hp, "name": mon_name, "level": level, "mon_name": raw_name})
 	if not _displaying:
@@ -272,7 +212,6 @@ func _on_pokemon_fainted(is_yours: bool, _mon_name: String):
 		_start_display()
 
 func _on_uturn_switch_request():
-	# Pause event queue, open party menu for player to pick a switch-in
 	_event_queue.append({"type": "uturn_pick"})
 	if not _displaying:
 		_start_display()
@@ -283,13 +222,11 @@ func _on_faint_switch_request():
 		_start_display()
 
 func _on_battle_ended(you_won: bool):
-	# Stop all battle music
 	if _music_player:
 		var tween := create_tween()
 		tween.tween_property(_music_player, "volume_db", -80.0, 1.0)
 		tween.tween_callback(_music_player.queue_free)
 	_stop_danger_music()
-	# Queue return to world after battle messages finish
 	_event_queue.append({"type": "return_to_world", "you_won": you_won})
 	if not _displaying:
 		_start_display()
@@ -297,7 +234,6 @@ func _on_battle_ended(you_won: bool):
 func _do_return_to_world(ev: Dictionary):
 	if ev["you_won"]:
 		_restore_kidnapped_files()
-	# Wait a moment, then transition back to the world scene
 	await get_tree().create_timer(1.5).timeout
 	get_tree().change_scene_to_file("res://scenes/world.tscn")
 
@@ -318,7 +254,6 @@ func _restore_kidnapped_files():
 			_move_folder_back(stashed_path, original_path)
 		else:
 			DirAccess.rename_absolute(stashed_path, original_path)
-	# Clear manifest
 	var mf = FileAccess.open(MANIFEST, FileAccess.WRITE)
 	mf.store_string(JSON.stringify({}))
 	mf.close()
@@ -346,8 +281,6 @@ func _on_attack_effectiveness(effectiveness: float):
 	_event_queue.append({"type": "sfx", "effectiveness": effectiveness})
 	if not _displaying:
 		_start_display()
-
-# ─── Event Queue ─────────────────────────────────────────────────────────────────
 
 func _push_message(text: String):
 	_event_queue.append({"type": "msg", "text": text})
@@ -397,8 +330,6 @@ func _end_display():
 		_action_buttons.visible = true
 		_fight_btn.disabled     = false
 
-# ─── Message Event ────────────────────────────────────────────────────────────────
-
 func _do_message(text: String):
 	_msg_label.text          = text
 	_msg_label.visible_ratio = 0.0
@@ -418,22 +349,17 @@ func _on_typewriter_done():
 	_awaiting_input = true
 	_auto_timer     = 0.0
 
-# ─── HP Event (auto-advances after animation) ─────────────────────────────────────
-
 func _do_hp(ev: Dictionary):
 	if ev["is_yours"]:
 		your_hp_bar.update_hp(ev["hp"], ev["max"])
 		current_hp_label.text = str(int(ev["hp"]))
 	else:
 		opp_hp_bar.update_hp(ev["hp"], ev["max"])
-	# Wait for the HP bar tween to finish, then check danger music + advance
 	get_tree().create_timer(HP_ANIM_SECS).timeout.connect(func():
 		if ev["is_yours"]:
 			_check_danger_music_deferred()
 		_process_next()
 	, CONNECT_ONE_SHOT)
-
-# ─── Sent-Out Event (pokeball + entry animation) ────────────────────────────
 
 func _do_sent_out(ev: Dictionary):
 	var is_yours: bool = ev["is_yours"]
@@ -444,8 +370,6 @@ func _do_sent_out(ev: Dictionary):
 	else:
 		is_faint_replacement = _opp_fainted
 		_opp_fainted = false
-
-	# For normal switches (not faint replacements), play return animation first
 	if not is_faint_replacement:
 		var pkmn_anim: AnimationPlayer = _your_pkmn_anim if is_yours else _opp_pkmn_anim
 		pkmn_anim.play("return")
@@ -456,10 +380,8 @@ func _do_sent_out(ev: Dictionary):
 		_continue_sent_out(ev, is_yours)
 
 func _continue_sent_out(ev: Dictionary, is_yours: bool):
-	# Slide out old HP container first (may already be offscreen after faint, that's fine)
 	_tween_hp_container_out(is_yours)
 	get_tree().create_timer(HP_SLIDE_DURATION).timeout.connect(func():
-		# Update labels and sprites for the new pokemon
 		if is_yours:
 			your_hp_bar.set_hp_instant(ev["hp"], ev["max"])
 			your_name_label.text  = ev["name"]
@@ -474,16 +396,13 @@ func _continue_sent_out(ev: Dictionary, is_yours: bool):
 			opp_lvl_label.text  = str(int(ev["level"]))
 			_set_pokemon_sprite(opp_pokemon_sprite, ev["mon_name"], false)
 			_play_switch_anim(false)
-		# Clear status icon — the status event in the queue will set it at the right time
 		var icon: TextureRect = your_status_icon if is_yours else opp_status_icon
 		icon.visible = false
-		# Reset substitute and stat displays for the new pokemon
 		var sub_sprite: TextureRect = _your_substitute if is_yours else _opp_substitute
 		sub_sprite.visible = false
 		var pkmn_spr: AnimatedSprite3D = your_pokemon_sprite if is_yours else opp_pokemon_sprite
 		pkmn_spr.transparency = 0.0
 		_hide_all_stat_slots(is_yours)
-		# After pokemon lands: slide HP container in, check danger music, advance
 		get_tree().create_timer(0.9).timeout.connect(func():
 			_tween_hp_container_in(is_yours)
 			if is_yours:
@@ -568,10 +487,7 @@ static func spawn_pokeball_burst(parent: Node, pos: Vector3):
 	particles.draw_pass_1 = mesh
 
 	parent.add_child(particles)
-	# Auto-remove after particles finish
 	parent.get_tree().create_timer(particles.lifetime + 0.2).timeout.connect(particles.queue_free, CONNECT_ONE_SHOT)
-
-# ─── SFX Event (plays sound, immediately advances) ──────────────────────────────
 
 func _do_sfx(ev: Dictionary):
 	var eff: float = ev["effectiveness"]
@@ -584,26 +500,19 @@ func _do_sfx(ev: Dictionary):
 	_sfx_player.play()
 	_process_next()
 
-# ─── Status Event (instant update, then advance) ────────────────────────────────
-
 func _do_status(ev: Dictionary):
 	var icon: TextureRect = your_status_icon if ev["is_yours"] else opp_status_icon
 	_set_status_icon(icon, ev["status"])
 	_process_next()
-
-# ─── U-turn Pick Event (opens party menu, pauses queue) ─────────────────────────
 
 func _do_uturn_pick():
 	_text_panel.visible = false
 	_party_menu.open_for_uturn()
 
 func _on_uturn_switch_picked(index: int):
-	# Called by party_menu when the player picks a switch-in for U-turn
 	_text_panel.visible = true
 	battle_sim.complete_uturn_switch(index)
 	_process_next()
-
-# ─── Faint Pick Event (opens party menu for player to choose replacement) ────
 
 func _do_faint_pick():
 	_text_panel.visible = false
@@ -613,8 +522,6 @@ func _on_faint_switch_picked(index: int):
 	_text_panel.visible = true
 	battle_sim.complete_faint_switch(index)
 	_process_next()
-
-# ─── Faint SFX Event ─────────────────────────────────────────────────────────────
 
 func _do_faint_sfx(ev: Dictionary):
 	if ev["is_yours"]:
@@ -627,17 +534,13 @@ func _do_faint_sfx(ev: Dictionary):
 	_hide_all_stat_slots(ev["is_yours"])
 	if ev["is_yours"]:
 		_stop_danger_music()
-	# Play faint animation on the pokemon sprite
 	var pkmn_anim: AnimationPlayer = _your_pkmn_anim if ev["is_yours"] else _opp_pkmn_anim
 	pkmn_anim.play("faint")
 	pkmn_anim.animation_finished.connect(func(_anim_name: StringName):
 		_process_next()
 	, CONNECT_ONE_SHOT)
 
-# ─── Danger Music (red HP) ───────────────────────────────────────────────────────
-
 func _check_danger_music_deferred():
-	# Called after animations finish (HP bar done, pokemon landed, etc.)
 	var your_mon = battle_sim.your_team[battle_sim.your_active]
 	var pct: float = float(your_mon["current_hp"]) / float(your_mon["max_hp"]) * 100.0
 	if pct > 0.0 and pct <= 20.0 and not _in_danger:
@@ -647,7 +550,6 @@ func _check_danger_music_deferred():
 
 func _start_danger_music():
 	_in_danger = true
-	# Mute bg music (don't stop, so playback position is preserved)
 	if _music_player:
 		var tween := create_tween()
 		tween.tween_property(_music_player, "volume_db", -80.0, 0.3)
@@ -658,12 +560,9 @@ func _start_danger_music():
 func _stop_danger_music():
 	_in_danger = false
 	_danger_player.stop()
-	# Restore bg music to its original volume
 	if _music_player and not battle_sim.battle_over:
 		var tween := create_tween()
 		tween.tween_property(_music_player, "volume_db", _music_original_volume, 0.3)
-
-# ─── HP Container Slide Tweens ───────────────────────────────────────────────────
 
 func _tween_hp_container_in(is_yours: bool):
 	var container: TextureRect
@@ -674,7 +573,6 @@ func _tween_hp_container_in(is_yours: bool):
 	else:
 		container = _opp_hp_container
 		original_x = _opp_hp_original_x
-	# Start offscreen: your HP slides from right, opponent from left
 	var offset_x: float = HP_SLIDE_OFFSET if is_yours else -HP_SLIDE_OFFSET
 	container.position.x = original_x + offset_x
 	container.visible = true
@@ -695,8 +593,6 @@ func _tween_hp_container_out(is_yours: bool):
 	var tween := create_tween()
 	tween.tween_property(container, "position:x", original_x + offset_x, HP_SLIDE_DURATION) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-
-# ─── Ability Container Tweens ────────────────────────────────────────────────────
 
 func _on_ability_activated(is_yours: bool, ability_display_name: String):
 	_event_queue.append({"type": "ability", "is_yours": is_yours, "name": ability_display_name})
@@ -722,22 +618,16 @@ func _do_ability(ev: Dictionary):
 	label.text = ev["name"]
 	container.position.x = original_x + offset_x
 	container.visible = true
-
-	# Slide in
 	var tween := create_tween()
 	tween.tween_property(container, "position:x", original_x, ABILITY_SLIDE_DURATION) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	# Hold, then slide out
 	tween.tween_interval(ABILITY_DISPLAY_SECS)
 	tween.tween_property(container, "position:x", original_x + offset_x, ABILITY_SLIDE_DURATION) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	# Advance after animation
 	var total_time := ABILITY_SLIDE_DURATION + ABILITY_DISPLAY_SECS + ABILITY_SLIDE_DURATION
 	get_tree().create_timer(total_time).timeout.connect(func():
 		_process_next()
 	, CONNECT_ONE_SHOT)
-
-# ─── Substitute Changed ─────────────────────────────────────────────────────────
 
 func _on_substitute_changed(is_yours: bool, has_substitute: bool):
 	_event_queue.append({"type": "substitute", "is_yours": is_yours, "active": has_substitute})
@@ -749,7 +639,6 @@ func _do_substitute(ev: Dictionary):
 	var pokemon_sprite: AnimatedSprite3D = your_pokemon_sprite if ev["is_yours"] else opp_pokemon_sprite
 
 	if ev["active"]:
-		# Pokemon tweens back and becomes transparent
 		var tween := create_tween()
 		tween.tween_property(pokemon_sprite, "transparency", 0.7, 0.3)
 		tween.tween_callback(func():
@@ -760,7 +649,6 @@ func _do_substitute(ev: Dictionary):
 			fade_in.tween_callback(_process_next)
 		)
 	else:
-		# Substitute breaks — hide sub, restore pokemon opacity
 		var tween := create_tween()
 		tween.tween_property(sub_sprite, "modulate:a", 0.0, 0.2)
 		tween.tween_callback(func():
@@ -768,8 +656,6 @@ func _do_substitute(ev: Dictionary):
 		)
 		tween.tween_property(pokemon_sprite, "transparency", 0.0, 0.3)
 		tween.tween_callback(_process_next)
-
-# ─── Transform Event ────────────────────────────────────────────────────────────
 
 const TRANSFORM_DURATION := 1.5
 
@@ -779,14 +665,12 @@ func _on_pokemon_transformed(is_yours: bool):
 		_start_display()
 
 func _do_transform(ev: Dictionary):
-	# Apply pixelate shader only to the transforming pokemon's sprite
 	var sprite: AnimatedSprite3D = your_pokemon_sprite if ev["is_yours"] else opp_pokemon_sprite
 	var shader_res := preload("res://shaders/pixelate_transform_3d.gdshader")
 	var mat := ShaderMaterial.new()
 	mat.shader = shader_res
 	mat.set_shader_parameter("progress", 0.0)
 	mat.set_shader_parameter("flash_intensity", 0.0)
-	# Pass the sprite's current texture to the shader
 	if sprite.sprite_frames:
 		var anim_name := sprite.animation
 		if sprite.sprite_frames.has_animation(anim_name) and sprite.sprite_frames.get_frame_count(anim_name) > 0:
@@ -794,14 +678,11 @@ func _do_transform(ev: Dictionary):
 	sprite.material_override = mat
 
 	var tween := create_tween()
-	# Pixelate up with flash
 	tween.tween_method(func(val: float):
 		mat.set_shader_parameter("progress", val)
 		mat.set_shader_parameter("flash_intensity", val * 0.6)
 	, 0.0, 1.0, TRANSFORM_DURATION * 0.4)
-	# Hold pixelated
 	tween.tween_interval(TRANSFORM_DURATION * 0.2)
-	# De-pixelate
 	tween.tween_method(func(val: float):
 		mat.set_shader_parameter("progress", val)
 		mat.set_shader_parameter("flash_intensity", val * 0.6)
@@ -810,8 +691,6 @@ func _do_transform(ev: Dictionary):
 		sprite.material_override = null
 		_process_next()
 	)
-
-# ─── Stat Change Event ──────────────────────────────────────────────────────────
 
 const STAT_SHADER_DURATION := 1.2
 
@@ -822,13 +701,9 @@ func _do_stat_change(ev: Dictionary):
 	var is_yours: bool = ev["is_yours"]
 	var stages: Dictionary = ev["stages"]
 	_update_stat_display(is_yours, stages)
-
-	# Determine net direction for the pokemon sprite shader
 	var net := 0
 	for key in stages:
 		net += stages[key]
-
-	# Apply directional shader to the pokemon sprite
 	var sprite: AnimatedSprite3D = your_pokemon_sprite if is_yours else opp_pokemon_sprite
 	var shader_res: Shader
 	if net >= 0:
@@ -839,14 +714,11 @@ func _do_stat_change(ev: Dictionary):
 	var mat := ShaderMaterial.new()
 	mat.shader = shader_res
 	mat.set_shader_parameter("intensity", 0.0)
-	# Pass the sprite's current texture
 	if sprite.sprite_frames:
 		var anim_name := sprite.animation
 		if sprite.sprite_frames.has_animation(anim_name) and sprite.sprite_frames.get_frame_count(anim_name) > 0:
 			mat.set_shader_parameter("base_texture", sprite.sprite_frames.get_frame_texture(anim_name, 0))
 	sprite.material_override = mat
-
-	# Tween shader intensity up then down
 	var tween := create_tween()
 	tween.tween_method(func(val: float):
 		mat.set_shader_parameter("intensity", val)
@@ -859,8 +731,6 @@ func _do_stat_change(ev: Dictionary):
 		sprite.material_override = null
 		_process_next()
 	)
-
-# ─── Stat Stage Labels ──────────────────────────────────────────────────────────
 
 const STAT_DISPLAY_NAMES := {
 	"atk_stage": "Atk", "def_stage": "Def",
@@ -886,14 +756,12 @@ func _update_stat_display(is_yours: bool, stages: Dictionary):
 		var label: Label = slot.get_node("StatText")
 		var prefix = "x" if val > 0 else ""
 		label.text = prefix + str(val) + " " + STAT_DISPLAY_NAMES[key]
-		# Color: red for negative, green/blue for positive
 		if val > 0:
 			label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
 		else:
 			label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.3))
 		slot.visible = true
 		slot_idx += 1
-	# Hide unused slots
 	while slot_idx < 4:
 		container.get_child(slot_idx).visible = false
 		slot_idx += 1
@@ -903,11 +771,8 @@ func _hide_all_stat_slots(is_yours: bool):
 	for i in range(container.get_child_count()):
 		container.get_child(i).visible = false
 
-# ─── Advance Logic ────────────────────────────────────────────────────────────────
-
 func _advance():
 	if _typing:
-		# First press: complete the typewriter instantly
 		if _typewriter_tween:
 			_typewriter_tween.kill()
 		_msg_label.visible_ratio = 1.0

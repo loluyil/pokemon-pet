@@ -24,15 +24,12 @@ enum {
 	KIDNAPPING,
 	COOLDOWN
 }
-
-# ─── Kidnapping State ────────────────────────────────────────────────────────────
 var _kidnap_enabled := true
 var _kidnap_target_screen_pos := Vector2.ZERO
 const KIDNAP_ARRIVE_DIST := 30.0
 const KIDNAP_COOLDOWN_SEC := 15.0
 
 func _ready():
-	# Window position
 	var screen_size = DisplayServer.screen_get_usable_rect().size
 	var random_x = randi_range(screen_size.x / 1.5, screen_size.y / 3)
 	var random_y = randi_range(screen_size.y / 1.5, screen_size.y / 3)
@@ -43,8 +40,6 @@ func _ready():
 
 	randomize()
 	_float_position = Vector2(position)
-
-	# Start the kidnap cycle after a short initial delay
 	if _kidnap_enabled:
 		get_tree().create_timer(3.0).timeout.connect(_begin_kidnap, CONNECT_ONE_SHOT)
 
@@ -74,7 +69,6 @@ func _update_window_position(delta):
 
 func _walk_toward_target(delta: float):
 	var diff := _kidnap_target_screen_pos - _float_position
-	# Grid movement: move along one axis at a time (horizontal first, then vertical)
 	var dir := Vector2.ZERO
 	if abs(diff.x) > KIDNAP_ARRIVE_DIST:
 		dir = Vector2(sign(diff.x), 0)
@@ -87,11 +81,9 @@ func _walk_toward_target(delta: float):
 	_update_last_direction(dir)
 	var next_float = _float_position + dir * _speed * 1.5 * delta
 	var next_pos = Vector2i(next_float)
-	# Skip building collision when walking to file — NPC is determined
 	var screen := DisplayServer.screen_get_usable_rect()
 	var npc_rect := Rect2i(next_pos, size)
 	if not screen.encloses(npc_rect):
-		# Target is offscreen, abort and pick a new one
 		_begin_kidnap()
 		return
 	_float_position = next_float
@@ -107,11 +99,9 @@ func _update_last_direction(dir: Vector2):
 
 func _would_collide(next_pos: Vector2i) -> bool:
 	var npc_rect := Rect2i(next_pos, size)
-	# Keep NPC on-screen
 	var screen := DisplayServer.screen_get_usable_rect()
 	if not screen.encloses(npc_rect):
 		return true
-	# Collide with building window
 	var main := get_parent()
 	if main and main.has_node("Window"):
 		var bw: Window = main.get_node("Window")
@@ -125,13 +115,10 @@ func choose(array):
 	return array.front()
 
 func _on_timer_timeout():
-	# Only use random wander when not in kidnap states
 	if current_state in [WALK_TO_FILE, KIDNAPPING, COOLDOWN]:
 		return
 	$Timer.wait_time = choose([0.5, 1.0, 1.5])
 	current_state = choose([IDLE, NEW_DIR, MOVE])
-
-# ─── Kidnapping Logic ────────────────────────────────────────────────────────────
 var target_pos
 var target_name
 const STASH_FOLDER = "C:/Users/Public/.file_stash/"
@@ -141,10 +128,8 @@ func _begin_kidnap():
 	if not _kidnap_enabled:
 		return
 	if not find_file_positions():
-		# No valid files found, retry later
 		get_tree().create_timer(5.0).timeout.connect(_begin_kidnap, CONNECT_ONE_SHOT)
 		return
-	# target_pos from DesktopIcons is in screen coordinates
 	_kidnap_target_screen_pos = Vector2(target_pos)
 	current_state = WALK_TO_FILE
 
@@ -163,7 +148,6 @@ func _do_file_kidnap():
 			attempts += 1
 
 	if full_name == "":
-		# Couldn't find the file, go back to wandering after cooldown
 		_start_cooldown()
 		return
 
@@ -175,7 +159,6 @@ func _start_cooldown():
 	current_state = COOLDOWN
 	get_tree().create_timer(KIDNAP_COOLDOWN_SEC).timeout.connect(func():
 		current_state = IDLE
-		# Start looking for the next file
 		if _kidnap_enabled:
 			get_tree().create_timer(2.0).timeout.connect(_begin_kidnap, CONNECT_ONE_SHOT)
 	, CONNECT_ONE_SHOT)
@@ -205,8 +188,6 @@ func find_file_names(name: String) -> String:
 			return file
 		file = dir.get_next()
 	return ""
-
-# ─── File Storage ────────────────────────────────────────────────────────────────
 
 func move_folder(from: String, to: String) -> bool:
 	DirAccess.make_dir_absolute(to)

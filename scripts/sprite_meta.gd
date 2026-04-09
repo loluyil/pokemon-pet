@@ -1,9 +1,6 @@
 extends Object
 class_name SpriteMeta
 
-# Auto-generated sprite frame metadata
-# Keys: ff=front frame width, fc=front frame count, fh=front height,
-#       bf=back frame width, bc=back frame count, bh=back height
 const SPRITE_META: Dictionary = {
 	"abomasnow": {"ff":96,"fc":48,"fh":79,"bf":94,"bc":81,"bh":85},
 	"absol": {"ff":67,"fc":110,"fh":68,"bf":68,"bc":137,"bh":59},

@@ -46,50 +46,32 @@ var your_active: int = 0
 var opponent_active: int = 0
 var battle_over: bool = false
 var turn_count: int = 0
-
-# Tracks a pending Wish heal for each side.
-# amount: HP to heal, turns: end-of-turn checks remaining before the heal lands.
 var wish_pending := {
 	"yours": {"amount": 0, "turns": 0},
 	"opp":   {"amount": 0, "turns": 0},
 }
-
-# Entry hazards on each side
 var field_hazards := {
 	"yours": {"stealth_rock": false, "spikes": 0, "toxic_spikes": 0},
 	"opp":   {"stealth_rock": false, "spikes": 0, "toxic_spikes": 0},
 }
 
 var weather := {"type": "", "turns": -1}
-
-# Set by execute_move when a U-turn/Volt Switch hits — checked in execute_turn
 var _pending_uturn := {"yours": false, "opp": false}
-
-# Stores remainder of a turn when player U-turn requires a pick
 var _deferred_turn: Dictionary = {}
-
-# Each Pokemon's chosen move name this turn (used by Sucker Punch / Counter / Mirror Coat)
 var _current_turn_moves := {"yours": "", "opp": ""}
-
-# Last damaging hit received per side — for Counter / Mirror Coat
 var _last_hit_received := {
 	"yours": {"damage": 0, "category": ""},
 	"opp":   {"damage": 0, "category": ""},
 }
 
 var _switching_out := {"yours": false, "opp": false}
-
-# Multi-hit moves: value is fixed int (always that many hits) or Array [min, max]
-# 2-5 hit moves use the Gen5 distribution: 35% × 2, 35% × 3, 15% × 4, 15% × 5
 const MULTI_HIT_MOVES: Dictionary = {
-	# Fixed 2 hits
 	"bonemerang":  2,
 	"double-hit":  2,
 	"double-kick": 2,
 	"dual-chop":   2,
 	"gear-grind":  2,
 	"twineedle":   2,
-	# Variable 2–5 hits (Skill Link → always 5)
 	"arm-thrust":  [2, 5],
 	"barrage":     [2, 5],
 	"bullet-seed": [2, 5],
@@ -103,21 +85,13 @@ const MULTI_HIT_MOVES: Dictionary = {
 	"spike-cannon":[2, 5],
 	"tail-slap":   [2, 5],
 }
-
-# OHKO moves (always deal full damage if they hit; level-gated accuracy)
 const OHKO_MOVES = ["fissure", "guillotine", "horn-drill", "sheer-cold"]
-
-# Fixed-damage moves (bypass the stat-based damage formula)
 const FIXED_DAMAGE_MOVES = [
 	"seismic-toss", "night-shade", "dragon-rage", "sonic-boom",
 	"super-fang", "endeavor", "final-gambit", "psywave",
 	"counter", "mirror-coat",
 ]
-
-# Protect-class moves that block incoming damage for one turn
 const PROTECT_MOVES = ["protect", "detect", "king-s-shield", "spiky-shield", "baneful-bunker"]
-
-# Healing moves: move name → percent of max HP healed
 const HEALING_MOVES = {
 	"recover": 50, "slack-off": 50, "roost": 50, "milk-drink": 50,
 	"soft-boiled": 50, "heal-order": 50, "morning-sun": 50,
@@ -234,8 +208,6 @@ const SOUND_IMMUNE_ABILITIES = {
 const POWDER_IMMUNE_ABILITIES = {
 	"overcoat": true,
 }
-
-# Pure status-inflicting moves: name → {status, immune_types, powder?}
 const STATUS_MOVE_EFFECTS = {
 	"toxic":         {"status": "toxic",   "immune_types": ["poison", "steel"]},
 	"thunder-wave":  {"status": "paralyze","immune_types": ["electric", "ground"]},
@@ -251,8 +223,6 @@ const STATUS_MOVE_EFFECTS = {
 	"nuzzle":        {"status": "paralyze","immune_types": ["electric"]},
 	"dark-void":     {"status": "sleep",   "immune_types": []},
 }
-
-# Status moves that boost the user's own stats
 const SELF_STAGE_MOVES = {
 	"swords-dance": {"atk_stage": 2},
 	"nasty-plot":   {"spa_stage": 2},
@@ -280,8 +250,6 @@ const SELF_STAGE_MOVES = {
 	"defend-order": {"def_stage": 1, "spd_stage": 1},
 	"attack-order": {"atk_stage": 1},
 }
-
-# Status moves that lower the opponent's stats
 const OPP_STAGE_MOVES = {
 	"growl":          {"atk_stage": -1},
 	"tail-whip":      {"def_stage": -1},
@@ -298,8 +266,6 @@ const OPP_STAGE_MOVES = {
 	"tickle":         {"atk_stage": -1, "def_stage": -1},
 	"memento":        {"atk_stage": -2, "spa_stage": -2},
 }
-
-# Recoil moves: fraction of damage dealt taken back by attacker
 const RECOIL_FRACTION = {
 	"double-edge": 0.333,
 	"flare-blitz": 0.333,
@@ -311,15 +277,11 @@ const RECOIL_FRACTION = {
 	"submission":  0.25,
 	"wild-charge": 0.25,
 }
-
-# Moves with elevated critical hit ratio (stage 1 = 1/8 chance instead of 1/24)
 const HIGH_CRIT_MOVES = [
 	"slash", "cross-chop", "stone-edge", "shadow-claw", "night-slash",
 	"psycho-cut", "razor-leaf", "air-cutter", "crabhammer", "karate-chop",
 	"blaze-kick", "drill-run", "leaf-blade", "spacial-rend",
 ]
-
-# Stat drops applied to the attacker after using these moves
 const USER_STAGE_AFTER = {
 	"close-combat": {"def_stage": -1, "spd_stage": -1},
 	"superpower":   {"atk_stage": -1, "def_stage": -1},
@@ -329,36 +291,21 @@ const USER_STAGE_AFTER = {
 	"psycho-boost": {"spa_stage": -2},
 	"v-create":     {"def_stage": -1, "spd_stage": -1, "spe_stage": -1},
 }
-
-# Moves that faint the user after dealing damage
 const SELF_FAINT_MOVES = ["explosion", "self-destruct"]
-
-# Moves that deal damage then switch the attacker out
 const UTURN_MOVES = ["u-turn", "volt-switch", "flip-turn", "baton-pass"]
-
-# Status-category moves that force the opponent to switch
 const PHAZING_MOVES = ["whirlwind", "roar"]
-
-# Damaging moves that force the TARGET to switch after being hit
 const PHAZING_DAMAGE_MOVES = ["dragon-tail", "circle-throw"]
-
-# Entry-hazard setup moves  →  field key
 const HAZARD_SETUP = {
 	"stealth-rock": "stealth_rock",
 	"spikes":       "spikes",
 	"toxic-spikes": "toxic_spikes",
 }
-
-# Secondary effects on damaging moves: status / stat-drop / flinch
-# "target" true = affects defender (default), false = affects attacker
 const SECONDARY_EFFECTS: Dictionary = {
-	# ── Freeze ──────────────────────────────────────────────────
 	"ice-beam":       {"status":"freeze",   "chance":10},
 	"blizzard":       {"status":"freeze",   "chance":10},
 	"ice-punch":      {"status":"freeze",   "chance":10},
 	"powder-snow":    {"status":"freeze",   "chance":10},
 	"aurora-beam":    {"stat":"atk_stage",  "change":-1, "chance":10},
-	# ── Burn ────────────────────────────────────────────────────
 	"flamethrower":   {"status":"burn",     "chance":10},
 	"fire-blast":     {"status":"burn",     "chance":10},
 	"fire-punch":     {"status":"burn",     "chance":10},
@@ -367,7 +314,6 @@ const SECONDARY_EFFECTS: Dictionary = {
 	"scald":          {"status":"burn",     "chance":30},
 	"heat-wave":      {"status":"burn",     "chance":10},
 	"flame-wheel":    {"status":"burn",     "chance":10},
-	# ── Paralysis ───────────────────────────────────────────────
 	"thunder":        {"status":"paralyze", "chance":30},
 	"thunderbolt":    {"status":"paralyze", "chance":10},
 	"thunder-punch":  {"status":"paralyze", "chance":10},
@@ -376,7 +322,6 @@ const SECONDARY_EFFECTS: Dictionary = {
 	"spark":          {"status":"paralyze", "chance":30},
 	"zap-cannon":     {"status":"paralyze", "chance":100},
 	"force-palm":     {"status":"paralyze", "chance":30},
-	# ── Defender stat drops ─────────────────────────────────────
 	"psychic":        {"stat":"spd_stage",      "change":-1, "chance":10},
 	"shadow-ball":    {"stat":"spd_stage",      "change":-1, "chance":20},
 	"crunch":         {"stat":"def_stage",       "change":-1, "chance":20},
@@ -393,16 +338,13 @@ const SECONDARY_EFFECTS: Dictionary = {
 	"low-sweep":      {"stat":"spe_stage",       "change":-1, "chance":100},
 	"octazooka":      {"stat":"accuracy_stage",  "change":-1, "chance":50},
 	"mud-bomb":       {"stat":"accuracy_stage",  "change":-1, "chance":30},
-	# ── Attacker stat rises ─────────────────────────────────────
 	"charge-beam":    {"stat_self":"spa_stage", "change":1, "chance":70},
 	"metal-claw":     {"stat_self":"atk_stage", "change":1, "chance":10},
 	"steel-wing":     {"stat_self":"def_stage", "change":1, "chance":10},
 	"flame-charge":   {"stat_self":"spe_stage", "change":1, "chance":100},
-	# ── All-stat rise (ancientpower family) ─────────────────────
 	"ancient-power":  {"all_self":1, "chance":10},
 	"ominous-wind":   {"all_self":1, "chance":10},
 	"silver-wind":    {"all_self":1, "chance":10},
-	# ── Flinch ──────────────────────────────────────────────────
 	"iron-head":      {"flinch":true, "chance":30},
 	"air-slash":      {"flinch":true, "chance":30},
 	"rock-slide":     {"flinch":true, "chance":30},
@@ -1468,8 +1410,6 @@ func get_effective_stat(mon: Dictionary, stat_name: String) -> int:
 				effective *= 0.5
 
 	return int(effective)
-
-# Apply stat stage changes to a Pokemon, clamped to [-6, 6], with battle messages.
 func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by_opponent: bool = false):
 	var triggered_defiant = false
 	var lowered_any_stat = false
@@ -1497,7 +1437,6 @@ func apply_stages(mon: Dictionary, stages: Dictionary, is_yours: bool, caused_by
 		mon[stat_key] = clampi(mon[stat_key] + change, -6, 6)
 		var actual = mon[stat_key] - old_stage
 		if actual == 0:
-			# Stat already at max/min — skip message and shader
 			continue
 		any_stat_changed = true
 		if actual < 0:
@@ -1537,8 +1476,6 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 
 	var level = attacker["level"]
 	var power = move["power"]
-
-	# --- Variable-power move overrides (must happen before the power == 0 guard) ---
 	match move["name"]:
 		"return":
 			power = max(1, int(attacker.get("friendship", 255) * 2 / 5))
@@ -1604,8 +1541,6 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 			elif pp_left == 3: power = 60
 			elif pp_left == 4: power = 50
 			else:              power = 40
-
-	# Moves with power 0 that we can't resolve to a real power use the fixed-damage path instead
 	if power == 0:
 		return {"damage": 0, "crit": false}
 
@@ -1617,15 +1552,11 @@ func calculate_damage(attacker: Dictionary, defender: Dictionary, move: Dictiona
 	if move["category"] == "physical":
 		atk = get_effective_stat(attacker, "attack")
 		def_stat = get_effective_stat(defender, "defense")
-		# Burn halves attack, but not on a crit (crits ignore negative stat changes,
-		# but burn is a condition — in Gen 6+ burn still applies on crits)
 		if attacker["status"] == "burn" and attacker["ability"] != "guts":
 			atk *= 0.5
 	else:
 		atk = get_effective_stat(attacker, "sp_atk")
 		def_stat = get_effective_stat(defender, "sp_def")
-
-	# Crits use attacker's stat ignoring negative stages, defender's ignoring positive stages
 	if crit:
 		if move["category"] == "physical":
 			var burn_mod = 0.5 if attacker["status"] == "burn" and attacker["ability"] != "guts" else 1.0
@@ -1772,9 +1703,6 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	turn_count += 1
 	var your_mon = your_team[your_active]
 	var opp_mon = opponent_team[opponent_active]
-
-	# Drop protection from the previous turn and reset consecutive counter
-	# if the Pokemon didn't use a protect-class move last turn.
 	your_mon["is_protected"] = false
 	opp_mon["is_protected"]  = false
 	if your_mon["last_move_used"] not in PROTECT_MOVES:
@@ -1816,8 +1744,6 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 		you_go_first = your_speed > opp_speed
 	else:
 		you_go_first = randi() % 2 == 0
-
-	# Reset per-turn flags
 	your_mon["is_flinched"] = false
 	opp_mon["is_flinched"]  = false
 	your_mon["analytic_active"] = false
@@ -1831,7 +1757,6 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	if you_go_first:
 		execute_move(your_mon, opp_mon, your_move, true)
 		if _pending_uturn["yours"]:
-			# Player used U-turn — defer the rest of the turn until they pick a switch
 			_deferred_turn = {
 				"opp_move": opp_move,
 				"you_go_first": true,
@@ -1863,8 +1788,6 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, allow_asleep: bool = false, skip_pp_cost: bool = false):
 	if attacker["is_fainted"]:
 		return
-
-	# Status immobilization checks — clear last_move_used so protect resets
 	var move_name = move["name"]
 	if _can_use_held_item(attacker) and _is_choice_item(attacker.get("item", "")) and attacker.get("choice_lock", "") != "" and attacker["choice_lock"] != move_name:
 		battle_message.emit(attacker["display_name"] + "'s " + attacker["item"] + " locks it into " + _format_name(attacker["choice_lock"]) + "!")
@@ -1930,8 +1853,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			if attacker["confusion_turns"] <= 0:
 				attacker["is_confused"] = false
 				battle_message.emit(attacker["display_name"] + " snapped out of its confusion!")
-
-	# Destiny Bond resets when the user moves again (unless using Destiny Bond itself)
 	if move["name"] != "destiny-bond":
 		attacker["destiny_bond"] = false
 
@@ -1945,8 +1866,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	battle_message.emit(attacker["display_name"] + " used " + _format_name(move_name) + "!")
 	var prepared_move = _prepare_move_for_use(attacker, move)
 	move = prepared_move
-
-	# --- Sucker Punch: fails if the defender did not choose a damaging move this turn ---
 	if move_name == "sucker-punch":
 		var def_side     = "opp" if is_yours else "yours"
 		var def_chosen   = _current_turn_moves.get(def_side, "")
@@ -1968,13 +1887,9 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 
 	if _can_use_held_item(attacker) and _is_choice_item(attacker.get("item", "")) and attacker.get("choice_lock", "") == "":
 		attacker["choice_lock"] = move_name
-
-	# --- Status / effect-only moves ---
 	if move["category"] == "status":
 		_apply_status_move(attacker, defender, move, is_yours)
 		return
-
-	# --- Damaging moves ---
 	if defender["is_protected"]:
 		battle_message.emit(defender["display_name"] + " protected itself!")
 		if move_name == "outrage":
@@ -1984,19 +1899,14 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if _can_use_held_item(attacker) and move.get("gem_boost", false):
 		var gem_name = attacker.get("item", "")
 		_consume_item(attacker, is_yours, attacker["display_name"] + " strengthened " + _format_name(move_name) + " with its " + gem_name + "!")
-
-	# --- OHKO moves ---
 	if move_name in OHKO_MOVES:
-		# Fail if attacker's level is lower than defender's
 		if attacker["level"] < defender["level"]:
 			battle_message.emit("It doesn't affect " + defender["display_name"] + "...")
 			return
-		# Type immunity (e.g. Guillotine/Horn Drill are Normal — no effect on Ghost)
 		var ohko_eff = get_move_effectiveness(attacker, move["type"], defender["types"])
 		if ohko_eff == 0.0:
 			battle_message.emit("It had no effect!")
 			return
-		# Level-adjusted accuracy: 30 + (atk_level - def_level)
 		var ohko_acc = 30 + (attacker["level"] - defender["level"])
 		if randi() % 100 >= ohko_acc:
 			battle_message.emit("It missed!")
@@ -2004,8 +1914,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		battle_message.emit("It's a one-hit KO!")
 		_deal_damage(defender, defender["current_hp"], attacker, is_yours, move)
 		return
-
-	# --- Fixed-damage moves (level-based, HP-based, etc.) ---
 	if move_name in FIXED_DAMAGE_MOVES:
 		var eff_check = get_move_effectiveness(attacker, move["type"], defender["types"])
 		if eff_check == 0.0:
@@ -2015,10 +1923,8 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		var failed    = false
 		match move_name:
 			"seismic-toss":
-				# No effect on Ghost types (already caught above by Fighting type chart)
 				fixed_dmg = attacker["level"]
 			"night-shade":
-				# No effect on Normal types (Ghost type chart)
 				fixed_dmg = attacker["level"]
 			"dragon-rage":
 				fixed_dmg = 40
@@ -2054,7 +1960,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			return
 		if fixed_dmg > 0:
 			_deal_damage(defender, fixed_dmg, attacker, is_yours, move)
-			# Final Gambit: attacker faints after use
 			if move_name == "final-gambit" and not attacker["is_fainted"]:
 				attacker["current_hp"] = 0
 				attacker["is_fainted"] = true
@@ -2070,8 +1975,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		return
 
 	attack_effectiveness.emit(effectiveness)
-
-	# --- Multi-hit moves (handled separately) ---
 	if move_name in MULTI_HIT_MOVES or move_name in ["triple-kick", "beat-up"]:
 		_execute_multi_hit(attacker, defender, move, is_yours)
 		return
@@ -2082,8 +1985,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		_emit_ability(not is_yours, "wonder-guard")
 	var hit_substitute = defender["substitute_hp"] > 0
 	var hp_damage = 0
-
-	# --- Rapid Spin: remove hazards from attacker's side ---
 	if move_name == "rapid-spin":
 		var hkey = "yours" if is_yours else "opp"
 		var h    = field_hazards[hkey]
@@ -2099,8 +2000,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			cleared = true
 		if cleared:
 			battle_message.emit(attacker["display_name"] + " blew away the hazards!")
-
-	# --- Substitute absorbs damage ---
 	if hit_substitute:
 		defender["substitute_hp"] = max(defender["substitute_hp"] - damage, 0)
 		if result["crit"]:
@@ -2111,7 +2010,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		else:
 			battle_message.emit("The substitute took the hit!")
 	else:
-		# Normal HP damage
 		damage = _apply_sturdy(defender, attacker, damage, not is_yours)
 		defender["current_hp"] = max(defender["current_hp"] - damage, 0)
 		hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
@@ -2128,8 +2026,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			battle_message.emit("It's super effective!")
 		elif effectiveness < 1.0:
 			battle_message.emit("It's not very effective...")
-
-		# Track last hit for Counter / Mirror Coat (only real HP damage, not substitute)
 		var def_side_key = "opp" if is_yours else "yours"
 		_last_hit_received[def_side_key]["damage"]   = damage
 		_last_hit_received[def_side_key]["category"] = move["category"]
@@ -2145,8 +2041,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		_apply_drain_heal(attacker, defender, move_name, hp_damage, is_yours)
 	_handle_on_hit_abilities(attacker, defender, move, is_yours, hp_damage, hit_substitute)
 	_handle_on_hit_items(attacker, defender, move, is_yours, hp_damage, hit_substitute)
-
-	# --- Secondary effects ---
 	if SECONDARY_EFFECTS.has(move_name) and not defender["is_fainted"] and effectiveness > 0.0 and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
 		_apply_secondary(attacker, defender, SECONDARY_EFFECTS[move_name], is_yours, hit_substitute)
 	elif _has_ability(attacker, "stench") and not defender["is_fainted"] and not hit_substitute and randi() % 100 < 10 and not _has_ability(defender, "inner-focus"):
@@ -2160,8 +2054,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			defender["is_flinched"] = true
 			if _has_ability(defender, "steadfast"):
 				apply_stages(defender, {"spe_stage": 1}, not is_yours)
-
-	# --- Knock Off: remove the target's held item ---
 	if move_name == "knock-off" and not hit_substitute and not defender["is_fainted"] and defender.get("item", "") != "":
 		var knocked_item = defender["item"]
 		defender["item"] = ""
@@ -2170,8 +2062,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		battle_message.emit(attacker["display_name"] + " knocked off " + defender["display_name"] + "'s " + knocked_item + "!")
 		if _has_ability(defender, "unburden"):
 			defender["unburden_active"] = true
-
-	# --- Phazing damage moves (Dragon Tail, Circle Throw) ---
 	if move_name in PHAZING_DAMAGE_MOVES and not defender["is_fainted"]:
 		if _has_ability(defender, "suction-cups") and not _is_mold_breaker_attack(attacker):
 			battle_message.emit(defender["display_name"] + " anchored itself with Suction Cups!")
@@ -2182,8 +2072,6 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			_force_switch(not is_yours, next_idx)
 		else:
 			battle_message.emit("But it failed!")
-
-	# --- Recoil (rock-head / magic-guard negate) ---
 	if RECOIL_FRACTION.has(move_name) \
 			and attacker["ability"] != "rock-head" \
 			and attacker["ability"] != "magic-guard" \
@@ -2193,42 +2081,31 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " was hurt by recoil!")
 		_try_trigger_hp_item(attacker, is_yours)
-
-	# --- Life Orb recoil ---
 	if _can_use_held_item(attacker) and attacker["item"] == "Life Orb" and attacker["ability"] != "magic-guard" and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
 		var lo_recoil = max(int(attacker["max_hp"] / 10), 1)
 		attacker["current_hp"] = max(attacker["current_hp"] - lo_recoil, 0)
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " lost HP to Life Orb!")
 		_try_trigger_hp_item(attacker, is_yours)
-
-	# --- Struggle recoil (1/4 max HP, not blocked by abilities) ---
 	if move_name == "struggle" and not attacker["is_fainted"]:
 		var struggle_recoil = max(int(attacker["max_hp"] / 4), 1)
 		attacker["current_hp"] = max(attacker["current_hp"] - struggle_recoil, 0)
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " is damaged by recoil!")
-
-	# --- Post-hit self stat drops ---
 	if USER_STAGE_AFTER.has(move_name):
 		apply_stages(attacker, USER_STAGE_AFTER[move_name], is_yours)
-
-	# --- Self-faint moves (Explosion, Self-Destruct) ---
 	if move_name in SELF_FAINT_MOVES and not attacker["is_fainted"]:
 		attacker["current_hp"] = 0
 		attacker["is_fainted"] = true
 		hp_changed.emit(is_yours, 0, attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " fainted!")
 		pokemon_fainted.emit(is_yours, attacker["name"])
-
-	# --- Faint checks ---
 	if defender["current_hp"] <= 0 and not defender["is_fainted"]:
 		defender["is_fainted"] = true
 		battle_message.emit(defender["display_name"] + " fainted!")
 		pokemon_fainted.emit(not is_yours, defender["name"])
 		if _has_ability(attacker, "moxie"):
 			apply_stages(attacker, {"atk_stage": 1}, is_yours)
-		# Destiny Bond: if the defender had Destiny Bond active, attacker also faints
 		if defender["destiny_bond"] and not attacker["is_fainted"]:
 			attacker["current_hp"] = 0
 			attacker["is_fainted"] = true
@@ -2242,15 +2119,11 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		pokemon_fainted.emit(is_yours, attacker["name"])
 
 	_handle_contact_abilities(attacker, defender, move_name, is_yours)
-
-	# --- U-turn / Volt Switch: flag a switch after this move resolves ---
 	if move_name in UTURN_MOVES and not attacker["is_fainted"]:
 		if _random_alive_not_active(is_yours) != -1:
 			_pending_uturn["yours" if is_yours else "opp"] = true
 	if move_name == "outrage":
 		_finalize_locked_move(attacker, is_yours, move_name)
-
-# Handles all category=="status" moves: healing, status infliction, and stat changes.
 func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, reflected: bool = false):
 	var move_name = move["name"]
 
@@ -2270,8 +2143,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		battle_message.emit(defender["display_name"] + " bounced the move back!")
 		_apply_status_move(defender, attacker, move, not is_yours, true)
 		return
-
-	# --- Entry hazard setup (Stealth Rock, Spikes, Toxic Spikes) ---
 	if HAZARD_SETUP.has(move_name):
 		var hkey    = _opposing_side_key(is_yours)
 		var fkey    = HAZARD_SETUP[move_name]
@@ -2317,8 +2188,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		battle_message.emit("Sleep Talk chose " + _format_name(called_move["name"]) + "!")
 		execute_move(attacker, defender, called_move, is_yours, true, true)
 		return
-
-	# --- Leech Seed ---
 	if move_name == "leech-seed":
 		if "grass" in defender["types"]:
 			battle_message.emit("It doesn't affect " + defender["display_name"] + "...")
@@ -2332,8 +2201,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		defender["leech_seed_source"] = _side_key(is_yours)
 		battle_message.emit(defender["display_name"] + " was seeded!")
 		return
-
-	# --- Substitute ---
 	if move_name == "substitute":
 		if attacker["substitute_hp"] > 0:
 			battle_message.emit(attacker["display_name"] + " already has a substitute!")
@@ -2348,8 +2215,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		substitute_changed.emit(is_yours, true)
 		battle_message.emit(attacker["display_name"] + " made a substitute!")
 		return
-
-	# --- Whirlwind / Roar: force opponent to switch ---
 	if move_name in PHAZING_MOVES:
 		if _has_ability(defender, "suction-cups") and not _is_mold_breaker_attack(attacker):
 			battle_message.emit(defender["display_name"] + " anchored itself with Suction Cups!")
@@ -2361,11 +2226,8 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		battle_message.emit(defender["display_name"] + " was blown away!")
 		_force_switch(not is_yours, next_idx)
 		return
-
-	# --- Protect / Detect / King's Shield etc. ---
 	if move_name in PROTECT_MOVES:
 		var consecutive = attacker["protect_consecutive"]
-		# Success probability: 100% first use, ×(1/3) each consecutive use
 		var success = consecutive == 0 or randf() < pow(1.0 / 3.0, consecutive)
 		if success:
 			attacker["is_protected"]        = true
@@ -2375,8 +2237,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 			attacker["protect_consecutive"] = 0
 			battle_message.emit("But it failed!")
 		return
-
-	# --- Rest: full heal + inflict sleep ---
 	if move_name == "rest":
 		if attacker["current_hp"] >= attacker["max_hp"] and attacker["status"] == "":
 			battle_message.emit("But it failed!")
@@ -2389,8 +2249,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		battle_message.emit(attacker["display_name"] + " went to sleep and restored HP!")
 		_try_trigger_status_cure_item(attacker, is_yours)
 		return
-
-	# --- Wish: delayed 50% heal, applied next end-of-turn ---
 	if move_name == "wish":
 		var wish_key = _side_key(is_yours)
 		if wish_pending[wish_key]["turns"] > 0:
@@ -2402,8 +2260,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		}
 		battle_message.emit(attacker["display_name"] + " made a wish!")
 		return
-
-	# --- Other healing moves (50% max HP) ---
 	if HEALING_MOVES.has(move_name):
 		if attacker["current_hp"] >= attacker["max_hp"]:
 			battle_message.emit(attacker["display_name"] + "'s HP is full!")
@@ -2413,8 +2269,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
 		battle_message.emit(attacker["display_name"] + " restored HP!")
 		return
-
-	# --- Status-inflicting moves ---
 	if STATUS_MOVE_EFFECTS.has(move_name):
 		var effect = STATUS_MOVE_EFFECTS[move_name]
 		var new_status = effect["status"]
@@ -2425,14 +2279,10 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		if not _can_receive_status(defender, new_status):
 			battle_message.emit(defender["display_name"] + " is immune!")
 			return
-
-		# Type immunity
 		for immune_type in effect.get("immune_types", []):
 			if immune_type in defender["types"]:
 				battle_message.emit(defender["display_name"] + " is immune!")
 				return
-
-		# Powder moves are blocked by Grass types
 		if effect.get("powder", false) and "grass" in defender["types"]:
 			battle_message.emit(defender["display_name"] + " is immune!")
 			return
@@ -2490,19 +2340,13 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 			return
 		_apply_transform(attacker, defender, is_yours)
 		return
-
-	# --- Self-boosting moves ---
 	if SELF_STAGE_MOVES.has(move_name):
 		apply_stages(attacker, SELF_STAGE_MOVES[move_name], is_yours)
 		return
-
-	# --- Destiny Bond ---
 	if move_name == "destiny-bond":
 		attacker["destiny_bond"] = true
 		battle_message.emit(attacker["display_name"] + " is trying to take its foe down with it!")
 		return
-
-	# --- Perish Song ---
 	if move_name == "perish-song":
 		var already_active: bool = attacker["perish_count"] >= 0 and defender["perish_count"] >= 0
 		if already_active:
@@ -2512,10 +2356,7 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		defender["perish_count"] = 3
 		battle_message.emit("All Pokemon hearing the song will faint in three turns!")
 		return
-
-	# --- Opponent-debuffing moves ---
 	if OPP_STAGE_MOVES.has(move_name):
-		# Memento: user faints after using it
 		if move_name == "memento":
 			apply_stages(defender, OPP_STAGE_MOVES[move_name], not is_yours, true)
 			attacker["current_hp"] = 0
@@ -2526,8 +2367,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 			return
 		apply_stages(defender, OPP_STAGE_MOVES[move_name], not is_yours, true)
 		return
-
-	# --- Yawn: makes the target drowsy; they fall asleep next end-of-turn ---
 	if move_name == "yawn":
 		if defender["status"] != "":
 			battle_message.emit("But it failed!")
@@ -2541,8 +2380,6 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 		defender["yawn_turns"] = 2
 		battle_message.emit(defender["display_name"] + " became drowsy!")
 		return
-
-	# Fallback for unimplemented status moves
 	battle_message.emit("But nothing happened!")
 
 func apply_end_of_turn(mon: Dictionary, is_yours: bool):
@@ -2557,8 +2394,6 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 		if mon["disable_turns"] <= 0:
 			mon["disable_turns"] = 0
 			mon["disabled_move"] = ""
-
-	# Wish heal arrives
 	var wish_key = _side_key(is_yours)
 	var wish = wish_pending[wish_key]
 	if wish["turns"] > 0:
@@ -2716,8 +2551,6 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 		if randi() % 100 < harvest_roll:
 			mon["item"] = mon["last_consumed_item"]
 			battle_message.emit(mon["display_name"] + " harvested a " + mon["item"] + "!")
-
-	# Perish Song countdown
 	if mon["perish_count"] > 0:
 		mon["perish_count"] -= 1
 		battle_message.emit(mon["display_name"] + "'s perish count fell to " + str(mon["perish_count"]) + "!")
@@ -2728,8 +2561,6 @@ func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 		battle_message.emit(mon["display_name"] + " fainted due to Perish Song!")
 		pokemon_fainted.emit(is_yours, mon["name"])
 		return
-
-	# Yawn: countdown, then inflict sleep
 	if mon.get("yawn_turns", 0) > 0:
 		mon["yawn_turns"] -= 1
 		if mon["yawn_turns"] == 0 and mon["status"] == "" and _can_receive_status(mon, "sleep"):
@@ -2764,7 +2595,6 @@ func check_faint(is_yours: bool):
 		return
 
 	if is_yours:
-		# Let the player choose which pokemon to send in
 		faint_switch_request.emit()
 	else:
 		_switch_in_pokemon(false, next)
@@ -2792,10 +2622,6 @@ func switch_pokemon(is_yours: bool, index: int):
 		return
 	_clear_switch_out_state(_get_active_mon(is_yours), is_yours)
 	_switch_in_pokemon(is_yours, index)
-
-# ─── Fixed-damage helper ──────────────────────────────────────────────────────
-# Applies a flat damage amount to `defender`, handles faint + Destiny Bond.
-# Used by OHKO moves, Counter, Mirror Coat, Seismic Toss, etc.
 func _deal_damage(defender: Dictionary, dmg: int, attacker: Dictionary, is_yours: bool, _move: Dictionary):
 	dmg = _apply_sturdy(defender, attacker, dmg, not is_yours)
 	defender["current_hp"] = max(defender["current_hp"] - dmg, 0)
@@ -2817,15 +2643,10 @@ func _deal_damage(defender: Dictionary, dmg: int, attacker: Dictionary, is_yours
 			battle_message.emit(attacker["display_name"] + " was taken down by Destiny Bond!")
 			pokemon_fainted.emit(is_yours, attacker["name"])
 	_handle_contact_abilities(attacker, defender, _move["name"], is_yours)
-
-# ─── Multi-hit move execution ────────────────────────────────────────────────
-# Handles all multi-hit, Triple Kick, and Beat Up logic.
 func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool):
 	var move_name  = move["name"]
 	var hit_count  = 0
 	var hp_damage  = 0  # damage that landed on real HP (for Life Orb trigger)
-
-	# ── Beat Up (each alive party member lands one hit) ──────────────────────
 	if move_name == "beat-up":
 		var team: Array = your_team if is_yours else opponent_team
 		for contributor in team:
@@ -2852,8 +2673,6 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 		battle_message.emit("Hit " + str(hit_count) + " time(s)!")
 		_multihit_finish(attacker, defender, move, is_yours, hp_damage)
 		return
-
-	# ── Determine number of hits ──────────────────────────────────────────────
 	var num_hits = 1
 	if move_name == "triple-kick":
 		num_hits = 3
@@ -2862,7 +2681,6 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 		if hit_spec is int:
 			num_hits = hit_spec
 		else:
-			# Variable 2-5 hit distribution: 35% / 35% / 15% / 15%
 			if attacker["ability"] == "skill-link":
 				num_hits = 5
 			else:
@@ -2871,13 +2689,9 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 				elif roll < 70: num_hits = 3
 				elif roll < 85: num_hits = 4
 				else:           num_hits = 5
-
-	# ── Execute each hit ──────────────────────────────────────────────────────
 	for i in num_hits:
 		if defender["current_hp"] <= 0:
 			break
-
-		# Triple Kick: accuracy checked per hit and power increases each hit
 		if move_name == "triple-kick":
 			if not accuracy_check(attacker, defender, move):
 				break
@@ -2900,8 +2714,6 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 				hp_damage += res["damage"]
 			hit_count += 1
 			continue
-
-		# Standard hit
 		var res = calculate_damage(attacker, defender, move)
 		var hit_substitute = defender["substitute_hp"] > 0
 		if res["crit"]:
@@ -2917,8 +2729,6 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 			hp_changed.emit(not is_yours, defender["current_hp"], defender["max_hp"])
 			hp_damage += res["damage"]
 		hit_count += 1
-
-		# Twineedle: 20% chance to poison per hit
 		if move_name == "twineedle" and not hit_substitute and defender["status"] == "" and defender["current_hp"] > 0:
 			if "poison" not in defender["types"] and "steel" not in defender["types"]:
 				if randi() % 100 < 20:
@@ -2928,8 +2738,6 @@ func _execute_multi_hit(attacker: Dictionary, defender: Dictionary, move: Dictio
 
 	battle_message.emit("Hit " + str(hit_count) + " time(s)!")
 	_multihit_finish(attacker, defender, move, is_yours, hp_damage)
-
-# Shared post-hit cleanup for multi-hit moves (Life Orb + faint checks).
 func _multihit_finish(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, hp_damage: int):
 	_handle_on_hit_abilities(attacker, defender, move, is_yours, hp_damage, false)
 	_handle_on_hit_items(attacker, defender, move, is_yours, hp_damage, false)
@@ -2957,8 +2765,6 @@ func _multihit_finish(attacker: Dictionary, defender: Dictionary, move: Dictiona
 		battle_message.emit(attacker["display_name"] + " fainted!")
 		pokemon_fainted.emit(is_yours, attacker["name"])
 
-# ─── Entry hazards ────────────────────────────────────────────────────────────
-
 func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 	if mon["is_fainted"]:
 		return
@@ -2966,8 +2772,6 @@ func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 	var hazards = field_hazards[hkey]
 	var is_grounded = "flying" not in mon["types"] and mon["ability"] != "levitate"
 	var avoids_hazard_damage = mon["ability"] == "magic-guard"
-
-	# Toxic Spikes: absorbed by incoming Poison-type, otherwise poison/badly poison
 	if hazards["toxic_spikes"] > 0 and is_grounded:
 		if "poison" in mon["types"]:
 			hazards["toxic_spikes"] = 0
@@ -2985,8 +2789,6 @@ func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 				status_changed.emit(is_yours, "poison")
 				battle_message.emit(mon["display_name"] + " was poisoned by the spikes!")
 				_try_trigger_status_cure_item(mon, is_yours)
-
-	# Spikes: 1/8, 1/6, 1/4 HP based on layers
 	if hazards["spikes"] > 0 and is_grounded and not avoids_hazard_damage:
 		var fracs = [0.125, 0.1666, 0.25]
 		var dmg = max(int(mon["max_hp"] * fracs[hazards["spikes"] - 1]), 1)
@@ -2995,8 +2797,6 @@ func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 		battle_message.emit(mon["display_name"] + " was hurt by the spikes!")
 		if _resolve_faint_from_residual(mon, is_yours):
 			return
-
-	# Stealth Rock: Rock-type effectiveness damage
 	if hazards["stealth_rock"] and not avoids_hazard_damage:
 		var eff = get_type_effectiveness("rock", mon["types"])
 		var dmg = max(int(mon["max_hp"] * 0.125 * eff), 1)
@@ -3004,8 +2804,6 @@ func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 		hp_changed.emit(is_yours, mon["current_hp"], mon["max_hp"])
 		battle_message.emit(mon["display_name"] + " was hurt by the stealth rocks!")
 		_resolve_faint_from_residual(mon, is_yours)
-
-# ─── Switch helpers ───────────────────────────────────────────────────────────
 
 func _random_alive_not_active(is_yours: bool) -> int:
 	var team   = your_team if is_yours else opponent_team
@@ -3027,7 +2825,6 @@ func _do_uturn_switch(is_yours: bool):
 	var old_name = old_mon["display_name"]
 	battle_message.emit(old_name + " came back!")
 	if is_yours:
-		# Let the player choose who to switch in
 		uturn_switch_request.emit()
 	else:
 		_force_switch(is_yours, idx)
@@ -3045,7 +2842,6 @@ func _resume_turn_after_uturn():
 	_deferred_turn = {}
 
 	if you_went_first and opp_move != null:
-		# Opponent still needs to attack the new switch-in
 		var opp_mon = opponent_team[opponent_active]
 		if not opp_mon["is_fainted"] and not opp_mon["is_flinched"]:
 			opp_mon["analytic_active"] = true
@@ -3069,8 +2865,6 @@ func _force_switch(is_yours: bool, index: int):
 	_clear_switch_out_state(_get_active_mon(is_yours), is_yours)
 	_switch_in_pokemon(is_yours, index)
 
-# ─── Secondary effect application ─────────────────────────────────────────────
-
 func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 		effect: Dictionary, is_yours: bool, blocked_by_substitute: bool = false):
 	var chance = effect["chance"]
@@ -3079,8 +2873,6 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 	var roll = randi() % 100
 	if roll >= chance:
 		return
-
-		# Status effect on defender
 	if effect.has("status"):
 		if blocked_by_substitute:
 			return
@@ -3091,7 +2883,6 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 			return
 		if _has_ability(defender, "shield-dust"):
 			return
-		# Type immunities for freeze/burn/paralyze
 		match new_status:
 			"freeze":
 				if "ice" in defender["types"]: return
@@ -3118,8 +2909,6 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 			return
 		_apply_confusion(defender, not is_yours)
 		return
-
-	# Stat drop on defender
 	if effect.has("stat"):
 		if blocked_by_substitute:
 			return
@@ -3127,21 +2916,15 @@ func _apply_secondary(attacker: Dictionary, defender: Dictionary,
 			return
 		apply_stages(defender, {effect["stat"]: effect["change"]}, not is_yours)
 		return
-
-	# Stat rise on attacker
 	if effect.has("stat_self"):
 		apply_stages(attacker, {effect["stat_self"]: effect["change"]}, is_yours)
 		return
-
-	# All-stat rise on attacker (Ancientpower family)
 	if effect.has("all_self"):
 		var v = effect["all_self"]
 		apply_stages(attacker,
 			{"atk_stage":v,"def_stage":v,"spa_stage":v,"spd_stage":v,"spe_stage":v},
 			is_yours)
 		return
-
-	# Flinch (only useful if attacker moved first — checked in execute_turn)
 	if effect.get("flinch", false):
 		if blocked_by_substitute:
 			return
@@ -3171,8 +2954,6 @@ func execute_switch_turn(switch_index: int):
 		your_mon["protect_consecutive"] = 0
 	if opp_mon["last_move_used"] not in PROTECT_MOVES:
 		opp_mon["protect_consecutive"] = 0
-
-	# Player switches — counts as their action for the turn
 	var opp_move_idx = get_opponent_move()
 	var opp_move = _resolve_locked_move(opp_mon, _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opp_move_idx]))
 	opp_mon["is_flinched"] = false

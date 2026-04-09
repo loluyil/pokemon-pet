@@ -32,24 +32,16 @@ func _update_color():
 	else:
 		texture_progress = red_bar
 
-# ── Public API ────────────────────────────────────────────────────────────────
-
 func update_hp(current_hp: int, max_hp: int):
 	var old_hp := value
 	max_value   = max_hp
-
-	# Kill any in-progress animations so they don't overlap
 	if _bar_tween:
 		_bar_tween.kill()
 	if _flash_tween:
 		_flash_tween.kill()
 	damage_flash.modulate.a = 0.0
-
-	# 1. Bar drains down to current HP
 	_bar_tween = create_tween()
 	_bar_tween.tween_property(self, "value", float(current_hp), TWEEN_DURATION)
-
-	# 2. Flash starts only AFTER the bar finishes
 	if current_hp < old_hp:
 		_bar_tween.tween_callback(_start_flash.bind(current_hp, old_hp, max_hp))
 
@@ -62,12 +54,9 @@ func set_hp_instant(current_hp: int, max_hp: int):
 	value               = current_hp
 	damage_flash.modulate.a = 0.0
 
-# ── Internal ──────────────────────────────────────────────────────────────────
-
 func _start_flash(current_hp: int, old_hp: int, max_hp: int):
 	var bar_w := size.x
 	var bar_h := size.y
-	# Position the dark overlay over the segment of bar that was just drained
 	damage_flash.offset_left   = (current_hp / float(max_hp)) * bar_w
 	damage_flash.offset_right  = (old_hp     / float(max_hp)) * bar_w
 	damage_flash.offset_top    = 0.0
