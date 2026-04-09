@@ -77,6 +77,8 @@ var _last_hit_received := {
 	"opp":   {"damage": 0, "category": ""},
 }
 
+var _switching_out := {"yours": false, "opp": false}
+
 # Multi-hit moves: value is fixed int (always that many hits) or Array [min, max]
 # 2-5 hit moves use the Gen5 distribution: 35% × 2, 35% × 3, 15% × 4, 15% × 5
 const MULTI_HIT_MOVES: Dictionary = {
@@ -557,6 +559,10 @@ func build_battle_pokemon(raw: Dictionary) -> Dictionary:
 		"illusion_active": false,
 		"transformed": false,
 		"yawn_turns": 0,
+		"just_switched_in": true,
+		"locked_move_name": "",
+		"locked_move_turns": 0,
+		"locked_move_confuses": false,
 	}
 
 func _get_base_species_name(mon_name: String) -> String:
@@ -900,6 +906,15 @@ func _resolve_choice_locked_move(mon: Dictionary, selected_move: Dictionary) -> 
 			return move
 	return selected_move
 
+func _resolve_locked_move(mon: Dictionary, selected_move: Dictionary) -> Dictionary:
+	var locked_name = mon.get("locked_move_name", "")
+	if locked_name == "" or mon.get("locked_move_turns", 0) <= 0:
+		return selected_move
+	for move in mon["moveset"]:
+		if move["name"] == locked_name:
+			return move
+	return selected_move
+
 func _handle_on_hit_items(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, hp_damage: int, hit_substitute: bool):
 	if not hit_substitute and hp_damage > 0:
 		if _can_use_held_item(defender) and defender.get("air_balloon_active", false) and defender.get("item", "") == "Air Balloon":
@@ -1110,6 +1125,10 @@ func _reset_switch_in_state(mon: Dictionary):
 	mon["air_balloon_active"] = mon["item"] == "Air Balloon"
 	mon["illusion_active"] = false
 	mon["transformed"] = false
+	mon["just_switched_in"] = true
+	mon["locked_move_name"] = ""
+	mon["locked_move_turns"] = 0
+	mon["locked_move_confuses"] = false
 	if mon["ability"] == "slow-start":
 		mon["slow_start_turns"] = 5
 	else:
@@ -1146,6 +1165,10 @@ func _clear_switch_out_state(mon: Dictionary, is_yours: bool):
 	mon["illusion_active"] = false
 	mon["transformed"] = false
 	mon["yawn_turns"] = 0
+	mon["just_switched_in"] = false
+	mon["locked_move_name"] = ""
+	mon["locked_move_turns"] = 0
+	mon["locked_move_confuses"] = false
 	if mon["status"] == "toxic":
 		mon["toxic_counter"] = 0
 	var foe = _get_active_mon(not is_yours)
@@ -1239,6 +1262,8 @@ func _move_targets_opponent(move_name: String, move: Dictionary) -> bool:
 func _can_switch_out(is_yours: bool) -> bool:
 	var active = _get_active_mon(is_yours)
 	var foe = _get_active_mon(not is_yours)
+	if active.get("locked_move_turns", 0) > 0 and active.get("locked_move_name", "") != "":
+		return false
 	if (_can_use_held_item(active) and active["item"] == "Shed Shell") or "ghost" in active["types"]:
 		return true
 	if _has_ability(foe, "shadow-tag"):
@@ -1757,8 +1782,8 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	if opp_mon["last_move_used"] not in PROTECT_MOVES:
 		opp_mon["protect_consecutive"] = 0
 
-	var your_move = _resolve_choice_locked_move(your_mon, your_mon["moveset"][your_move_index])
-	var opp_move = _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opponent_move_index])
+	var your_move = _resolve_locked_move(your_mon, _resolve_choice_locked_move(your_mon, your_mon["moveset"][your_move_index]))
+	var opp_move = _resolve_locked_move(opp_mon, _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opponent_move_index]))
 	if _all_moves_empty(opp_mon):
 		opp_move = _make_struggle_move()
 
@@ -1800,6 +1825,8 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 	_pending_uturn          = {"yours": false, "opp": false}
 	_current_turn_moves     = {"yours": your_move["name"], "opp": opp_move["name"]}
 	_last_hit_received      = {"yours": {"damage": 0, "category": ""}, "opp": {"damage": 0, "category": ""}}
+	_switching_out          = {"yours": false, "opp": false}
+	_switching_out          = {"yours": false, "opp": false}
 
 	if you_go_first:
 		execute_move(your_mon, opp_mon, your_move, true)
@@ -1833,7 +1860,7 @@ func execute_turn(your_move_index: int, opponent_move_index: int):
 				return
 	_finish_turn()
 
-func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool):
+func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, allow_asleep: bool = false, skip_pp_cost: bool = false):
 	if attacker["is_fainted"]:
 		return
 
@@ -1867,7 +1894,7 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			attacker["sleep_turns"] = 0
 			status_changed.emit(is_yours, "")
 			battle_message.emit(attacker["display_name"] + " woke up!")
-		else:
+		elif not allow_asleep and move_name not in ["sleep-talk", "snore"]:
 			attacker["last_move_used"] = ""
 			battle_message.emit(attacker["display_name"] + " is fast asleep!")
 			return
@@ -1909,9 +1936,10 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		attacker["destiny_bond"] = false
 
 	attacker["last_move_used"] = move_name
-	if move.has("current_pp"):
+	if move.has("current_pp") and not skip_pp_cost:
 		var pp_cost = 1
 		if _move_targets_opponent(move_name, move) and _has_ability(defender, "pressure"):
+			_emit_ability(not is_yours, "pressure")
 			pp_cost += 1
 		move["current_pp"] = max(0, move["current_pp"] - pp_cost)
 	battle_message.emit(attacker["display_name"] + " used " + _format_name(move_name) + "!")
@@ -1926,6 +1954,10 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		if def_mdata["category"] == "status" or def_chosen == "":
 			battle_message.emit("But it failed!")
 			return
+
+	if move_name == "fake-out" and not attacker.get("just_switched_in", false):
+		battle_message.emit("But it failed!")
+		return
 
 	if not accuracy_check(attacker, defender, move):
 		battle_message.emit("It missed!")
@@ -1945,6 +1977,8 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	# --- Damaging moves ---
 	if defender["is_protected"]:
 		battle_message.emit(defender["display_name"] + " protected itself!")
+		if move_name == "outrage":
+			_finalize_locked_move(attacker, is_yours, move_name)
 		return
 
 	if _can_use_held_item(attacker) and move.get("gem_boost", false):
@@ -2102,8 +2136,10 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 		if move["type"] == "dark" and _has_ability(defender, "justified"):
 			apply_stages(defender, {"atk_stage": 1}, not is_yours)
 		if _has_ability(defender, "color-change") and defender["current_hp"] > 0:
-			defender["types"] = [move["type"]]
-			battle_message.emit(defender["display_name"] + " transformed into the " + move["type"].capitalize() + " type!")
+			if defender["types"] != [move["type"]]:
+				_emit_ability(not is_yours, "color-change")
+				defender["types"] = [move["type"]]
+				battle_message.emit(defender["display_name"] + " transformed into the " + move["type"].capitalize() + " type!")
 
 	if DRAINING_MOVES.has(move_name):
 		_apply_drain_heal(attacker, defender, move_name, hp_damage, is_yours)
@@ -2119,6 +2155,11 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 			apply_stages(defender, {"spe_stage": 1}, not is_yours)
 	if CONFUSION_SECONDARY_MOVES.has(move_name) and not defender["is_fainted"] and not hit_substitute and hp_damage > 0 and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
 		_apply_secondary(attacker, defender, {"chance": CONFUSION_SECONDARY_MOVES[move_name], "confuse": true}, is_yours, false)
+	if move_name == "fake-out" and not defender["is_fainted"] and not hit_substitute and hp_damage > 0:
+		if not _has_ability(defender, "inner-focus") and not _has_ability(defender, "shield-dust"):
+			defender["is_flinched"] = true
+			if _has_ability(defender, "steadfast"):
+				apply_stages(defender, {"spe_stage": 1}, not is_yours)
 
 	# --- Knock Off: remove the target's held item ---
 	if move_name == "knock-off" and not hit_substitute and not defender["is_fainted"] and defender.get("item", "") != "":
@@ -2145,7 +2186,8 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	# --- Recoil (rock-head / magic-guard negate) ---
 	if RECOIL_FRACTION.has(move_name) \
 			and attacker["ability"] != "rock-head" \
-			and attacker["ability"] != "magic-guard":
+			and attacker["ability"] != "magic-guard" \
+			and not (_has_ability(attacker, "sheer-force") and _move_has_secondary_effect(move_name)):
 		var recoil = max(int(damage * RECOIL_FRACTION[move_name]), 1)
 		attacker["current_hp"] = max(attacker["current_hp"] - recoil, 0)
 		hp_changed.emit(is_yours, attacker["current_hp"], attacker["max_hp"])
@@ -2205,6 +2247,8 @@ func execute_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, 
 	if move_name in UTURN_MOVES and not attacker["is_fainted"]:
 		if _random_alive_not_active(is_yours) != -1:
 			_pending_uturn["yours" if is_yours else "opp"] = true
+	if move_name == "outrage":
+		_finalize_locked_move(attacker, is_yours, move_name)
 
 # Handles all category=="status" moves: healing, status infliction, and stat changes.
 func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictionary, is_yours: bool, reflected: bool = false):
@@ -2250,6 +2294,28 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 			else:
 				hazards["toxic_spikes"] += 1
 				battle_message.emit("Poison spikes were scattered on the ground!")
+		field_hazards[hkey] = hazards
+		return
+
+	if move_name == "sleep-talk":
+		if attacker["status"] != "sleep":
+			battle_message.emit("But it failed!")
+			return
+		var callable_moves: Array = []
+		for candidate in attacker["moveset"]:
+			if candidate["name"] == "sleep-talk":
+				continue
+			if candidate.get("current_pp", 1) <= 0:
+				continue
+			callable_moves.append(candidate)
+		if callable_moves.is_empty():
+			battle_message.emit("But it failed!")
+			return
+		var called_move: Dictionary = callable_moves[randi() % callable_moves.size()].duplicate(true)
+		called_move.erase("current_pp")
+		called_move.erase("max_pp")
+		battle_message.emit("Sleep Talk chose " + _format_name(called_move["name"]) + "!")
+		execute_move(attacker, defender, called_move, is_yours, true, true)
 		return
 
 	# --- Leech Seed ---
@@ -2481,6 +2547,9 @@ func _apply_status_move(attacker: Dictionary, defender: Dictionary, move: Dictio
 
 func apply_end_of_turn(mon: Dictionary, is_yours: bool):
 	if mon["is_fainted"]:
+		return
+	if mon["current_hp"] <= 0:
+		_resolve_faint_from_residual(mon, is_yours)
 		return
 
 	if mon.get("disable_turns", 0) > 0:
@@ -2902,6 +2971,7 @@ func apply_entry_hazards(mon: Dictionary, is_yours: bool):
 	if hazards["toxic_spikes"] > 0 and is_grounded:
 		if "poison" in mon["types"]:
 			hazards["toxic_spikes"] = 0
+			field_hazards[hkey] = hazards
 			battle_message.emit(mon["display_name"] + " absorbed the toxic spikes!")
 		elif mon["status"] == "" and "steel" not in mon["types"] and _can_receive_status(mon, "toxic"):
 			if hazards["toxic_spikes"] >= 2:
@@ -2987,6 +3057,10 @@ func _resume_turn_after_uturn():
 func _finish_turn():
 	apply_end_of_turn(your_team[your_active], true)
 	apply_end_of_turn(opponent_team[opponent_active], false)
+	if your_team.size() > 0:
+		your_team[your_active]["just_switched_in"] = false
+	if opponent_team.size() > 0:
+		opponent_team[opponent_active]["just_switched_in"] = false
 	_refresh_active_ability_state()
 	check_faint(true)
 	check_faint(false)
@@ -3099,19 +3173,34 @@ func execute_switch_turn(switch_index: int):
 		opp_mon["protect_consecutive"] = 0
 
 	# Player switches — counts as their action for the turn
-	battle_message.emit(your_mon["display_name"] + ", come back!")
-	switch_pokemon(true, switch_index)
-
-	# Opponent still attacks the new Pokemon
 	var opp_move_idx = get_opponent_move()
-	var opp_move = opp_mon["moveset"][opp_move_idx]
+	var opp_move = _resolve_locked_move(opp_mon, _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opp_move_idx]))
 	opp_mon["is_flinched"] = false
 	opp_mon["analytic_active"] = true
 	_current_turn_moves  = {"yours": "", "opp": opp_move["name"]}
 	_last_hit_received   = {"yours": {"damage": 0, "category": ""}, "opp": {"damage": 0, "category": ""}}
-	execute_move(opp_mon, your_team[your_active], opp_move, false)
-	if _pending_uturn["opp"]:
-		_do_uturn_switch(false)
+	_switching_out       = {"yours": true, "opp": false}
+
+	if opp_move["name"] == "pursuit":
+		battle_message.emit(your_mon["display_name"] + ", come back!")
+		var pursuit_move := opp_move.duplicate(true)
+		pursuit_move["power"] = int(pursuit_move.get("power", 40)) * 2
+		execute_move(opp_mon, your_mon, pursuit_move, false)
+		_switching_out["yours"] = false
+		if your_mon["is_fainted"]:
+			apply_end_of_turn(opponent_team[opponent_active], false)
+			_refresh_active_ability_state()
+			check_faint(true)
+			check_faint(false)
+			return
+		switch_pokemon(true, switch_index)
+	else:
+		battle_message.emit(your_mon["display_name"] + ", come back!")
+		switch_pokemon(true, switch_index)
+		_switching_out["yours"] = false
+		execute_move(opp_mon, your_team[your_active], opp_move, false)
+		if _pending_uturn["opp"]:
+			_do_uturn_switch(false)
 
 	apply_end_of_turn(your_team[your_active], true)
 	apply_end_of_turn(opponent_team[opponent_active], false)
@@ -3151,7 +3240,7 @@ func execute_turn_struggle(opponent_move_index: int):
 		opp_mon["protect_consecutive"] = 0
 
 	var your_move = _make_struggle_move()
-	var opp_move = _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opponent_move_index])
+	var opp_move = _resolve_locked_move(opp_mon, _resolve_choice_locked_move(opp_mon, opp_mon["moveset"][opponent_move_index]))
 	if _all_moves_empty(opp_mon):
 		opp_move = _make_struggle_move()
 
@@ -3208,6 +3297,21 @@ func execute_turn_struggle(opponent_move_index: int):
 
 func get_opponent_move() -> int:
 	return randi() % opponent_team[opponent_active]["moveset"].size()
+
+func _finalize_locked_move(attacker: Dictionary, is_yours: bool, move_name: String):
+	if move_name != "outrage":
+		return
+	if attacker.get("locked_move_name", "") == "":
+		attacker["locked_move_name"] = "outrage"
+		attacker["locked_move_turns"] = randi_range(2, 3)
+		attacker["locked_move_confuses"] = true
+	attacker["locked_move_turns"] = max(attacker.get("locked_move_turns", 0) - 1, 0)
+	if attacker["locked_move_turns"] > 0:
+		return
+	attacker["locked_move_name"] = ""
+	if attacker.get("locked_move_confuses", false) and not attacker["is_fainted"]:
+		_apply_confusion(attacker, is_yours)
+	attacker["locked_move_confuses"] = false
 
 func print_teams():
 	print("=== YOUR TEAM ===")
