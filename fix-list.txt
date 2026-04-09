@@ -1,0 +1,26 @@
+To-do fix list:
+	
+	*** = fixed 
+	
+	Abilities:
+		1. Sheer Force: should disable second effects of moves like recoil or status***
+		2. Color Change: doesn't change color when being hit***
+		3. Pressure: should reveal itself***
+		
+	Moves:
+		1. Outrage: should be stuck in outrage and confuse at the end***
+		2. Pursuit: should always attack pokemon switching out***
+		3. Sleep talk: only works while sleeping - doesnt even work when sleeping***
+		4. Toxic spikes: 2x should toxic***
+		
+	Bugs:
+		1. Leftovers saving pokemon when they reach 0 - pokemon should faint***
+	
+	Quality:
+		1. Add background art
+		2. Add better platforms
+		3. Fix particles for pokeball
+		4. Make buff/debuff effects better
+		5. Attach trainer sprite to the one in battle as well
+		6. Add spikes/toxic spikes/stealth rock sprites
+		
